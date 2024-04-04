@@ -1,0 +1,16 @@
+[package]
+name = "orx-concurrent-iter"
+version = "1.0.0"
+edition = "2021"
+authors = ["orxfun <orx.ugur.arikan@gmail.com>"]
+description = "A thread-safe, convenient and lightweight concurrent iterator trait and efficient implementations."
+license = "MIT"
+repository = "https://github.com/orxfun/orx-concurrent-bag/"
+keywords = ["concurrency", "iterator", "iteration", "atomic", "parallelism"]
+categories = ["data-structures", "concurrency", "rust-patterns"]
+
+[dependencies]
+
+[dev-dependencies]
+orx-concurrent-bag = "1.8"
+test-case = "3.3.1"
