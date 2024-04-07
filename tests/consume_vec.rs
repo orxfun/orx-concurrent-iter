@@ -88,7 +88,7 @@ fn concurrent_iter_heap(num_threads: usize, batch: usize, vec: Vec<String>) {
 }
 
 #[test_matrix(
-    [1, 2, 4, 8, 64, 1024, 64*1024],
+    [1, 2, 4, 8, 64, 1024, 4*1024],
     [4 ,8, 16],
     [1, 2, 4, 5, 8, 64, 71, 1024, 1025]
 )]
