@@ -1,4 +1,7 @@
-use crate::iter::{atomic_counter::AtomicCounter, atomic_iter::AtomicIter};
+use crate::{
+    iter::{atomic_counter::AtomicCounter, atomic_iter::AtomicIter},
+    NextChunk, NextMany,
+};
 use std::{
     cell::UnsafeCell,
     cmp::Ordering,
@@ -62,7 +65,6 @@ where
         &self.reserved_counter
     }
 
-    // todo! check the conditions
     fn get(&self, item_idx: usize) -> Option<Self::Item> {
         loop {
             let yielded_count = self.yielded_counter.current();
@@ -80,7 +82,6 @@ where
                     };
                 }
 
-                // todo! item_idx < yielded_count => actually, this must never happen
                 Ordering::Less => return None,
 
                 // item_idx > yielded_count => we need the other items to be yielded
@@ -91,6 +92,18 @@ where
                 }
             }
         }
+    }
+
+    fn fetch_n(&self, n: usize) -> impl NextChunk<Self::Item> {
+        let begin_idx = self.counter().fetch_and_add(n);
+
+        let idx_range = begin_idx..(begin_idx + n);
+        let values = idx_range
+            .map(|i| self.get(i))
+            .take_while(|x| x.is_some())
+            .map(|x| x.expect("is-some is checked"));
+
+        NextMany { begin_idx, values }
     }
 }
 

@@ -8,7 +8,7 @@
 //! * **convenient**: An iterator implementing `ConcurrentIter` can safely be shared among threads as a shared reference. Further, it may be used similar to a regular `Iterator` with `for` syntax.
 //! * **efficient** and **lightweight**: All concurrent iterator implementations provided in this crate extend atomic iterators, which are lock-free and depend only on atomic primitives.
 //!
-//! ## A. Examples
+//! ## Examples
 //!
 //! ### Basic Usage
 //!
@@ -186,13 +186,13 @@
 //! }
 //! ```
 //!
-//! Note that due to parallelization, `outputs` is not guaranteed to be in the same order as `inputs`. In order to preserve the order of the input in the output, [`ConcurrentIter::ids_and_values`] method can be used, rather than the `values`, to get indices of values while iterating (see the explanation in the next section).
+//! Note that due to parallelization, `outputs` is not guaranteed to be in the same order as `inputs`. In order to preserve the order of the input in the output, [`ConcurrentIter::ids_and_values`] method can be used, rather than the `values`, to get indices of values while iterating (see the explanation in the next section). Similarly, `ConcurrentBag` can be replaced with [`orx_concurrent_bag::ConcurrentOrderedBag`](https://crates.io/crates/orx-concurrent-ordered-bag) to guarantee that the order is preserved.
 //!
-//! ## Iteration with Indices
+//! ### Iteration with Indices
 //!
-//! In a single-threaded regular `Iterator`, values can be paired up with their indices easily by calling `enumerate` on the iterator. We can also call `rf_inputs.values().enumerate()`; however, this would have a different meaning in a multi-threaded execution. It would pair up the values with the indices of the iteration local to that thread. In other words, the first value of every thread will be paired up with index zero.
+//! In a single-threaded regular `Iterator`, values can be paired up with their indices easily by calling `enumerate` on the iterator. We can also call `inputs.values().enumerate()`; however, this would have a different meaning in a multi-threaded execution. It would pair up the values with the indices of the iteration local to that thread. In other words, the first value of every thread will zero.
 //!
-//! However, it is often useful to know the input index of the iteration value. This can be achieved simply by using [`ConcurrentIter::ids_and_values`] instead of [`ConcurrentIter::values`].
+//! Actual iteration index of values can be obtained simply by using [`ConcurrentIter::ids_and_values`] instead of [`ConcurrentIter::values`].
 //!
 //! ```rust
 //! use orx_concurrent_iter::*;
@@ -235,15 +235,17 @@
 //! * No index appears more than once in any of the `indices_for_thread` vectors.
 //! * And union of these vectors give the indices from 0 to `n-1` where n is the number of yielded elements.
 //!
-//! # Iteration in Chunks
+//! ### Iteration in Chunks
 //!
 //! In the default iteration using `for` together with `values` and `ids_and_values` methods, the threads pull elements one by one. Note that these iterators internally call [`ConcurrentIter::next`] and [`ConcurrentIter::next_id_and_value`]  methods, respectively.
 //!
-//! Further, it is also possible to iterate in chunks with [`ConcurrentIter::next_chunk`] and [`ConcurrentIter::next_id_and_chunk`] methods. These methods differ from `next` and `next_id_and_value` in the following:
+//! Further, it is also possible to iterate in chunks with [`ConcurrentIter::next_chunk`] and [`ExactSizeConcurrentIter::next_exact_chunk`] methods. These methods differ from `next` and `next_id_and_value` in the following:
 //! * They receive the `chunk_size` parameter.
-//! * They return an `Iterator` which yields the next `chunk_size`, or fewer if there is not sufficient, **consecutive** elements.
-//! * `next_id_and_chunk` method additionally returns the index of the first element that the returned iterator will yield. Note that the index of the remaining elements can be known since the iterator will return consecutive elements.
+//! * They return an `Iterator` or `ExactSizeIterator` which yields the next `chunk_size` or fewer **consecutive** elements.
+//! * Further, they additionally return the index of the first element that the returned iterator will yield. Note that the index of the remaining elements can be known since the iterator will return consecutive elements.
 //!
+//! The advantage of `ExactSizeConcurrentIter` over `ConcurrentIter`, or `next_exact_chunk` over `next_chunk` is that it returns an iterator with an exact known size, which allows to return `None` when the iterator is empty. This has ergonomic benefits such as allowing `if let Some` or `while let Some` as demonstrated below. However, as expected, sources only with known lengths allow for it.
+//!  
 //! ```rust
 //! use orx_concurrent_iter::*;
 //!
@@ -257,28 +259,18 @@
 //! let [first, second] = std::thread::scope(|s| {
 //!     let first = s.spawn(move || {
 //!         let mut chars: Vec<char> = vec![];
-//!         loop {
-//!             let mut chunk = characters.next_chunk(3).peekable();
-//!             match chunk.peek() {
-//!                 None => break,
-//!                 Some(_) => chars.extend(chunk.copied()),
-//!             }
+//!         while let Some(chunk) = characters.next_exact_chunk(3) {
+//!             chars.extend(chunk.values().copied());
 //!             lag(100);
 //!         }
 //!         chars
 //!     });
 //!
 //!     let second = s.spawn(move || {
+//!         lag(50);
 //!         let mut chars: Vec<char> = vec![];
-//!         loop {
-//!             lag(50);
-//!
-//!             let mut chunk = characters.next_chunk(3).peekable();
-//!             match chunk.peek() {
-//!                 None => break,
-//!                 Some(_) => chars.extend(chunk.copied()),
-//!             }
-//!
+//!         while let Some(chunk) = characters.next_exact_chunk(3) {
+//!             chars.extend(chunk.values().copied());
 //!             lag(100);
 //!         }
 //!         chars
@@ -298,7 +290,7 @@
 //! assert_eq!(second, ['d', 'e', 'f']);
 //! ```
 //!
-//! ## B. Traits and Implementors
+//! ## Traits and Implementors
 //!
 //! As discussed so far, the trait of types which can safely be iterated concurrently by multiple threads is [`ConcurrentIter`].
 //!
@@ -345,3 +337,4 @@ pub use iter::implementors::{
     array::ConIterOfArray, iter::ConIterOfIter, slice::ConIterOfSlice, vec::ConIterOfVec,
 };
 pub use iter::wrappers::{ids_and_values::ConIterIdsAndValues, values::ConIterValues};
+pub use next::{Next, NextChunk, NextMany, NextManyExact};

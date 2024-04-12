@@ -1,12 +1,11 @@
-use std::cmp::Ordering;
-
 use crate::{
     iter::{
         atomic_counter::AtomicCounter,
         atomic_iter::{AtomicIter, AtomicIterWithInitialLen},
     },
-    next::NextMany,
+    NextChunk, NextManyExact,
 };
+use std::cmp::Ordering;
 
 /// A concurrent iterator over a slice yielding references to the elements.
 #[derive(Debug)]
@@ -57,24 +56,32 @@ impl<'a, T: Send + Sync> AtomicIter for ConIterOfSlice<'a, T> {
         self.slice.get(item_idx)
     }
 
-    fn fetch_n(&self, n: usize) -> NextMany<Self::Item, impl Iterator<Item = Self::Item>> {
-        let begin_idx = self.counter.fetch_and_add(n);
-
-        let values = match begin_idx.cmp(&self.slice.len()) {
-            Ordering::Less => {
-                let end_idx = (begin_idx + n).min(self.slice.len());
-                self.slice[begin_idx..end_idx].iter()
-            }
-            _ => [].iter(),
-        };
-
-        NextMany { begin_idx, values }
+    fn fetch_n(&self, n: usize) -> impl NextChunk<Self::Item> {
+        self.fetch_n_with_exact_len(n)
     }
 }
 
 impl<'a, T: Send + Sync> AtomicIterWithInitialLen for ConIterOfSlice<'a, T> {
     fn initial_len(&self) -> usize {
         self.slice.len()
+    }
+
+    fn fetch_n_with_exact_len(
+        &self,
+        n: usize,
+    ) -> NextManyExact<Self::Item, impl ExactSizeIterator<Item = Self::Item>> {
+        let begin_idx = self.counter.fetch_and_add(n);
+
+        let values = match begin_idx.cmp(&self.slice.len()) {
+            Ordering::Less => {
+                let end_idx = (begin_idx + n).min(self.slice.len()).max(begin_idx);
+                let values = self.slice[begin_idx..end_idx].iter();
+                values
+            }
+            _ => [].iter(),
+        };
+
+        NextManyExact { begin_idx, values }
     }
 }
 

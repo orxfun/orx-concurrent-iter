@@ -20,8 +20,8 @@ fn concurrent_iter(num_threads: usize, batch: usize, array: [i64; 1024]) {
                     let mut more = true;
                     while more {
                         more = false;
-                        let (_begin_idx, iter) = iter.next_id_and_chunk(batch).into();
-                        for value in iter {
+                        let next = iter.next_chunk(batch);
+                        for value in next.values() {
                             sum += value;
                             more = true;
                         }
