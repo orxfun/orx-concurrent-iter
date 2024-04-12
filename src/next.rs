@@ -1,23 +1,82 @@
+/// Result of a `next_id_and_value` call on a concurrent iterator which contains two bits of information:
+/// * `idx`: index of the element in the iterator.
+/// * `value`: of the element.
 #[derive(Debug)]
 pub struct Next<T> {
+    /// Index of the element in the iterator.
     pub idx: usize,
+    /// Value of the element.
     pub value: T,
 }
 
+/// A trait representing return types of a `next_chunk` call on a concurrent iterator.
+pub trait NextChunk<T> {
+    /// Type of the iterator yielding elements of the chunk.
+    type ChunkIter: Iterator<Item = T>;
+
+    /// Elements in the obtained chunk.
+    fn values(self) -> Self::ChunkIter;
+
+    /// The index of the first element to be yielded by the `values` iterator.
+    fn begin_idx(&self) -> usize;
+}
+
+/// A `NextChunk` implementation with a begin index and any iterator, not necessarily with a known length.
 #[derive(Debug)]
 pub struct NextMany<T, Iter>
 where
     Iter: Iterator<Item = T>,
 {
-    pub begin_idx: usize,
-    pub values: Iter,
+    pub(crate) begin_idx: usize,
+    pub(crate) values: Iter,
 }
 
-impl<T, Iter> From<NextMany<T, Iter>> for (usize, Iter)
+impl<T, Iter: Iterator<Item = T>> NextChunk<T> for NextMany<T, Iter> {
+    type ChunkIter = Iter;
+
+    #[inline(always)]
+    fn values(self) -> Self::ChunkIter {
+        self.values
+    }
+
+    #[inline(always)]
+    fn begin_idx(&self) -> usize {
+        self.begin_idx
+    }
+}
+
+/// A `NextChunk` implementation with a begin index and an `ExactSizeIterator` iterator with known length.
+#[derive(Debug)]
+pub struct NextManyExact<T, Iter>
 where
-    Iter: Iterator<Item = T>,
+    Iter: ExactSizeIterator<Item = T>,
 {
-    fn from(value: NextMany<T, Iter>) -> Self {
-        (value.begin_idx, value.values)
+    pub(crate) begin_idx: usize,
+    pub(crate) values: Iter,
+}
+
+impl<T, Iter: ExactSizeIterator<Item = T>> NextManyExact<T, Iter> {
+    /// Exact length of the chunk which is less than or equal to the requested chunk size.
+    pub fn exact_len(&self) -> usize {
+        self.values.len()
+    }
+
+    /// Returns whether or not the chunk is empty.
+    pub fn is_empty(&self) -> bool {
+        self.values.len() == 0
+    }
+}
+
+impl<T, Iter: ExactSizeIterator<Item = T>> NextChunk<T> for NextManyExact<T, Iter> {
+    type ChunkIter = Iter;
+
+    #[inline(always)]
+    fn values(self) -> Self::ChunkIter {
+        self.values
+    }
+
+    #[inline(always)]
+    fn begin_idx(&self) -> usize {
+        self.begin_idx
     }
 }

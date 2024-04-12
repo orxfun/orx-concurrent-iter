@@ -1,8 +1,5 @@
 use super::wrappers::values::ConIterValues;
-use crate::{
-    next::{Next, NextMany},
-    ConIterIdsAndValues,
-};
+use crate::{next::Next, ConIterIdsAndValues, NextChunk, NextManyExact};
 
 /// Trait defining a concurrent iterator with `next` and `next_id_and_chunk` methods which can safely be called my multiple threads concurrently.
 pub trait ConcurrentIter: Send + Sync {
@@ -25,10 +22,7 @@ pub trait ConcurrentIter: Send + Sync {
     /// This call would be equivalent to calling `next_id_and_value` method `chunk_size` times in a single-threaded execution.
     /// However, calling `next` method `chunk_size` times in a concurrent execution does not guarantee to return `chunk_size` consecutive elements.
     /// On the other hand, `next_id_and_chunk` guarantees that it returns consecutive elements, preventing any intermediate calls.
-    fn next_id_and_chunk(
-        &self,
-        chunk_size: usize,
-    ) -> NextMany<Self::Item, impl Iterator<Item = Self::Item>>;
+    fn next_chunk(&self, chunk_size: usize) -> impl NextChunk<Self::Item>;
 
     /// Advances the iterator and returns the next value.
     ///
@@ -36,21 +30,6 @@ pub trait ConcurrentIter: Send + Sync {
     #[inline(always)]
     fn next(&self) -> Option<Self::Item> {
         self.next_id_and_value().map(|x| x.value)
-    }
-
-    /// Advances the iterator `chunk_size` times and returns an iterator of at most `chunk_size` consecutive next values.
-    ///
-    /// This method:
-    /// * returns an iterator of `chunk_size` elements if there exists sufficient elements left in the iteration, or
-    /// * it might return an iterator of `m < chunk_size` elements if there exists only `m` elements left, or
-    /// * it might return an empty iterator.
-    ///
-    /// This call would be equivalent to calling `next` method `n` times in a single-threaded execution.
-    /// However, calling `next` method `chunk_size` times in a concurrent execution does not guarantee to return `n` consecutive elements.
-    /// On the other hand, `next_id_and_chunk` guarantees that it returns consecutive elements, preventing any intermediate calls.
-    #[inline(always)]
-    fn next_chunk(&self, chunk_size: usize) -> impl Iterator<Item = Self::Item> {
-        self.next_id_and_chunk(chunk_size).values
     }
 
     /// Returns an `Iterator` over the values of elements of the concurrent iterator.
@@ -83,6 +62,16 @@ pub trait ExactSizeConcurrentIter: ConcurrentIter {
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
+    /// Returns the next chunk with the requested `chunk_size`:
+    /// * Returns `None` if there are no more elements to yield.
+    /// * Returns `Some` of a [`crate::NextManyExact`] which contains the following information:
+    ///   * `begin_idx`: the index of the first element to be yielded by the `values` iterator.
+    ///   * `values`: an `ExactSizeIterator` with known `len` which is guaranteed to be positive and less than or equal to `chunk_size`.
+    fn next_exact_chunk(
+        &self,
+        chunk_size: usize,
+    ) -> Option<NextManyExact<Self::Item, impl ExactSizeIterator<Item = Self::Item>>>;
 }
 
 #[cfg(test)]

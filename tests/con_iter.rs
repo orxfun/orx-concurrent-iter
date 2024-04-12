@@ -24,8 +24,9 @@ where
                     let mut more = true;
                     while more {
                         more = false;
-                        let (begin_idx, iter) = iter.next_id_and_chunk(batch).into();
-                        for (i, value) in iter.enumerate() {
+                        let next = iter.next_chunk(batch);
+                        let begin_idx = next.begin_idx();
+                        for (i, value) in next.values().enumerate() {
                             bag.push((begin_idx + i, value));
                             more = true;
                         }
@@ -61,7 +62,7 @@ where
                         let mut more = true;
                         while more {
                             more = false;
-                            for value in iter.next_chunk(batch) {
+                            for value in iter.next_chunk(batch).values() {
                                 sum = sum + value;
                                 more = true;
                             }

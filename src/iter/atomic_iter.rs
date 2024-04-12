@@ -2,7 +2,7 @@ use super::{
     atomic_counter::AtomicCounter,
     con_iter::{ConcurrentIter, ExactSizeConcurrentIter},
 };
-use crate::next::{Next, NextMany};
+use crate::{next::Next, NextChunk, NextManyExact};
 use std::cmp::Ordering;
 
 /// Trait defining a set of concurrent iterators which internally uses an atomic counter of elements to be yielded.
@@ -27,23 +27,20 @@ pub trait AtomicIter: Send + Sync {
 
     /// Returns an iterator of the next `n` **consecutive items** that the iterator yields.
     /// It might return an iterator of less or no items if the iteration does not have sufficient elements left.
-    fn fetch_n(&self, n: usize) -> NextMany<Self::Item, impl Iterator<Item = Self::Item>> {
-        let begin_idx = self.counter().fetch_and_add(n);
-
-        let idx_range = begin_idx..(begin_idx + n);
-        let values = idx_range
-            .map(|i| self.get(i))
-            .take_while(|x| x.is_some())
-            .map(|x| x.expect("is-some is checked"));
-
-        NextMany { begin_idx, values }
-    }
+    fn fetch_n(&self, n: usize) -> impl NextChunk<Self::Item>;
 }
 
 /// An atomic counter based iterator with exactly known initial length.
 pub trait AtomicIterWithInitialLen: AtomicIter {
     /// Returns the initial length of the atomic iterator.
     fn initial_len(&self) -> usize;
+
+    /// Returns an iterator of the next `n` **consecutive items** that the iterator together with an exact size iterator.
+    /// It might return an iterator of less or no items if the iteration does not have sufficient elements left.
+    fn fetch_n_with_exact_len(
+        &self,
+        n: usize,
+    ) -> NextManyExact<Self::Item, impl ExactSizeIterator<Item = Self::Item>>;
 }
 
 impl<A: AtomicIter> ConcurrentIter for A {
@@ -55,11 +52,7 @@ impl<A: AtomicIter> ConcurrentIter for A {
     }
 
     #[inline(always)]
-    fn next_id_and_chunk(
-        &self,
-        n: usize,
-    ) -> NextMany<<Self as AtomicIter>::Item, impl Iterator<Item = <Self as AtomicIter>::Item>>
-    {
+    fn next_chunk(&self, n: usize) -> impl NextChunk<<Self as AtomicIter>::Item> {
         self.fetch_n(n)
     }
 }
@@ -70,6 +63,18 @@ impl<A: AtomicIterWithInitialLen> ExactSizeConcurrentIter for A {
         match current.cmp(&self.initial_len()) {
             Ordering::Less => self.initial_len() - current,
             _ => 0,
+        }
+    }
+
+    fn next_exact_chunk(
+        &self,
+        chunk_size: usize,
+    ) -> Option<NextManyExact<Self::Item, impl ExactSizeIterator<Item = Self::Item>>> {
+        let next = self.fetch_n_with_exact_len(chunk_size);
+        if next.is_empty() {
+            None
+        } else {
+            Some(next)
         }
     }
 }
@@ -121,9 +126,10 @@ pub(crate) mod tests {
         while has_more {
             has_more = false;
             let next_id_and_chunk = iter.fetch_n(n);
-            for (j, value) in next_id_and_chunk.values.enumerate() {
+            let begin_idx = next_id_and_chunk.begin_idx();
+            for (j, value) in next_id_and_chunk.values().enumerate() {
                 let value = value + 0usize;
-                assert_eq!(value, next_id_and_chunk.begin_idx + j);
+                assert_eq!(value, begin_idx + j);
                 assert_eq!(value, i);
 
                 i += 1;
@@ -166,8 +172,8 @@ pub(crate) mod tests {
         while has_more {
             has_more = false;
 
-            let mut next_id_and_chunk = iter.fetch_n(n);
-            if next_id_and_chunk.values.next().is_some() {
+            let next_id_and_chunk = iter.fetch_n(n);
+            if next_id_and_chunk.values().next().is_some() {
                 has_more = true;
             }
 

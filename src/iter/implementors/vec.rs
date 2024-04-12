@@ -1,4 +1,7 @@
-use crate::{iter::atomic_iter::AtomicIterWithInitialLen, AtomicCounter, AtomicIter};
+use crate::{
+    iter::atomic_iter::AtomicIterWithInitialLen, AtomicCounter, AtomicIter, NextChunk,
+    NextManyExact,
+};
 use std::{cell::UnsafeCell, cmp::Ordering};
 
 /// A concurrent iterator over a vector, consuming the vector and yielding its elements.
@@ -51,12 +54,35 @@ impl<T: Send + Sync + Default> AtomicIter for ConIterOfVec<T> {
             _ => None,
         }
     }
+
+    fn fetch_n(&self, n: usize) -> impl NextChunk<Self::Item> {
+        self.fetch_n_with_exact_len(n)
+    }
 }
 
 impl<T: Send + Sync + Default> AtomicIterWithInitialLen for ConIterOfVec<T> {
     fn initial_len(&self) -> usize {
         self.vec_len
     }
+
+    fn fetch_n_with_exact_len(
+        &self,
+        n: usize,
+    ) -> NextManyExact<Self::Item, impl ExactSizeIterator<Item = Self::Item>> {
+        let vec = unsafe { self.mut_vec() };
+
+        let begin_idx = self.counter().fetch_and_add(n);
+        let end_idx = (begin_idx + n).min(self.vec_len).max(begin_idx);
+        let idx_range = begin_idx..end_idx;
+        let values = idx_range.map(|i| unsafe { get_unchecked(vec, i) });
+
+        NextManyExact { begin_idx, values }
+    }
+}
+
+#[inline(always)]
+unsafe fn get_unchecked<T: Default>(vec: &mut Vec<T>, item_idx: usize) -> T {
+    std::mem::take(&mut vec[item_idx])
 }
 
 unsafe impl<T: Send + Sync + Default> Sync for ConIterOfVec<T> {}

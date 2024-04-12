@@ -1,4 +1,4 @@
-use crate::{next::NextMany, AtomicCounter, AtomicIter, AtomicIterWithInitialLen};
+use crate::{AtomicCounter, AtomicIter, AtomicIterWithInitialLen, NextChunk, NextManyExact};
 use std::{
     cmp::Ordering,
     ops::{Add, Range, Sub},
@@ -87,21 +87,8 @@ where
         }
     }
 
-    fn fetch_n(&self, n: usize) -> NextMany<Self::Item, impl Iterator<Item = Self::Item>> {
-        let begin_idx = self.counter.fetch_and_add(n);
-
-        let begin_value = self.range.start + begin_idx.into();
-
-        let end_value = match begin_value.cmp(&self.range.end) {
-            Ordering::Less => (begin_value + n.into()).min(self.range.end),
-            _ => begin_value,
-        };
-
-        let end_idx: usize = (end_value - self.range.start).into();
-
-        let values = (begin_idx..end_idx).map(Idx::from);
-
-        NextMany { begin_idx, values }
+    fn fetch_n(&self, n: usize) -> impl NextChunk<Self::Item> {
+        self.fetch_n_with_exact_len(n)
     }
 }
 
@@ -119,6 +106,26 @@ where
 {
     fn initial_len(&self) -> usize {
         (self.range.end - self.range.start).into()
+    }
+
+    fn fetch_n_with_exact_len(
+        &self,
+        n: usize,
+    ) -> NextManyExact<Self::Item, impl ExactSizeIterator<Item = Self::Item>> {
+        let begin_idx = self.counter.fetch_and_add(n);
+
+        let begin_value = self.range.start + begin_idx.into();
+
+        let end_value = match begin_value.cmp(&self.range.end) {
+            Ordering::Less => (begin_value + n.into()).min(self.range.end),
+            _ => begin_value,
+        };
+
+        let end_idx: usize = (end_value - self.range.start).into();
+
+        let values = (begin_idx..end_idx).map(Idx::from);
+
+        NextManyExact { begin_idx, values }
     }
 }
 
