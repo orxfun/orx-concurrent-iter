@@ -81,7 +81,7 @@ impl<T: Send + Sync + Default> AtomicIterWithInitialLen for ConIterOfVec<T> {
 }
 
 #[inline(always)]
-unsafe fn get_unchecked<T: Default>(vec: &mut Vec<T>, item_idx: usize) -> T {
+unsafe fn get_unchecked<T: Default>(vec: &mut [T], item_idx: usize) -> T {
     std::mem::take(&mut vec[item_idx])
 }
 
