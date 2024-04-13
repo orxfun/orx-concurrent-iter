@@ -1,5 +1,10 @@
 use crate::{
-    iter::{constructors::into_con_iter::IntoConcurrentIter, implementors::range::ConIterOfRange},
+    iter::{
+        constructors::{
+            into_con_iter::IntoConcurrentIter, into_exact_con_iter::IntoExactSizeConcurrentIter,
+        },
+        implementors::range::ConIterOfRange,
+    },
     ConcurrentIterable,
 };
 use std::ops::{Add, Range, Sub};
@@ -46,12 +51,31 @@ where
     }
 }
 
+impl<Idx> IntoExactSizeConcurrentIter for Range<Idx>
+where
+    Idx: Send
+        + Sync
+        + Clone
+        + Copy
+        + From<usize>
+        + Into<usize>
+        + Add<Idx, Output = Idx>
+        + Sub<Idx, Output = Idx>
+        + Ord,
+{
+    type Item = Idx;
+
+    type ExactConIter = ConIterOfRange<Idx>;
+
+    fn into_exact_con_iter(self) -> Self::ExactConIter {
+        Self::ExactConIter::new(self)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        iter::constructors::into_con_iter::IterIntoConcurrentIter, ConIterOfIter, ConcurrentIter,
-    };
+    use crate::{ConIterOfIter, ConcurrentIter};
 
     #[test]
     fn con_iter() {
@@ -62,10 +86,24 @@ mod tests {
         assert_eq!(con_iter.next(), Some(43));
         assert_eq!(con_iter.next(), Some(44));
         assert_eq!(con_iter.next(), None);
+
+        let con_iter: ConIterOfRange<_> = values.clone().into_con_iter();
+        assert_eq!(con_iter.next(), Some(42));
+        assert_eq!(con_iter.next(), Some(43));
+        assert_eq!(con_iter.next(), Some(44));
+        assert_eq!(con_iter.next(), None);
+
+        let con_iter: ConIterOfRange<_> = values.into_exact_con_iter();
+        assert_eq!(con_iter.next(), Some(42));
+        assert_eq!(con_iter.next(), Some(43));
+        assert_eq!(con_iter.next(), Some(44));
+        assert_eq!(con_iter.next(), None);
     }
 
     #[test]
     fn into_con_iter() {
+        use crate::IterIntoConcurrentIter;
+
         let values = 42..45;
 
         let con_iter: ConIterOfIter<_, _> = values.into_iter().take(2).into_con_iter();
