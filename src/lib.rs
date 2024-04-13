@@ -333,6 +333,7 @@ pub use iter::atomic_iter::{AtomicIter, AtomicIterWithInitialLen};
 pub use iter::con_iter::{ConcurrentIter, ExactSizeConcurrentIter};
 pub use iter::constructors::con_iterable::ConcurrentIterable;
 pub use iter::constructors::into_con_iter::{IntoConcurrentIter, IterIntoConcurrentIter};
+pub use iter::constructors::into_exact_con_iter::IntoExactSizeConcurrentIter;
 pub use iter::implementors::{
     array::ConIterOfArray, iter::ConIterOfIter, slice::ConIterOfSlice, vec::ConIterOfVec,
 };
