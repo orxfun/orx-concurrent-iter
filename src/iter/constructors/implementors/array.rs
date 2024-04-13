@@ -1,5 +1,10 @@
 use crate::{
-    iter::{constructors::into_con_iter::IntoConcurrentIter, implementors::array::ConIterOfArray},
+    iter::{
+        constructors::{
+            into_con_iter::IntoConcurrentIter, into_exact_con_iter::IntoExactSizeConcurrentIter,
+        },
+        implementors::array::ConIterOfArray,
+    },
     ConIterOfSlice, ConcurrentIterable,
 };
 
@@ -20,6 +25,16 @@ impl<const N: usize, T: Send + Sync + Default> IntoConcurrentIter for [T; N] {
 
     fn into_con_iter(self) -> Self::ConIter {
         Self::ConIter::new(self)
+    }
+}
+
+impl<const N: usize, T: Send + Sync + Default> IntoExactSizeConcurrentIter for [T; N] {
+    type Item = T;
+
+    type ExactConIter = ConIterOfArray<N, T>;
+
+    fn into_exact_con_iter(self) -> Self::ExactConIter {
+        Self::ExactConIter::new(self)
     }
 }
 
@@ -44,6 +59,12 @@ mod tests {
         let values = ['a', 'b', 'c'];
 
         let con_iter = values.into_con_iter();
+        assert_eq!(con_iter.next(), Some('a'));
+        assert_eq!(con_iter.next(), Some('b'));
+        assert_eq!(con_iter.next(), Some('c'));
+        assert_eq!(con_iter.next(), None);
+
+        let con_iter = values.into_exact_con_iter();
         assert_eq!(con_iter.next(), Some('a'));
         assert_eq!(con_iter.next(), Some('b'));
         assert_eq!(con_iter.next(), Some('c'));
