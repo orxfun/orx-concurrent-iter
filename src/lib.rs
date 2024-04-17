@@ -335,7 +335,8 @@ pub use iter::constructors::con_iterable::ConcurrentIterable;
 pub use iter::constructors::into_con_iter::{IntoConcurrentIter, IterIntoConcurrentIter};
 pub use iter::constructors::into_exact_con_iter::IntoExactSizeConcurrentIter;
 pub use iter::implementors::{
-    array::ConIterOfArray, iter::ConIterOfIter, slice::ConIterOfSlice, vec::ConIterOfVec,
+    array::ConIterOfArray, iter::ConIterOfIter, range::ConIterOfRange, slice::ConIterOfSlice,
+    vec::ConIterOfVec,
 };
 pub use iter::wrappers::{ids_and_values::ConIterIdsAndValues, values::ConIterValues};
 pub use next::{Next, NextChunk, NextMany, NextManyExact};
