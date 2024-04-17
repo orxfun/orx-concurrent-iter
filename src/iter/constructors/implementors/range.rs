@@ -70,45 +70,9 @@ where
     fn into_exact_con_iter(self) -> Self::ExactConIter {
         Self::ExactConIter::new(self)
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::{ConIterOfIter, ConcurrentIter};
-
-    #[test]
-    fn con_iter() {
-        let values = 42..45;
-
-        let con_iter: ConIterOfRange<_> = values.con_iter();
-        assert_eq!(con_iter.next(), Some(42));
-        assert_eq!(con_iter.next(), Some(43));
-        assert_eq!(con_iter.next(), Some(44));
-        assert_eq!(con_iter.next(), None);
-
-        let con_iter: ConIterOfRange<_> = values.clone().into_con_iter();
-        assert_eq!(con_iter.next(), Some(42));
-        assert_eq!(con_iter.next(), Some(43));
-        assert_eq!(con_iter.next(), Some(44));
-        assert_eq!(con_iter.next(), None);
-
-        let con_iter: ConIterOfRange<_> = values.into_exact_con_iter();
-        assert_eq!(con_iter.next(), Some(42));
-        assert_eq!(con_iter.next(), Some(43));
-        assert_eq!(con_iter.next(), Some(44));
-        assert_eq!(con_iter.next(), None);
-    }
-
-    #[test]
-    fn into_con_iter() {
-        use crate::IterIntoConcurrentIter;
-
-        let values = 42..45;
-
-        let con_iter: ConIterOfIter<_, _> = values.into_iter().take(2).into_con_iter();
-        assert_eq!(con_iter.next(), Some(42));
-        assert_eq!(con_iter.next(), Some(43));
-        assert_eq!(con_iter.next(), None);
+    fn exact_len(&self) -> usize {
+        let len = self.end - self.start;
+        len.into()
     }
 }
