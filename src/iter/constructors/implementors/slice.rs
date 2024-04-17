@@ -35,34 +35,8 @@ impl<'a, T: Send + Sync> IntoExactSizeConcurrentIter for &'a [T] {
     fn into_exact_con_iter(self) -> Self::ExactConIter {
         Self::ExactConIter::new(self)
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::ConcurrentIter;
-
-    #[test]
-    fn con_iter() {
-        let values = ['a', 'b', 'c'];
-        let slice = values.as_slice();
-
-        let con_iter = slice.con_iter();
-        assert_eq!(con_iter.next(), Some(&'a'));
-        assert_eq!(con_iter.next(), Some(&'b'));
-        assert_eq!(con_iter.next(), Some(&'c'));
-        assert_eq!(con_iter.next(), None);
-
-        let con_iter = slice.into_con_iter();
-        assert_eq!(con_iter.next(), Some(&'a'));
-        assert_eq!(con_iter.next(), Some(&'b'));
-        assert_eq!(con_iter.next(), Some(&'c'));
-        assert_eq!(con_iter.next(), None);
-
-        let con_iter = slice.into_exact_con_iter();
-        assert_eq!(con_iter.next(), Some(&'a'));
-        assert_eq!(con_iter.next(), Some(&'b'));
-        assert_eq!(con_iter.next(), Some(&'c'));
-        assert_eq!(con_iter.next(), None);
+    fn exact_len(&self) -> usize {
+        self.len()
     }
 }

@@ -10,4 +10,7 @@ pub trait IntoExactSizeConcurrentIter {
 
     /// Consumes this type and converts it into an exact size concurrent iterator.
     fn into_exact_con_iter(self) -> Self::ExactConIter;
+
+    /// Returns the exact remaining length of the exact size concurrent iterator, before converting it into the iterator.
+    fn exact_len(&self) -> usize;
 }
