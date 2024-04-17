@@ -28,12 +28,8 @@ impl<'a, T: Send + Sync> IntoConcurrentIter for &'a [T] {
 }
 
 impl<'a, T: Send + Sync> IntoExactSizeConcurrentIter for &'a [T] {
-    type Item = &'a T;
-
-    type ExactConIter = ConIterOfSlice<'a, T>;
-
-    fn into_exact_con_iter(self) -> Self::ExactConIter {
-        Self::ExactConIter::new(self)
+    fn into_exact_con_iter(self) -> Self::ConIter {
+        Self::ConIter::new(self)
     }
 
     fn exact_len(&self) -> usize {

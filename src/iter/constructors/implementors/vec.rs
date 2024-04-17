@@ -27,12 +27,8 @@ impl<T: Send + Sync + Default> IntoConcurrentIter for Vec<T> {
 }
 
 impl<T: Send + Sync + Default> IntoExactSizeConcurrentIter for Vec<T> {
-    type Item = T;
-
-    type ExactConIter = ConIterOfVec<T>;
-
-    fn into_exact_con_iter(self) -> Self::ExactConIter {
-        Self::ExactConIter::new(self)
+    fn into_exact_con_iter(self) -> Self::ConIter {
+        Self::ConIter::new(self)
     }
 
     fn exact_len(&self) -> usize {

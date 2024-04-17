@@ -63,12 +63,8 @@ where
         + Sub<Idx, Output = Idx>
         + Ord,
 {
-    type Item = Idx;
-
-    type ExactConIter = ConIterOfRange<Idx>;
-
-    fn into_exact_con_iter(self) -> Self::ExactConIter {
-        Self::ExactConIter::new(self)
+    fn into_exact_con_iter(self) -> Self::ConIter {
+        Self::ConIter::new(self)
     }
 
     fn exact_len(&self) -> usize {
