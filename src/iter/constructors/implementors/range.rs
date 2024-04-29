@@ -49,6 +49,11 @@ where
     fn into_con_iter(self) -> Self::ConIter {
         Self::ConIter::new(self)
     }
+
+    fn try_get_exact_len(&self) -> Option<usize> {
+        let len = self.end - self.start;
+        Some(len.into())
+    }
 }
 
 impl<Idx> IntoExactSizeConcurrentIter for Range<Idx>
@@ -63,6 +68,10 @@ where
         + Sub<Idx, Output = Idx>
         + Ord,
 {
+    type Item = Idx;
+
+    type ConIter = ConIterOfRange<Idx>;
+
     fn into_exact_con_iter(self) -> Self::ConIter {
         Self::ConIter::new(self)
     }

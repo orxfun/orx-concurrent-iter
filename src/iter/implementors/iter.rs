@@ -1,6 +1,6 @@
 use crate::{
-    iter::{atomic_counter::AtomicCounter, atomic_iter::AtomicIter},
-    NextChunk, NextMany,
+    iter::{atomic_counter::AtomicCounter, atomic_iter::AtomicIter, default_fns},
+    ConcurrentIter, Next, NextChunk, NextMany,
 };
 use std::{
     cell::UnsafeCell,
@@ -55,17 +55,15 @@ where
     }
 }
 
-impl<T: Send + Sync, Iter> AtomicIter for ConIterOfIter<T, Iter>
+impl<T: Send + Sync, Iter> AtomicIter<T> for ConIterOfIter<T, Iter>
 where
     Iter: Iterator<Item = T>,
 {
-    type Item = T;
-
     fn counter(&self) -> &AtomicCounter {
         &self.reserved_counter
     }
 
-    fn get(&self, item_idx: usize) -> Option<Self::Item> {
+    fn get(&self, item_idx: usize) -> Option<T> {
         loop {
             let yielded_count = self.yielded_counter.current();
             match item_idx.cmp(&yielded_count) {
@@ -94,7 +92,7 @@ where
         }
     }
 
-    fn fetch_n(&self, n: usize) -> impl NextChunk<Self::Item> {
+    fn fetch_n(&self, n: usize) -> impl NextChunk<T> {
         let begin_idx = self.counter().fetch_and_add(n);
 
         let idx_range = begin_idx..(begin_idx + n);
@@ -105,8 +103,47 @@ where
 
         NextMany { begin_idx, values }
     }
+
+    #[inline(always)]
+    fn for_each_n<F: FnMut(T)>(&self, chunk_size: usize, f: F) {
+        default_fns::for_each::any_for_each(self, chunk_size, f)
+    }
+
+    #[inline(always)]
+    fn enumerate_for_each_n<F: FnMut(usize, T)>(&self, chunk_size: usize, f: F) {
+        default_fns::for_each::any_for_each_with_ids(self, chunk_size, f)
+    }
 }
 
 unsafe impl<T: Send + Sync, Iter> Sync for ConIterOfIter<T, Iter> where Iter: Iterator<Item = T> {}
 
 unsafe impl<T: Send + Sync, Iter> Send for ConIterOfIter<T, Iter> where Iter: Iterator<Item = T> {}
+
+// AtomicIter -> ConcurrentIter
+
+impl<T: Send + Sync, Iter> ConcurrentIter for ConIterOfIter<T, Iter>
+where
+    Iter: Iterator<Item = T>,
+{
+    type Item = T;
+
+    #[inline(always)]
+    fn next_id_and_value(&self) -> Option<Next<Self::Item>> {
+        self.fetch_one()
+    }
+
+    #[inline(always)]
+    fn next_chunk(&self, chunk_size: usize) -> impl NextChunk<Self::Item> {
+        self.fetch_n(chunk_size)
+    }
+
+    #[inline(always)]
+    fn for_each_n<F: FnMut(Self::Item)>(&self, chunk_size: usize, f: F) {
+        <Self as AtomicIter<_>>::for_each_n(self, chunk_size, f)
+    }
+
+    #[inline(always)]
+    fn enumerate_for_each_n<F: FnMut(usize, Self::Item)>(&self, chunk_size: usize, f: F) {
+        <Self as AtomicIter<_>>::enumerate_for_each_n(self, chunk_size, f)
+    }
+}

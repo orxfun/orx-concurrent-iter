@@ -1,6 +1,8 @@
-pub mod atomic_counter;
+pub(crate) mod atomic_counter;
+/// Module defining concurrent iterators based on an atomic counter.
 pub mod atomic_iter;
-pub mod con_iter;
-pub mod constructors;
-pub mod implementors;
-pub mod wrappers;
+pub(crate) mod con_iter;
+pub(crate) mod constructors;
+mod default_fns;
+pub(crate) mod implementors;
+pub(crate) mod wrappers;

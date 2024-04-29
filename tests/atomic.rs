@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use orx_concurrent_bag::ConcurrentBag;
+use orx_concurrent_iter::iter::atomic_iter::*;
 use orx_concurrent_iter::*;
 use std::ops::Add;
 
@@ -17,10 +18,10 @@ pub(crate) const ATOMIC_FETCH_N: [usize; 8] = [
     ATOMIC_TEST_LEN * 2,
 ];
 
-pub(crate) fn atomic_fetch_one<A>(iter: A)
+pub(crate) fn atomic_fetch_one<T, A>(iter: A)
 where
-    A: AtomicIter,
-    A::Item: Add<usize, Output = usize>,
+    A: AtomicIter<T>,
+    T: Add<usize, Output = usize> + Send + Sync,
 {
     assert_eq!(0, iter.counter().current());
 
@@ -33,10 +34,10 @@ where
     }
 }
 
-pub(crate) fn atomic_fetch_n<A>(iter: A, n: usize)
+pub(crate) fn atomic_fetch_n<T, A>(iter: A, n: usize)
 where
-    A: AtomicIter,
-    A::Item: Add<usize, Output = usize>,
+    A: AtomicIter<T>,
+    T: Add<usize, Output = usize> + Send + Sync,
 {
     assert_eq!(0, iter.counter().current());
 
@@ -59,10 +60,10 @@ where
     }
 }
 
-pub(crate) fn atomic_exact_fetch_one<A>(iter: A)
+pub(crate) fn atomic_exact_fetch_one<T, A>(iter: A)
 where
-    A: AtomicIterWithInitialLen,
-    A::Item: Add<usize, Output = usize>,
+    A: AtomicIterWithInitialLen<T> + ExactSizeConcurrentIter<Item = T>,
+    T: Add<usize, Output = usize> + Send + Sync,
 {
     let mut remaining = ATOMIC_TEST_LEN;
 
@@ -78,10 +79,10 @@ where
     assert!(iter.is_empty());
 }
 
-pub(crate) fn atomic_exact_fetch_n<A>(iter: A, n: usize)
+pub(crate) fn atomic_exact_fetch_n<T, A>(iter: A, n: usize)
 where
-    A: AtomicIterWithInitialLen,
-    A::Item: Add<usize, Output = usize>,
+    A: AtomicIterWithInitialLen<T> + ExactSizeConcurrentIter<Item = T>,
+    T: Add<usize, Output = usize> + Send + Sync,
 {
     let mut remaining = ATOMIC_TEST_LEN;
 

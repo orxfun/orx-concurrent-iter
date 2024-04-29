@@ -4,6 +4,7 @@ use atomic::{
     atomic_exact_fetch_n, atomic_exact_fetch_one, atomic_fetch_n, atomic_fetch_one,
     test_ids_and_values, test_values, ATOMIC_FETCH_N, ATOMIC_TEST_LEN,
 };
+use orx_concurrent_iter::iter::atomic_iter::*;
 use orx_concurrent_iter::*;
 use test_case::test_matrix;
 

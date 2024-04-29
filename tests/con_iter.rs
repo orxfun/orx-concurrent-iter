@@ -41,6 +41,77 @@ where
     vec.iter().map(|x| x.1).collect()
 }
 
+fn concurrent_for_each_sum<I>(num_threads: usize, batch: usize, con_iter: I, expected_sum: usize)
+where
+    I: ConcurrentIter + Send + Sync,
+    I::Item: Clone + Add<usize, Output = usize>,
+    usize: Add<I::Item, Output = usize>,
+{
+    let iter = &con_iter;
+
+    let sum: usize = std::thread::scope(|s| {
+        (0..num_threads)
+            .map(|_| {
+                s.spawn(move || {
+                    let mut sum = 0;
+                    if batch == 1 {
+                        iter.for_each(|value| sum = sum + value);
+                    } else {
+                        iter.for_each_n(batch, |value| sum = sum + value);
+                    }
+                    sum
+                })
+            })
+            .map(|x| x.join().unwrap())
+            .sum()
+    });
+    assert_eq!(sum, expected_sum);
+}
+
+fn concurrent_enumerate_for_each_sum<I>(
+    num_threads: usize,
+    batch: usize,
+    con_iter: I,
+    expected_sum: usize,
+    len: usize,
+) where
+    I: ConcurrentIter + Send + Sync,
+    I::Item: Clone + Add<usize, Output = usize>,
+    usize: Add<I::Item, Output = usize>,
+{
+    let iter = &con_iter;
+
+    let sums = std::thread::scope(|s| {
+        (0..num_threads)
+            .map(|_| {
+                s.spawn(move || {
+                    let mut sum = 0;
+                    let mut sum_indices = 0;
+                    if batch == 1 {
+                        iter.enumerate_for_each(|idx, value| {
+                            sum = sum + value;
+                            sum_indices += idx;
+                        });
+                    } else {
+                        iter.enumerate_for_each_n(batch, |idx, value| {
+                            sum = sum + value;
+                            sum_indices += idx;
+                        });
+                    }
+                    (sum, sum_indices)
+                })
+            })
+            .map(|x| x.join().unwrap())
+            .collect::<Vec<_>>()
+    });
+
+    let sum: usize = sums.iter().map(|x| x.0).sum();
+    let sum_indices: usize = sums.iter().map(|x| x.1).sum();
+
+    assert_eq!(sum, expected_sum);
+    assert_eq!(sum_indices, (0..len).sum::<usize>());
+}
+
 fn concurrent_sum<I>(num_threads: usize, batch: usize, con_iter: I, expected_sum: usize)
 where
     I: ConcurrentIter + Send + Sync,
@@ -92,8 +163,11 @@ fn con_iter_slice(len: usize, num_threads: usize, batch: usize) {
 
     let collected: Vec<&usize> = concurrent_iter(num_threads, batch, slice.con_iter());
     assert_eq!(source, collected.into_iter().copied().collect::<Vec<_>>());
+    assert_eq!(slice.try_get_exact_len(), Some(len));
 
     concurrent_sum(num_threads, batch, clone.as_slice().con_iter(), sum);
+    concurrent_for_each_sum(num_threads, batch, clone.as_slice().con_iter(), sum);
+    concurrent_enumerate_for_each_sum(num_threads, batch, clone.as_slice().con_iter(), sum, len);
 }
 
 #[test_matrix(
@@ -107,8 +181,11 @@ fn con_iter_vec(len: usize, num_threads: usize, batch: usize) {
 
     let collected: Vec<usize> = concurrent_iter(num_threads, batch, source.clone().into_con_iter());
     assert_eq!(source, collected.into_iter().collect::<Vec<_>>());
+    assert_eq!(source.try_get_exact_len(), Some(len));
 
-    concurrent_sum(num_threads, batch, source.into_con_iter(), sum);
+    concurrent_sum(num_threads, batch, source.clone().into_con_iter(), sum);
+    concurrent_for_each_sum(num_threads, batch, source.clone().into_con_iter(), sum);
+    concurrent_enumerate_for_each_sum(num_threads, batch, source.into_con_iter(), sum, len);
 }
 
 #[test_matrix(
@@ -124,8 +201,11 @@ fn con_iter_iter(len: usize, num_threads: usize, batch: usize) {
 
     let collected: Vec<&usize> = concurrent_iter(num_threads, batch, clone.iter().into_con_iter());
     assert_eq!(source, collected.into_iter().copied().collect::<Vec<_>>());
+    assert_eq!(source.try_get_exact_len(), Some(len));
 
     concurrent_sum(num_threads, batch, clone.iter().into_con_iter(), sum);
+    concurrent_for_each_sum(num_threads, batch, clone.iter().into_con_iter(), sum);
+    concurrent_enumerate_for_each_sum(num_threads, batch, clone.iter().into_con_iter(), sum, len);
 }
 
 #[test_matrix(
@@ -141,6 +221,15 @@ fn con_iter_array(num_threads: usize, batch: usize) {
 
     let collected: Vec<usize> = concurrent_iter(num_threads, batch, source.into_con_iter());
     assert_eq!(source.as_slice(), collected.into_iter().collect::<Vec<_>>());
+    assert_eq!(source.try_get_exact_len(), Some(1024));
 
     concurrent_sum(num_threads, batch, source.into_con_iter(), sum);
+    concurrent_for_each_sum(num_threads, batch, source.into_con_iter(), sum);
+    concurrent_enumerate_for_each_sum(
+        num_threads,
+        batch,
+        source.into_con_iter(),
+        sum,
+        source.len(),
+    );
 }
