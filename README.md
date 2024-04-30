@@ -3,16 +3,16 @@
 [![orx-concurrent-iter crate](https://img.shields.io/crates/v/orx-concurrent-iter.svg)](https://crates.io/crates/orx-concurrent-iter)
 [![orx-concurrent-iter documentation](https://docs.rs/orx-concurrent-iter/badge.svg)](https://docs.rs/orx-concurrent-iter)
 
-A thread-safe, convenient and lightweight concurrent iterator trait and efficient implementations.
+A thread-safe, ergonomic and lightweight concurrent iterator trait and efficient implementations.
 
-* **convenient**: An iterator implementing `ConcurrentIter` can safely be shared among threads as a shared reference. Further, it may be used similar to a regular `Iterator` with `for` syntax.
+* **ergonomic**: An iterator implementing `ConcurrentIter` can safely be shared among threads as a shared reference. It may be iterated over concurrently from multiple threads with `for` syntax. It further provides higher level methods such as `for_each` and `fold` which allow for safe, simple and efficient parallelism.
 * **efficient** and **lightweight**: All concurrent iterator implementations provided in this crate extend atomic iterators, which are lock-free and depend only on atomic primitives.
 
 ## Examples
 
 ### Basic Usage
 
-A `ConcurrentIter` can be safely shared among threads and iterated over concurrently. As expected, it will yield each element only once and in order. The yielded elements will be shared among the threads which concurrently iterates based on first come first serve. In other words, threads concurrently pull elements from the iterator.
+A `ConcurrentIter` can be safely shared among threads and iterated over concurrently. As expected, it will yield each element only once and in order. The yielded elements will be shared among the threads which concurrently iterates based on first come first serve. In other words, threads concurrently pull remaining elements from the iterator.
 
 ```rust
 use orx_concurrent_iter::*;
@@ -33,13 +33,13 @@ fn process_concurrently<T, ConIter, Fun>(
     ConIter: ConcurrentIter<Item = T>,
 {
     // just take a reference and share among threads
-    let con_iter = &concurrent_iter;
+    let iter = &concurrent_iter;
 
     std::thread::scope(|s| {
         for _ in 0..num_threads {
             s.spawn(move || {
                 // concurrently iterate over values in a `for` loop
-                for value in con_iter.values() {
+                for value in iter.values() {
                     process(value);
                 }
             });
@@ -48,8 +48,8 @@ fn process_concurrently<T, ConIter, Fun>(
 }
 
 /// just fix process and num_threads for brevity
-fn con_run<T: Send + Sync + Debug>(con_iter: impl ConcurrentIter<Item = T>) {
-    process_concurrently(&fake_work, 8, con_iter)
+fn con_run<T: Send + Sync + Debug>(concurrent_iter: impl ConcurrentIter<Item = T>) {
+    process_concurrently(&fake_work, 8, concurrent_iter)
 }
 
 // non-consuming iteration over references
@@ -94,15 +94,15 @@ while let Some(value) = con_iter.next() {
 }
 ```
 
-The `values` method returns a regular `Iterator` which does nothing but wrap the `ConcurrentIter` and call `next`. Its only purpose is to enable using the concurrent iterator directly inside a `for` loop.
+Or even with `for` loop using the `values` method:
 
 ```rust ignore
-for value in rf_con_iter.values() {
+for value in con_iter.values() {
     process(value);
 }
 ```
 
-### Simple Parallel Computing
+### Parallel Computing, Almost Trivial
 
 Considering the elements of the iteration as inputs of a process, `ConcurrentIter` conveniently allows distribution of tasks to multiple threads.
 
@@ -145,7 +145,21 @@ for num_threads in [1, 2, 4, 8] {
 }
 ```
 
-Note that parallel map can also be implemented by merging returned transformed collections, such as vectors. Especially for larger data types, a more efficient approach could be to pair `ConcurrentIter` with a concurrent collection such as [`orx_concurrent_bag::ConcurrentBag`](https://crates.io/crates/orx-concurrent-bag) which allows to efficiently collect results concurrently without copies.
+Higher level functions may provide further simplifications. For instance, the `handles` above could also be collected as follows using the concurrent `fold` method:
+
+```rust ignore
+fn map_fold(aggregated: u64, input: u64) -> u64 {
+    fold(aggregated, compute(input))
+}
+
+// ...
+
+let handles: Vec<_> = (0..num_threads)
+    .map(|_| s.spawn(move || inputs.fold(1, 0u64, map_fold)))
+    .collect();
+```
+
+Parallel map can also be implemented by merging returned transformed collections, such as vectors. Especially for larger data types, a more efficient approach could be to pair `ConcurrentIter` with a concurrent collection such as [`orx_concurrent_bag::ConcurrentBag`](https://crates.io/crates/orx-concurrent-bag) which allows to efficiently collect results concurrently without copies.
 
 ```rust
 use orx_concurrent_iter::*;
@@ -190,7 +204,7 @@ Note that due to parallelization, `outputs` is not guaranteed to be in the same 
 
 ### Iteration with Indices
 
-In a single-threaded regular `Iterator`, values can be paired up with their indices easily by calling `enumerate` on the iterator. We can also call `inputs.values().enumerate()`; however, this would have a different meaning in a multi-threaded execution. It would pair up the values with the indices of the iteration local to that thread. In other words, the first value of every thread will zero.
+In a single-threaded regular `Iterator`, values can be paired up with their indices easily by calling `enumerate` on the iterator. We can also call `inputs.values().enumerate()`; however, this would have a different meaning in a multi-threaded execution. It would pair up the values with the indices of the iteration local to that thread. In other words, the first value of every thread will be zero.
 
 Actual iteration index of values can be obtained simply by using [`ConcurrentIter::ids_and_values`] instead of [`ConcurrentIter::values`].
 
@@ -237,9 +251,9 @@ Notice that:
 
 ### Iteration in Chunks
 
-In the default iteration using `for` together with `values` and `ids_and_values` methods, the threads pull elements one by one. Note that these iterators internally call [`ConcurrentIter::next`] and [`ConcurrentIter::next_id_and_value`]  methods, respectively.
+In the default iteration using `for` together with `values` and `ids_and_values` methods, the threads pull elements one by one. Note that these iterators internally call `ConcurrentIter::next` and `ConcurrentIter::next_id_and_value` methods, respectively.
 
-Further, it is also possible to iterate in chunks with [`ConcurrentIter::next_chunk`] and [`ExactSizeConcurrentIter::next_exact_chunk`] methods. These methods differ from `next` and `next_id_and_value` in the following:
+Further, it is also possible to iterate in chunks with `ConcurrentIter::next_chunk` and `ExactSizeConcurrentIter::next_exact_chunk` methods. These methods differ from `next` and `next_id_and_value` in the following:
 * They receive the `chunk_size` parameter.
 * They return an `Iterator` or `ExactSizeIterator` which yields the next `chunk_size` or fewer **consecutive** elements.
 * Further, they additionally return the index of the first element that the returned iterator will yield. Note that the index of the remaining elements can be known since the iterator will return consecutive elements.
@@ -292,11 +306,11 @@ assert_eq!(second, ['d', 'e', 'f']);
 
 ## Traits and Implementors
 
-As discussed so far, the trait of types which can safely be iterated concurrently by multiple threads is [`ConcurrentIter`].
+As discussed so far, the trait defining types that can be safely be iterated concurrently by multiple threads is `ConcurrentIter`.
 
 Further, there are two traits which define types that can provide a `ConcurrentIter`.
-* A [`ConcurrentIterable`] type implements the **`con_iter(&self)`** method which returns a concurrent iterator without consuming the type itself.
-* On the other hand, types implementing [`IntoConcurrentIter`] trait has the **`into_con_iter(self)`** method which consumes and converts the type into a concurrent iterator. Additionally there exists [`IterIntoConcurrentIter`] trait which is functionally identical to `IntoConcurrentIter` and only implemented by regular iterators, separated only to allow for special implementations for vectors and arrays.
+* A `ConcurrentIterable` type implements the **`con_iter(&self)`** method which returns a concurrent iterator without consuming the type itself.
+* On the other hand, types implementing `IntoConcurrentIter` trait has the **`into_con_iter(self)`** method which consumes and converts the type into a concurrent iterator. Additionally there exists `IterIntoConcurrentIter` trait which is functionally identical to `IntoConcurrentIter` and only implemented by regular iterators, separated only to allow for special implementations for vectors and arrays.
 
 The following table summarizes the implementations of the standard types in this crate.
 

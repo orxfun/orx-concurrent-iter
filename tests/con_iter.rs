@@ -68,6 +68,23 @@ where
     assert_eq!(sum, expected_sum);
 }
 
+fn concurrent_fold_sum<I>(num_threads: usize, batch: usize, con_iter: I, expected_sum: usize)
+where
+    I: ConcurrentIter + Send + Sync,
+    I::Item: Clone + Add<usize, Output = usize>,
+    usize: Add<I::Item, Output = usize>,
+{
+    let iter = &con_iter;
+
+    let sum: usize = std::thread::scope(|s| {
+        (0..num_threads)
+            .map(|_| s.spawn(move || iter.fold(batch, 0usize, |x, y| x + y)))
+            .map(|x| x.join().unwrap())
+            .sum()
+    });
+    assert_eq!(sum, expected_sum);
+}
+
 fn concurrent_enumerate_for_each_sum<I>(
     num_threads: usize,
     batch: usize,
@@ -167,6 +184,7 @@ fn con_iter_slice(len: usize, num_threads: usize, batch: usize) {
 
     concurrent_sum(num_threads, batch, clone.as_slice().con_iter(), sum);
     concurrent_for_each_sum(num_threads, batch, clone.as_slice().con_iter(), sum);
+    concurrent_fold_sum(num_threads, batch, clone.as_slice().con_iter(), sum);
     concurrent_enumerate_for_each_sum(num_threads, batch, clone.as_slice().con_iter(), sum, len);
 }
 
@@ -185,6 +203,7 @@ fn con_iter_vec(len: usize, num_threads: usize, batch: usize) {
 
     concurrent_sum(num_threads, batch, source.clone().into_con_iter(), sum);
     concurrent_for_each_sum(num_threads, batch, source.clone().into_con_iter(), sum);
+    concurrent_fold_sum(num_threads, batch, source.clone().into_con_iter(), sum);
     concurrent_enumerate_for_each_sum(num_threads, batch, source.into_con_iter(), sum, len);
 }
 
@@ -205,6 +224,7 @@ fn con_iter_iter(len: usize, num_threads: usize, batch: usize) {
 
     concurrent_sum(num_threads, batch, clone.iter().into_con_iter(), sum);
     concurrent_for_each_sum(num_threads, batch, clone.iter().into_con_iter(), sum);
+    concurrent_fold_sum(num_threads, batch, clone.iter().into_con_iter(), sum);
     concurrent_enumerate_for_each_sum(num_threads, batch, clone.iter().into_con_iter(), sum, len);
 }
 
@@ -225,6 +245,7 @@ fn con_iter_array(num_threads: usize, batch: usize) {
 
     concurrent_sum(num_threads, batch, source.into_con_iter(), sum);
     concurrent_for_each_sum(num_threads, batch, source.into_con_iter(), sum);
+    concurrent_fold_sum(num_threads, batch, source.into_con_iter(), sum);
     concurrent_enumerate_for_each_sum(
         num_threads,
         batch,
