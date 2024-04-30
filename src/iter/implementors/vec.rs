@@ -70,6 +70,11 @@ impl<T: Send + Sync + Default> AtomicIter<T> for ConIterOfVec<T> {
     fn enumerate_for_each_n<F: FnMut(usize, T)>(&self, chunk_size: usize, f: F) {
         default_fns::for_each::exact_for_each_with_ids(self, chunk_size, f)
     }
+
+    #[inline(always)]
+    fn fold<B, F: FnMut(B, T) -> B>(&self, chunk_size: usize, initial: B, f: F) -> B {
+        default_fns::fold::exact_fold(self, chunk_size, f, initial)
+    }
 }
 
 impl<T: Send + Sync + Default> AtomicIterWithInitialLen<T> for ConIterOfVec<T> {
@@ -125,6 +130,14 @@ impl<T: Send + Sync + Default> ConcurrentIter for ConIterOfVec<T> {
     #[inline(always)]
     fn enumerate_for_each_n<F: FnMut(usize, Self::Item)>(&self, chunk_size: usize, f: F) {
         <Self as AtomicIter<_>>::enumerate_for_each_n(self, chunk_size, f)
+    }
+
+    #[inline(always)]
+    fn fold<B, Fold>(&self, chunk_size: usize, neutral: B, fold: Fold) -> B
+    where
+        Fold: FnMut(B, Self::Item) -> B,
+    {
+        <Self as AtomicIter<_>>::fold(self, chunk_size, neutral, fold)
     }
 }
 

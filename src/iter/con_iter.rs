@@ -242,7 +242,7 @@ pub trait ConcurrentIter: Send + Sync {
         self.into()
     }
 
-    /// Applies the function `f` to each element of the iterator concurrently.
+    /// Applies the function `fun` to each element of the iterator concurrently.
     ///
     /// Note that this method might be called on the same iterator at the same time from different threads.
     /// The iterator guarantees that the function is applied to each element exactly once.
@@ -282,9 +282,9 @@ pub trait ConcurrentIter: Send + Sync {
     /// let sum: u32 = outputs.into_inner().iter().sum();
     /// assert_eq!(sum, (0..8).sum());
     /// ```
-    fn for_each_n<F: FnMut(Self::Item)>(&self, chunk_size: usize, f: F);
+    fn for_each_n<Fun: FnMut(Self::Item)>(&self, chunk_size: usize, fun: Fun);
 
-    /// Applies the function `f` to each index and corresponding element of the iterator concurrently.
+    /// Applies the function `fun` to each index and corresponding element of the iterator concurrently.
     ///
     /// Note that this method might be called on the same iterator at the same time from different threads.
     /// The iterator guarantees that the function is applied to each element exactly once.
@@ -327,9 +327,9 @@ pub trait ConcurrentIter: Send + Sync {
     /// let sum: u32 = outputs.into_inner().iter().sum();
     /// assert_eq!(sum, (0..8).sum());
     /// ```
-    fn enumerate_for_each_n<F: FnMut(usize, Self::Item)>(&self, chunk_size: usize, f: F);
+    fn enumerate_for_each_n<Fun: FnMut(usize, Self::Item)>(&self, chunk_size: usize, fun: Fun);
 
-    /// Applies the function `f` to each element of the iterator concurrently.
+    /// Applies the function `fun` to each element of the iterator concurrently.
     ///
     /// Note that this method might be called on the same iterator at the same time from different threads.
     /// The iterator guarantees that the function is applied to each element exactly once.
@@ -367,11 +367,11 @@ pub trait ConcurrentIter: Send + Sync {
     /// let sum: u32 = outputs.into_inner().iter().sum();
     /// assert_eq!(sum, (0..8).sum());
     /// ```
-    fn for_each<F: FnMut(Self::Item)>(&self, f: F) {
-        self.for_each_n(1, f)
+    fn for_each<Fun: FnMut(Self::Item)>(&self, fun: Fun) {
+        self.for_each_n(1, fun)
     }
 
-    /// Applies the function `f` to each index and corresponding element of the iterator concurrently.
+    /// Applies the function `fun` to each index and corresponding element of the iterator concurrently.
     /// It may be considered as the concurrent counterpart of the chain of `enumerate` and `for_each` calls.
     ///
     /// Note that this method might be called on the same iterator at the same time from different threads.
@@ -413,9 +413,102 @@ pub trait ConcurrentIter: Send + Sync {
     /// let sum: u32 = outputs.into_inner().iter().sum();
     /// assert_eq!(sum, (0..8).sum());
     /// ```
-    fn enumerate_for_each<F: FnMut(usize, Self::Item)>(&self, f: F) {
-        self.enumerate_for_each_n(1, f)
+    fn enumerate_for_each<Fun: FnMut(usize, Self::Item)>(&self, fun: Fun) {
+        self.enumerate_for_each_n(1, fun)
     }
+
+    /// Folds the elements of the iterator pulled concurrently using `fold` function.
+    ///
+    /// Note that this method might be called on the same iterator at the same time from different threads.
+    /// Each thread will start its concurrent fold operation with the `neutral` value.
+    /// This value is then transformed into the result by applying the `fold` on it together with the pulled elements.
+    ///
+    /// Therefore, each thread will end up at a different partial result.
+    /// Further, each thread's partial result might be different in every execution.
+    ///
+    /// However, once `fold` is applied starting again from `neutral` using the thread results, we compute the deterministic result.
+    /// This establishes a very ergonomic parallel fold implementation.
+    ///
+    /// # Chunk Size
+    ///
+    /// When `chunk_size` is set to 1, threads will pull elements from the iterator one by one.
+    /// This might be the preferred setting when we are working with general `ConcurrentIter`s rather than `ExactSizeConcurrentIter`s,
+    /// or whenever the work to be done to `fold` the results is large enough to make the time spent for updating atomic counters insignificant.
+    ///
+    /// On the other hand, whenever we are working with an `ExactSizeConcurrentIter` and the iterator has many elements,
+    /// it is possible to avoid the cost of atomic updates almost completely by setting the chunk size to a larger value.
+    /// Rule of thumb in this situation is that the larger the better provided that the chunk size is not too large that would lead some threads to remain idle.
+    /// However, note that this optimization is only significant if the `fold` operation is significantly small, such as the addition example below.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `chunk_size` is zero; chunk size is required to be strictly positive.
+    ///
+    /// # Examples
+    ///
+    /// Notice that the initial value is called `neutral` as in **monoids**, rather than init or initial.
+    /// This is to highlight that each thread will start its separate execution from this value.
+    ///
+    /// ### Good Example with a Neutral Element
+    ///
+    /// Integer addition and number zero are good examples for `neutral` and `fold`, respectively.
+    /// Assume our iterator will yield 4 values: [3, 4, 1, 9].
+    /// We want to sum these values using two threads.
+    /// We can achieve parallelism very conveniently using `fold` as follows.
+    ///
+    /// ```rust
+    /// use orx_concurrent_iter::*;
+    ///
+    /// let num_threads = 2;
+    ///
+    /// let numbers = vec![3, 4, 1, 9];
+    /// let slice = numbers.as_slice();
+    /// let iter = &slice.con_iter();
+    ///
+    /// let neutral = 0; // neutral for i32 & add
+    ///
+    /// let sum = std::thread::scope(|s| {
+    ///     (0..num_threads)
+    ///         .map(|_| s.spawn(move || iter.fold(1, neutral, |x, y| x + y))) // parallel fold
+    ///         .map(|x| x.join().unwrap())
+    ///         .fold(neutral, |x, y| x + y) // sequential fold
+    /// });
+    ///
+    /// assert_eq!(sum, 17);
+    /// ```
+    ///
+    /// Note that this code can execute in one of many possible ways.
+    /// Let's say our two threads are called tA and tB.
+    /// * tA might pull and sum all four of the numbers; hence, returns 17. tB cannot pull any element and just returns the neutral element. Sequential fold will add 17 and 0, and return 17.
+    /// * tA might pull only the third element; hence, returns 0+1 = 1. tB pulls the other 3 elements and returns 0+3+4+9 = 16. Final fold will then return 0+1+16 = 17.
+    /// * and so on, so forth.
+    ///
+    /// `ConcurrentIter` guarantees that each element is visited and computed exactly once.
+    /// Therefore, the parallel computation will always be correct provided that we provide a neutral element such that:
+    ///
+    /// ```rust ignore
+    /// assert_eq!(fold(neutral, element), element);
+    /// ```
+    ///
+    /// Other trivial examples are:
+    /// * `1` & multiplication
+    /// * empty string/list & string/list concat
+    /// * `true` & logical, etc.
+    ///
+    /// ## Wrong Example with a Non-Neutral Element
+    ///
+    /// In a sequential fold operation, once can start the summation above with an initial value of 100.
+    /// Then, the resulting value would deterministically be 117.
+    ///
+    /// However, if we pass 100 as the neutral element to the concurrent fold above, we would receive 217 (additional 100 for each thread).
+    /// Notice that the result depends on the number of threads used in computation.
+    /// This is incorrect.
+    ///
+    /// In either case, it is a good practice to leave 100 out of the fold operation.
+    /// Ideally, we would pass 0 as the initial and neutral element, and add 100 to the result of the fold operation.
+    fn fold<B, Fold>(&self, chunk_size: usize, neutral: B, fold: Fold) -> B
+    where
+        Fold: FnMut(B, Self::Item) -> B;
 }
 
 /// A concurrent iterator that knows its exact length.
