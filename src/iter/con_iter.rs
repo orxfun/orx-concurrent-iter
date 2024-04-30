@@ -449,8 +449,6 @@ pub trait ConcurrentIter: Send + Sync {
     /// Notice that the initial value is called `neutral` as in **monoids**, rather than init or initial.
     /// This is to highlight that each thread will start its separate execution from this value.
     ///
-    /// ### Good Example with a Neutral Element
-    ///
     /// Integer addition and number zero are good examples for `neutral` and `fold`, respectively.
     /// Assume our iterator will yield 4 values: [3, 4, 1, 9].
     /// We want to sum these values using two threads.
@@ -495,9 +493,9 @@ pub trait ConcurrentIter: Send + Sync {
     /// * empty string/list & string/list concat
     /// * `true` & logical, etc.
     ///
-    /// ## Wrong Example with a Non-Neutral Element
+    /// ***Wrong Example with a Non-Neutral Element***
     ///
-    /// In a sequential fold operation, once can start the summation above with an initial value of 100.
+    /// In a sequential fold operation, one can choose to start the summation above with an initial value of 100.
     /// Then, the resulting value would deterministically be 117.
     ///
     /// However, if we pass 100 as the neutral element to the concurrent fold above, we would receive 217 (additional 100 for each thread).
@@ -505,7 +503,7 @@ pub trait ConcurrentIter: Send + Sync {
     /// This is incorrect.
     ///
     /// In either case, it is a good practice to leave 100 out of the fold operation.
-    /// Ideally, we would pass 0 as the initial and neutral element, and add 100 to the result of the fold operation.
+    /// It is preferable to pass 0 as the initial and neutral element, and add 100 to the result of the fold operation.
     fn fold<B, Fold>(&self, chunk_size: usize, neutral: B, fold: Fold) -> B
     where
         Fold: FnMut(B, Self::Item) -> B;
