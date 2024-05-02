@@ -5,8 +5,8 @@
 
 A thread-safe, ergonomic and lightweight concurrent iterator trait and efficient implementations.
 
-* **ergonomic**: An iterator implementing `ConcurrentIter` can safely be shared among threads as a shared reference. It may be iterated over concurrently from multiple threads with `for` syntax. It further provides higher level methods such as `for_each` and `fold` which allow for safe, simple and efficient parallelism.
-* **efficient** and **lightweight**: All concurrent iterator implementations provided in this crate extend atomic iterators, which are lock-free and depend only on atomic primitives.
+* **ergonomic**: An iterator implementing `ConcurrentIter` can safely be shared among threads. It may be iterated over concurrently from multiple threads with `for` or `while let`. It further provides higher level methods such as `for_each` and `fold` which allow for safe, simple and efficient parallelism.
+* **efficient** and **lightweight**: All concurrent iterator implementations provided in this crate extend atomic iterators which are lock-free and depend only on atomic primitives.
 
 ## Examples
 
@@ -314,13 +314,13 @@ Further, there are two traits which define types that can provide a `ConcurrentI
 
 The following table summarizes the implementations of the standard types in this crate.
 
-| Type | ConcurrentIterable <br/> `con_iter` element type | IntoConcurrentIter <br/> `into_con_iter` element type |
-|---|---|---|
-| `&'a [T]` | `&'a T` | `&'a T` |
-| `Range<Idx>` | `Idx` | `Idx` |
-| `Vec<T>` | `&T` | `T` |
-| `[T; N]` | `&T` | `T` |
-| `Iter: Iterator<Item = T>` | - | `T` |
+| Type | ConcurrentIterable <br/> `con_iter()` element type | IntoConcurrentIter <br/> `into_con_iter()` element type | Cloned <br/> `con_iter().cloned()` |
+|---|---|---|---|
+| `&'a [T]` | `&'a T` | `&'a T` | `T` |
+| `Range<Idx>` | `Idx` | `Idx` | |
+| `Vec<T>` | `&T` | `T` | |
+| `[T; N]` | `&T` | `T` | |
+| `Iter: Iterator<Item = T>` | - | `T` | |
 
 
 ## License
