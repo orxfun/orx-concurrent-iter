@@ -1,22 +1,20 @@
-use super::cloned::slice::ClonedConIterOfSlice;
 use crate::{
     iter::{
         atomic_counter::AtomicCounter,
         atomic_iter::{AtomicIter, AtomicIterWithInitialLen},
         default_fns,
     },
-    ConcurrentIter, ExactSizeConcurrentIter, Next, NextChunk, NextManyExact,
+    ConIterOfSlice, ConcurrentIter, ExactSizeConcurrentIter, Next, NextChunk, NextManyExact,
 };
 use std::cmp::Ordering;
 
-/// A concurrent iterator over a slice yielding references to the elements.
-#[derive(Debug)]
-pub struct ConIterOfSlice<'a, T: Send + Sync> {
+/// A concurrent iterator over a slice yielding references to clones of the elements.
+pub struct ClonedConIterOfSlice<'a, T: Send + Sync + Clone> {
     slice: &'a [T],
     counter: AtomicCounter,
 }
 
-impl<'a, T: Send + Sync> ConIterOfSlice<'a, T> {
+impl<'a, T: Send + Sync + Clone> ClonedConIterOfSlice<'a, T> {
     /// Creates a concurrent iterator for the given `slice`.
     pub fn new(slice: &'a [T]) -> Self {
         Self {
@@ -24,29 +22,26 @@ impl<'a, T: Send + Sync> ConIterOfSlice<'a, T> {
             counter: AtomicCounter::new(),
         }
     }
-
-    /// Returns a reference to the underlying slice.
-    pub fn as_slice(&self) -> &'a [T] {
-        self.slice
-    }
-
-    /// A concurrent iterator over a slice yielding references to clones of the elements.
-    pub fn cloned(self) -> ClonedConIterOfSlice<'a, T>
-    where
-        T: Clone,
-    {
-        self.into()
-    }
 }
 
-impl<'a, T: Send + Sync> From<&'a [T]> for ConIterOfSlice<'a, T> {
+impl<'a, T: Send + Sync + Clone> From<&'a [T]> for ClonedConIterOfSlice<'a, T> {
     /// Creates a concurrent iterator for the given `slice`.
     fn from(slice: &'a [T]) -> Self {
         Self::new(slice)
     }
 }
 
-impl<'a, T: Send + Sync> Clone for ConIterOfSlice<'a, T> {
+impl<'a, T: Send + Sync + Clone> From<ConIterOfSlice<'a, T>> for ClonedConIterOfSlice<'a, T> {
+    /// Creates a concurrent iterator for the given `slice`.
+    fn from(iter: ConIterOfSlice<'a, T>) -> Self {
+        Self {
+            slice: iter.as_slice(),
+            counter: iter.counter().clone(),
+        }
+    }
+}
+
+impl<'a, T: Send + Sync + Clone> Clone for ClonedConIterOfSlice<'a, T> {
     fn clone(&self) -> Self {
         Self {
             slice: self.slice,
@@ -55,39 +50,39 @@ impl<'a, T: Send + Sync> Clone for ConIterOfSlice<'a, T> {
     }
 }
 
-impl<'a, T: Send + Sync> AtomicIter<&'a T> for ConIterOfSlice<'a, T> {
+impl<'a, T: Send + Sync + Clone> AtomicIter<T> for ClonedConIterOfSlice<'a, T> {
     #[inline(always)]
     fn counter(&self) -> &AtomicCounter {
         &self.counter
     }
 
     #[inline(always)]
-    fn get(&self, item_idx: usize) -> Option<&'a T> {
-        self.slice.get(item_idx)
+    fn get(&self, item_idx: usize) -> Option<T> {
+        self.slice.get(item_idx).cloned()
     }
 
     #[inline(always)]
-    fn fetch_n(&self, n: usize) -> impl NextChunk<&'a T> {
+    fn fetch_n(&self, n: usize) -> impl NextChunk<T> {
         self.fetch_n_with_exact_len(n)
     }
 
     #[inline(always)]
-    fn for_each_n<F: FnMut(&'a T)>(&self, chunk_size: usize, f: F) {
+    fn for_each_n<F: FnMut(T)>(&self, chunk_size: usize, f: F) {
         default_fns::for_each::exact_for_each(self, chunk_size, f)
     }
 
     #[inline(always)]
-    fn enumerate_for_each_n<F: FnMut(usize, &'a T)>(&self, chunk_size: usize, f: F) {
+    fn enumerate_for_each_n<F: FnMut(usize, T)>(&self, chunk_size: usize, f: F) {
         default_fns::for_each::exact_for_each_with_ids(self, chunk_size, f)
     }
 
     #[inline(always)]
-    fn fold<B, F: FnMut(B, &'a T) -> B>(&self, chunk_size: usize, initial: B, f: F) -> B {
+    fn fold<B, F: FnMut(B, T) -> B>(&self, chunk_size: usize, initial: B, f: F) -> B {
         default_fns::fold::exact_fold(self, chunk_size, f, initial)
     }
 }
 
-impl<'a, T: Send + Sync> AtomicIterWithInitialLen<&'a T> for ConIterOfSlice<'a, T> {
+impl<'a, T: Send + Sync + Clone> AtomicIterWithInitialLen<T> for ClonedConIterOfSlice<'a, T> {
     #[inline(always)]
     fn initial_len(&self) -> usize {
         self.slice.len()
@@ -96,30 +91,30 @@ impl<'a, T: Send + Sync> AtomicIterWithInitialLen<&'a T> for ConIterOfSlice<'a, 
     fn fetch_n_with_exact_len(
         &self,
         n: usize,
-    ) -> NextManyExact<&'a T, impl ExactSizeIterator<Item = &'a T>> {
+    ) -> NextManyExact<T, impl ExactSizeIterator<Item = T>> {
         let begin_idx = self.counter().fetch_and_add(n);
 
         let values = match begin_idx.cmp(&self.slice.len()) {
             Ordering::Less => {
                 let end_idx = (begin_idx + n).min(self.slice.len()).max(begin_idx);
-                let values = self.slice[begin_idx..end_idx].iter();
+                let values = self.slice[begin_idx..end_idx].iter().cloned();
                 values
             }
-            _ => [].iter(),
+            _ => [].iter().cloned(),
         };
 
         NextManyExact { begin_idx, values }
     }
 }
 
-unsafe impl<'a, T: Send + Sync> Sync for ConIterOfSlice<'a, T> {}
+unsafe impl<'a, T: Send + Sync + Clone> Sync for ClonedConIterOfSlice<'a, T> {}
 
-unsafe impl<'a, T: Send + Sync> Send for ConIterOfSlice<'a, T> {}
+unsafe impl<'a, T: Send + Sync + Clone> Send for ClonedConIterOfSlice<'a, T> {}
 
 // AtomicIter -> ConcurrentIter
 
-impl<'a, T: Send + Sync> ConcurrentIter for ConIterOfSlice<'a, T> {
-    type Item = &'a T;
+impl<'a, T: Send + Sync + Clone> ConcurrentIter for ClonedConIterOfSlice<'a, T> {
+    type Item = T;
 
     #[inline(always)]
     fn next_id_and_value(&self) -> Option<Next<Self::Item>> {
@@ -150,7 +145,7 @@ impl<'a, T: Send + Sync> ConcurrentIter for ConIterOfSlice<'a, T> {
     }
 }
 
-impl<'a, T: Send + Sync> ExactSizeConcurrentIter for ConIterOfSlice<'a, T> {
+impl<'a, T: Send + Sync + Clone> ExactSizeConcurrentIter for ClonedConIterOfSlice<'a, T> {
     #[inline(always)]
     fn len(&self) -> usize {
         let current = <Self as AtomicIter<_>>::counter(self).current();
