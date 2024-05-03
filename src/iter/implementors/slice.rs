@@ -25,17 +25,17 @@ impl<'a, T: Send + Sync> ConIterOfSlice<'a, T> {
         }
     }
 
-    /// Returns a reference to the underlying slice.
-    pub fn as_slice(&self) -> &'a [T] {
-        self.slice
-    }
-
     /// A concurrent iterator over a slice yielding references to clones of the elements.
     pub fn cloned(self) -> ClonedConIterOfSlice<'a, T>
     where
         T: Clone,
     {
         self.into()
+    }
+
+    /// Returns a reference to the underlying slice.
+    pub(crate) fn as_slice(&self) -> &'a [T] {
+        self.slice
     }
 }
 
@@ -147,6 +147,11 @@ impl<'a, T: Send + Sync> ConcurrentIter for ConIterOfSlice<'a, T> {
         Fold: FnMut(B, Self::Item) -> B,
     {
         <Self as AtomicIter<_>>::fold(self, chunk_size, neutral, fold)
+    }
+
+    #[inline(always)]
+    fn try_get_len(&self) -> Option<usize> {
+        Some(<Self as ExactSizeConcurrentIter>::len(self))
     }
 }
 

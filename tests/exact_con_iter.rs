@@ -120,7 +120,6 @@ where
                     let len = x.exact_len();
                     assert!(len > 0);
                     for (i, value) in x.values().enumerate() {
-                        dbg!(begin_idx, len, i, &value);
                         assert_eq!(begin_idx + i, value + 0);
                     }
                 }

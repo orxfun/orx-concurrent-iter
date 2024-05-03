@@ -507,6 +507,9 @@ pub trait ConcurrentIter: Send + Sync {
     fn fold<B, Fold>(&self, chunk_size: usize, neutral: B, fold: Fold) -> B
     where
         Fold: FnMut(B, Self::Item) -> B;
+
+    /// Returns Some of the remaining length of the iterator if it is known; returns None otherwise.
+    fn try_get_len(&self) -> Option<usize>;
 }
 
 /// A concurrent iterator that knows its exact length.

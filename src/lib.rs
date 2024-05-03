@@ -348,6 +348,7 @@ pub use iter::con_iter::{ConcurrentIter, ExactSizeConcurrentIter};
 pub use iter::constructors::con_iterable::ConcurrentIterable;
 pub use iter::constructors::into_con_iter::{IntoConcurrentIter, IterIntoConcurrentIter};
 pub use iter::constructors::into_exact_con_iter::IntoExactSizeConcurrentIter;
+pub use iter::implementors::cloned::slice::ClonedConIterOfSlice;
 pub use iter::implementors::{
     array::ConIterOfArray, iter::ConIterOfIter, range::ConIterOfRange, slice::ConIterOfSlice,
     vec::ConIterOfVec,

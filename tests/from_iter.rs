@@ -29,3 +29,29 @@ fn con_iter() {
     assert_eq!(con_iter.next(), Some(String::from('c')));
     assert_eq!(con_iter.next(), None);
 }
+
+#[test]
+fn len() {
+    let values = ['a', 'b', 'c', 'd'];
+    let iter = values.iter();
+
+    assert_eq!(iter.try_get_exact_len(), None);
+
+    let con_iter = iter.into_con_iter();
+    assert_eq!(con_iter.try_get_len(), None);
+
+    _ = con_iter.next();
+    assert_eq!(con_iter.try_get_len(), None);
+
+    _ = con_iter.next_chunk(2);
+    assert_eq!(con_iter.try_get_len(), None);
+
+    _ = con_iter.next_chunk(2);
+    assert_eq!(con_iter.try_get_len(), None);
+
+    _ = con_iter.next();
+    assert_eq!(con_iter.try_get_len(), None);
+
+    _ = con_iter.next();
+    assert_eq!(con_iter.try_get_len(), None);
+}

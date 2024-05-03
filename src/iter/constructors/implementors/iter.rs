@@ -11,4 +11,8 @@ where
     fn into_con_iter(self) -> Self::ConIter {
         Self::ConIter::new(self)
     }
+
+    fn try_get_exact_len(&self) -> Option<usize> {
+        None
+    }
 }
