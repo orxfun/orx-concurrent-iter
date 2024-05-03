@@ -140,6 +140,11 @@ impl<const N: usize, T: Send + Sync + Default> ConcurrentIter for ConIterOfArray
     {
         <Self as AtomicIter<_>>::fold(self, chunk_size, neutral, fold)
     }
+
+    #[inline(always)]
+    fn try_get_len(&self) -> Option<usize> {
+        Some(<Self as ExactSizeConcurrentIter>::len(self))
+    }
 }
 
 impl<const N: usize, T: Send + Sync + Default> ExactSizeConcurrentIter for ConIterOfArray<N, T> {

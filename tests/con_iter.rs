@@ -228,6 +228,7 @@ fn con_iter_iter(len: usize, num_threads: usize, batch: usize) {
     concurrent_enumerate_for_each_sum(num_threads, batch, clone.iter().into_con_iter(), sum, len);
 }
 
+
 #[test_matrix(
     [1, 2, 8],
     [1, 2, 4, 5, 8, 64, 71, 1024, 1025]

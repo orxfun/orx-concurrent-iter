@@ -139,6 +139,11 @@ impl<T: Send + Sync + Default> ConcurrentIter for ConIterOfVec<T> {
     {
         <Self as AtomicIter<_>>::fold(self, chunk_size, neutral, fold)
     }
+
+    #[inline(always)]
+    fn try_get_len(&self) -> Option<usize> {
+        Some(<Self as ExactSizeConcurrentIter>::len(self))
+    }
 }
 
 impl<T: Send + Sync + Default> ExactSizeConcurrentIter for ConIterOfVec<T> {

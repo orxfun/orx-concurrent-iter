@@ -220,6 +220,11 @@ where
     {
         <Self as AtomicIter<_>>::fold(self, chunk_size, neutral, fold)
     }
+
+    #[inline(always)]
+    fn try_get_len(&self) -> Option<usize> {
+        Some(<Self as ExactSizeConcurrentIter>::len(self))
+    }
 }
 
 impl<Idx> ExactSizeConcurrentIter for ConIterOfRange<Idx>

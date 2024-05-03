@@ -59,6 +59,7 @@ impl<T: Send + Sync, Iter> AtomicIter<T> for ConIterOfIter<T, Iter>
 where
     Iter: Iterator<Item = T>,
 {
+    #[inline(always)]
     fn counter(&self) -> &AtomicCounter {
         &self.reserved_counter
     }
@@ -95,13 +96,43 @@ where
     fn fetch_n(&self, n: usize) -> impl NextChunk<T> {
         let begin_idx = self.counter().fetch_and_add(n);
 
-        let idx_range = begin_idx..(begin_idx + n);
-        let values = idx_range
-            .map(|i| self.get(i))
-            .take_while(|x| x.is_some())
-            .map(|x| x.expect("is-some is checked"));
+        loop {
+            let yielded_count = self.yielded_counter.current();
+            match begin_idx.cmp(&yielded_count) {
+                // begin_idx==yielded_count => it is our job to provide the items
+                Ordering::Equal => {
+                    // SAFETY: no other thread has the valid condition to iterate, they are waiting
+                    let iter = unsafe { self.mut_iter() };
+                    let idx_range = begin_idx..(begin_idx + n);
+                    let values = idx_range
+                        .map(|_| iter.next())
+                        .take_while(|x| x.is_some())
+                        .map(|x| x.expect("is_some is checked"))
+                        .collect::<Vec<_>>();
+                    let older_count = self.yielded_counter.fetch_and_add(n);
+                    assert_eq!(older_count, begin_idx);
 
-        NextMany { begin_idx, values }
+                    return NextMany { begin_idx, values };
+                }
+
+                Ordering::Less => {
+                    return NextMany {
+                        begin_idx,
+                        values: vec![],
+                    }
+                }
+
+                // begin_idx > yielded_count => we need the other items to be yielded
+                Ordering::Greater => {
+                    if self.completed.load(atomic::Ordering::Relaxed) {
+                        return NextMany {
+                            begin_idx,
+                            values: vec![],
+                        };
+                    }
+                }
+            }
+        }
     }
 
     #[inline(always)]
@@ -158,5 +189,10 @@ where
         Fold: FnMut(B, Self::Item) -> B,
     {
         <Self as AtomicIter<_>>::fold(self, chunk_size, neutral, fold)
+    }
+
+    #[inline(always)]
+    fn try_get_len(&self) -> Option<usize> {
+        None
     }
 }

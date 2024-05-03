@@ -25,4 +25,7 @@ pub trait IterIntoConcurrentIter {
 
     /// Consumes this type and converts it into a concurrent iterator.
     fn into_con_iter(self) -> Self::ConIter;
+
+    /// Returns Some of the exact initial length of the iterator to be created if it is known; returns None otherwise.
+    fn try_get_exact_len(&self) -> Option<usize>;
 }

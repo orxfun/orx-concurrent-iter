@@ -14,8 +14,10 @@ fn new() {
     let slice = values.as_slice();
 
     let con_iter = ConIterOfSlice::new(slice);
-    let vec = con_iter.as_slice().to_vec();
-    assert_eq!(slice, &vec);
+    assert_eq!(con_iter.next(), Some(&'a'));
+    assert_eq!(con_iter.next(), Some(&'b'));
+    assert_eq!(con_iter.next(), Some(&'c'));
+    assert_eq!(con_iter.next(), None);
 }
 
 #[test]
@@ -23,9 +25,11 @@ fn from() {
     let values = ['a', 'b', 'c'];
     let slice = values.as_slice();
 
-    let con_iter: ConIterOfSlice<_> = slice.into();
-    let vec = con_iter.as_slice().to_vec();
-    assert_eq!(slice, &vec);
+    let con_iter = ConIterOfSlice::new(slice);
+    assert_eq!(con_iter.next(), Some(&'a'));
+    assert_eq!(con_iter.next(), Some(&'b'));
+    assert_eq!(con_iter.next(), Some(&'c'));
+    assert_eq!(con_iter.next(), None);
 }
 
 #[test]
@@ -50,12 +54,12 @@ fn debug() {
 fn as_slice() {
     let values = ['a', 'b', 'c'];
     let slice = values.as_slice();
+    let vec = slice.to_vec();
 
     let con_iter: ConIterOfSlice<_> = slice.into();
 
     assert_eq!(con_iter.next(), Some(&'a'));
 
-    let vec = con_iter.as_slice().to_vec();
     assert_eq!(slice, &vec);
 }
 

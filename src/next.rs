@@ -23,22 +23,30 @@ pub trait NextChunk<T> {
 
 /// A `NextChunk` implementation with a begin index and any iterator, not necessarily with a known length.
 #[derive(Debug)]
-pub struct NextMany<T, Iter>
+pub struct NextMany<T, IntoIter>
 where
-    Iter: Iterator<Item = T>,
+    IntoIter: IntoIterator<Item = T>,
+    IntoIter::IntoIter: ExactSizeIterator<Item = T>,
 {
     pub(crate) begin_idx: usize,
-    pub(crate) values: Iter,
+    pub(crate) values: IntoIter,
 }
 
-impl<T, Iter: Iterator<Item = T>> NextChunk<T> for NextMany<T, Iter> {
+impl<T, Iter, IntoIter> NextChunk<T> for NextMany<T, IntoIter>
+where
+    Iter: Iterator<Item = T>,
+    IntoIter: IntoIterator<Item = T, IntoIter = Iter>,
+    IntoIter::IntoIter: ExactSizeIterator<Item = T>,
+{
     type ChunkIter = Iter;
 
+    /// Type of the iterator yielding elements of the chunk.
     #[inline(always)]
     fn values(self) -> Self::ChunkIter {
-        self.values
+        self.values.into_iter()
     }
 
+    /// The index of the first element to be yielded by the `values` iterator.
     #[inline(always)]
     fn begin_idx(&self) -> usize {
         self.begin_idx
