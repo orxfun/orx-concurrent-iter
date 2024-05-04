@@ -21,27 +21,10 @@ where
     }
 
     let iter = get_iter();
-    while let Some(chunk) = iter.next_exact_chunk(7) {
-        let begin_idx = chunk.begin_idx();
-        for (idx, i) in chunk.values().enumerate() {
-            let idx = begin_idx + idx;
+    while let Some(chunk) = iter.next_chunk(7) {
+        for (idx, i) in chunk.values.enumerate() {
+            let idx = chunk.begin_idx + idx;
             assert_eq!(i + 0, idx);
-        }
-    }
-
-    let iter = get_iter();
-    loop {
-        let chunk = iter.next_chunk(7);
-        let begin_idx = chunk.begin_idx();
-        let mut has_more = false;
-        for (idx, i) in chunk.values().enumerate() {
-            has_more = true;
-            let idx = begin_idx + idx;
-            assert_eq!(i + 0, idx);
-        }
-
-        if !has_more {
-            break;
         }
     }
 }
@@ -91,15 +74,11 @@ where
     let con_iter = &iter;
     std::thread::scope(|s| {
         for _ in 0..num_threads {
-            s.spawn(move || loop {
-                let next = con_iter.next_chunk(7);
-                let mut has_any = false;
-                for x in next.values() {
-                    con_bag.push(x);
-                    has_any = true;
-                }
-                if !has_any {
-                    break;
+            s.spawn(move || {
+                while let Some(chunk) = con_iter.next_chunk(7) {
+                    for x in chunk.values {
+                        con_bag.push(x);
+                    }
                 }
             });
         }
@@ -115,12 +94,11 @@ where
     std::thread::scope(|s| {
         for _ in 0..num_threads {
             s.spawn(move || {
-                while let Some(x) = con_iter.next_exact_chunk(7) {
-                    let begin_idx = x.begin_idx();
-                    let len = x.exact_len();
+                while let Some(chunk) = con_iter.next_chunk(7) {
+                    let len = chunk.values.len();
                     assert!(len > 0);
-                    for (i, value) in x.values().enumerate() {
-                        assert_eq!(begin_idx + i, value + 0);
+                    for (i, value) in chunk.values.enumerate() {
+                        assert_eq!(chunk.begin_idx + i, value + 0);
                     }
                 }
             });

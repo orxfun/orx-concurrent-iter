@@ -273,8 +273,8 @@ let characters = &inputs.con_iter();
 let [first, second] = std::thread::scope(|s| {
     let first = s.spawn(move || {
         let mut chars: Vec<char> = vec![];
-        while let Some(chunk) = characters.next_exact_chunk(3) {
-            chars.extend(chunk.values().copied());
+        while let Some(chunk) = characters.next_chunk(3) {
+            chars.extend(chunk.values.copied());
             lag(100);
         }
         chars
@@ -283,8 +283,8 @@ let [first, second] = std::thread::scope(|s| {
     let second = s.spawn(move || {
         lag(50);
         let mut chars: Vec<char> = vec![];
-        while let Some(chunk) = characters.next_exact_chunk(3) {
-            chars.extend(chunk.values().copied());
+        while let Some(chunk) = characters.next_chunk(3) {
+            chars.extend(chunk.values.copied());
             lag(100);
         }
         chars

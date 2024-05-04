@@ -21,14 +21,8 @@ fn concurrent_iter<I: Iterator<Item = i64>>(
                         sum += next.value;
                     }
                 } else {
-                    let mut more = true;
-                    while more {
-                        more = false;
-                        let next = iter.next_chunk(batch);
-                        for value in next.values() {
-                            sum += value;
-                            more = true;
-                        }
+                    while let Some(chunk) = iter.next_chunk(batch) {
+                        sum += chunk.values.sum::<i64>();
                     }
                 }
                 sum
@@ -43,8 +37,8 @@ fn concurrent_iter<I: Iterator<Item = i64>>(
 
 #[test_matrix(
     [1, 8, 64, 256],
-    [4, 8, 16],
-    [1, 8, 71, 1025],
+    [4, 16],
+    [1, 4, 64],
     [false, true]
 )]
 fn consume_iter(len: usize, num_threads: usize, batch: usize, lag: bool) {

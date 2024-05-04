@@ -1,9 +1,10 @@
 use crate::{
     iter::{
         atomic_iter::{AtomicIter, AtomicIterWithInitialLen},
-        default_fns,
+        buffered::{buffered_iter::BufferedIter, range::BufferedRange},
     },
-    AtomicCounter, ConcurrentIter, ExactSizeConcurrentIter, Next, NextChunk, NextManyExact,
+    next::NextChunk,
+    AtomicCounter, ConcurrentIter, ExactSizeConcurrentIter, Next,
 };
 use std::{
     cmp::Ordering,
@@ -47,6 +48,10 @@ where
             counter: AtomicCounter::new(),
         }
     }
+
+    pub(crate) fn range(&self) -> &Range<Idx> {
+        &self.range
+    }
 }
 
 impl<Idx> From<Range<Idx>> for ConIterOfRange<Idx>
@@ -84,6 +89,15 @@ where
         &self.counter
     }
 
+    #[inline(always)]
+    fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
+        let begin_idx = self.counter().fetch_and_add(number_to_fetch);
+        match begin_idx.cmp(&self.initial_len()) {
+            Ordering::Less => Some(begin_idx),
+            _ => None,
+        }
+    }
+
     fn get(&self, item_idx: usize) -> Option<Idx> {
         let value = self.range.start + item_idx.into();
         match value.cmp(&self.range.end) {
@@ -93,23 +107,27 @@ where
     }
 
     #[inline(always)]
-    fn fetch_n(&self, n: usize) -> impl NextChunk<Idx> {
-        self.fetch_n_with_exact_len(n)
-    }
+    fn fetch_n(&self, n: usize) -> Option<NextChunk<Idx, impl ExactSizeIterator<Item = Idx>>> {
+        let begin_idx = self
+            .progress_and_get_begin_idx(n)
+            .unwrap_or(self.initial_len());
 
-    #[inline(always)]
-    fn for_each_n<F: FnMut(Idx)>(&self, chunk_size: usize, f: F) {
-        default_fns::for_each::exact_for_each(self, chunk_size, f)
-    }
+        let begin_value = self.range.start + begin_idx.into();
 
-    #[inline(always)]
-    fn enumerate_for_each_n<F: FnMut(usize, Idx)>(&self, chunk_size: usize, f: F) {
-        default_fns::for_each::exact_for_each_with_ids(self, chunk_size, f)
-    }
+        let end_value = match begin_value.cmp(&self.range.end) {
+            Ordering::Less => (begin_value + n.into()).min(self.range.end),
+            _ => begin_value,
+        };
 
-    #[inline(always)]
-    fn fold<B, F: FnMut(B, Idx) -> B>(&self, chunk_size: usize, initial: B, f: F) -> B {
-        default_fns::fold::exact_fold(self, chunk_size, f, initial)
+        let end_idx: usize = (end_value - self.range.start).into();
+
+        match begin_idx.cmp(&end_idx) {
+            Ordering::Equal => None,
+            _ => {
+                let values = (begin_idx..end_idx).map(Idx::from);
+                Some(NextChunk { begin_idx, values })
+            }
+        }
     }
 }
 
@@ -128,26 +146,6 @@ where
     #[inline(always)]
     fn initial_len(&self) -> usize {
         (self.range.end - self.range.start).into()
-    }
-
-    fn fetch_n_with_exact_len(
-        &self,
-        n: usize,
-    ) -> NextManyExact<Idx, impl ExactSizeIterator<Item = Idx>> {
-        let begin_idx = self.counter.fetch_and_add(n);
-
-        let begin_value = self.range.start + begin_idx.into();
-
-        let end_value = match begin_value.cmp(&self.range.end) {
-            Ordering::Less => (begin_value + n.into()).min(self.range.end),
-            _ => begin_value,
-        };
-
-        let end_idx: usize = (end_value - self.range.start).into();
-
-        let values = (begin_idx..end_idx).map(Idx::from);
-
-        NextManyExact { begin_idx, values }
     }
 }
 
@@ -193,32 +191,24 @@ where
 {
     type Item = Idx;
 
+    type BufferedIter = BufferedRange;
+
     #[inline(always)]
     fn next_id_and_value(&self) -> Option<Next<Self::Item>> {
         self.fetch_one()
     }
 
     #[inline(always)]
-    fn next_chunk(&self, chunk_size: usize) -> impl NextChunk<Self::Item> {
+    fn next_chunk(
+        &self,
+        chunk_size: usize,
+    ) -> Option<NextChunk<Self::Item, impl ExactSizeIterator<Item = Self::Item>>> {
         self.fetch_n(chunk_size)
     }
 
-    #[inline(always)]
-    fn for_each_n<F: FnMut(Self::Item)>(&self, chunk_size: usize, f: F) {
-        <Self as AtomicIter<_>>::for_each_n(self, chunk_size, f)
-    }
-
-    #[inline(always)]
-    fn enumerate_for_each_n<F: FnMut(usize, Self::Item)>(&self, chunk_size: usize, f: F) {
-        <Self as AtomicIter<_>>::enumerate_for_each_n(self, chunk_size, f)
-    }
-
-    #[inline(always)]
-    fn fold<B, Fold>(&self, chunk_size: usize, neutral: B, fold: Fold) -> B
-    where
-        Fold: FnMut(B, Self::Item) -> B,
-    {
-        <Self as AtomicIter<_>>::fold(self, chunk_size, neutral, fold)
+    fn buffered_iter(&self, chunk_size: usize) -> BufferedIter<Self::Item, Self::BufferedIter> {
+        let buffered_iter = Self::BufferedIter::new(chunk_size);
+        BufferedIter::new(buffered_iter, self)
     }
 
     #[inline(always)]
@@ -246,18 +236,6 @@ where
         match current.cmp(&initial_len) {
             std::cmp::Ordering::Less => initial_len - current,
             _ => 0,
-        }
-    }
-
-    fn next_exact_chunk(
-        &self,
-        chunk_size: usize,
-    ) -> Option<NextManyExact<Self::Item, impl ExactSizeIterator<Item = Self::Item>>> {
-        let next = <Self as AtomicIterWithInitialLen<_>>::fetch_n_with_exact_len(self, chunk_size);
-        if next.is_empty() {
-            None
-        } else {
-            Some(next)
         }
     }
 }

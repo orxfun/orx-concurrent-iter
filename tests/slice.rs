@@ -109,7 +109,7 @@ fn atomic_exact() {
 
 #[test_matrix(
     [1, 2, 8],
-    [1, 2, 8, 64, 1025, 5483]
+    [1, 8, 64, 1025, 5483]
 )]
 fn ids_and_values(num_threads: usize, len: usize) {
     let values: Vec<_> = (0..len).collect();

@@ -273,8 +273,8 @@
 //! let [first, second] = std::thread::scope(|s| {
 //!     let first = s.spawn(move || {
 //!         let mut chars: Vec<char> = vec![];
-//!         while let Some(chunk) = characters.next_exact_chunk(3) {
-//!             chars.extend(chunk.values().copied());
+//!         while let Some(chunk) = characters.next_chunk(3) {
+//!             chars.extend(chunk.values.copied());
 //!             lag(100);
 //!         }
 //!         chars
@@ -283,8 +283,8 @@
 //!     let second = s.spawn(move || {
 //!         lag(50);
 //!         let mut chars: Vec<char> = vec![];
-//!         while let Some(chunk) = characters.next_exact_chunk(3) {
-//!             chars.extend(chunk.values().copied());
+//!         while let Some(chunk) = characters.next_chunk(3) {
+//!             chars.extend(chunk.values.copied());
 //!             lag(100);
 //!         }
 //!         chars
@@ -354,4 +354,4 @@ pub use iter::implementors::{
     vec::ConIterOfVec,
 };
 pub use iter::wrappers::{ids_and_values::ConIterIdsAndValues, values::ConIterValues};
-pub use next::{Next, NextChunk, NextMany, NextManyExact};
+pub use next::{Next, NextChunk};

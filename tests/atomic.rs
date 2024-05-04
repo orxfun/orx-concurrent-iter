@@ -42,20 +42,14 @@ where
     assert_eq!(0, iter.counter().current());
 
     let mut i = 0;
-    let mut has_more = true;
 
-    while has_more {
-        has_more = false;
-        let next_id_and_chunk = iter.fetch_n(n);
-        let begin_idx = next_id_and_chunk.begin_idx();
-        for (j, value) in next_id_and_chunk.values().enumerate() {
+    while let Some(chunk) = iter.fetch_n(n) {
+        for (j, value) in chunk.values.enumerate() {
             let value = value + 0usize;
-            assert_eq!(value, begin_idx + j);
+            assert_eq!(value, chunk.begin_idx + j);
             assert_eq!(value, i);
 
             i += 1;
-
-            has_more = true;
         }
     }
 }
@@ -89,20 +83,9 @@ where
     assert!(!iter.is_empty());
     assert_eq!(iter.len(), remaining);
 
-    let mut has_more = true;
-    while has_more {
-        has_more = false;
-
-        let next_id_and_chunk = iter.fetch_n(n);
-        if next_id_and_chunk.values().next().is_some() {
-            has_more = true;
-        }
-
-        if n > remaining {
-            remaining = 0;
-        } else {
-            remaining -= n;
-        }
+    while let Some(chunk) = iter.fetch_n(n) {
+        let num_fetched = chunk.values.len();
+        remaining -= num_fetched;
 
         assert_eq!(iter.len(), remaining);
     }

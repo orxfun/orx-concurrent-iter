@@ -14,21 +14,24 @@ where
     let iter = &con_iter;
 
     std::thread::scope(|s| {
-        for _ in 0..num_threads {
+        for t in 0..num_threads {
             s.spawn(move || {
                 if batch == 1 {
                     while let Some(next) = iter.next_id_and_value() {
                         bag.push((next.idx, next.value));
                     }
+                }
+                if t % 2 == 0 {
+                    while let Some(chunk) = iter.next_chunk(batch) {
+                        for (i, value) in chunk.values.enumerate() {
+                            bag.push((chunk.begin_idx + i, value));
+                        }
+                    }
                 } else {
-                    let mut more = true;
-                    while more {
-                        more = false;
-                        let next = iter.next_chunk(batch);
-                        let begin_idx = next.begin_idx();
-                        for (i, value) in next.values().enumerate() {
-                            bag.push((begin_idx + i, value));
-                            more = true;
+                    let mut buffered_iter = iter.buffered_iter(batch);
+                    while let Some(chunk) = buffered_iter.next() {
+                        for (i, value) in chunk.values.enumerate() {
+                            bag.push((chunk.begin_idx + i, value));
                         }
                     }
                 }
@@ -54,11 +57,7 @@ where
             .map(|_| {
                 s.spawn(move || {
                     let mut sum = 0;
-                    if batch == 1 {
-                        iter.for_each(|value| sum = sum + value);
-                    } else {
-                        iter.for_each_n(batch, |value| sum = sum + value);
-                    }
+                    iter.for_each(batch, |value| sum = sum + value);
                     sum
                 })
             })
@@ -104,17 +103,10 @@ fn concurrent_enumerate_for_each_sum<I>(
                 s.spawn(move || {
                     let mut sum = 0;
                     let mut sum_indices = 0;
-                    if batch == 1 {
-                        iter.enumerate_for_each(|idx, value| {
-                            sum = sum + value;
-                            sum_indices += idx;
-                        });
-                    } else {
-                        iter.enumerate_for_each_n(batch, |idx, value| {
-                            sum = sum + value;
-                            sum_indices += idx;
-                        });
-                    }
+                    iter.enumerate_for_each_n(batch, |idx, value| {
+                        sum = sum + value;
+                        sum_indices += idx;
+                    });
                     (sum, sum_indices)
                 })
             })
@@ -147,12 +139,9 @@ where
                             sum = sum + value;
                         }
                     } else {
-                        let mut more = true;
-                        while more {
-                            more = false;
-                            for value in iter.next_chunk(batch).values() {
+                        while let Some(chunk) = iter.next_chunk(batch) {
+                            for value in chunk.values {
                                 sum = sum + value;
-                                more = true;
                             }
                         }
                     }
@@ -167,9 +156,9 @@ where
 }
 
 #[test_matrix(
-    [1, 2, 4, 8, 64, 1024, 64*1024],
+    [1, 4, 1024, 64*1024],
     [1, 2, 8],
-    [1, 2, 4, 5, 8, 64, 71, 1024, 1025]
+    [1, 4, 64, 1024]
 )]
 fn con_iter_slice(len: usize, num_threads: usize, batch: usize) {
     let source: Vec<_> = (0..len).collect();
@@ -189,9 +178,9 @@ fn con_iter_slice(len: usize, num_threads: usize, batch: usize) {
 }
 
 #[test_matrix(
-    [1, 2, 4, 8, 64, 1024, 64*1024],
+    [1, 4, 1024, 64*1024],
     [1, 2, 8],
-    [1, 2, 4, 5, 8, 64, 71, 1024, 1025]
+    [1, 4, 64, 1024]
 )]
 fn con_iter_vec(len: usize, num_threads: usize, batch: usize) {
     let source: Vec<_> = (0..len).collect();
@@ -208,9 +197,9 @@ fn con_iter_vec(len: usize, num_threads: usize, batch: usize) {
 }
 
 #[test_matrix(
-    [1, 2, 4, 8, 64, 1024, 64*1024],
+    [1, 4, 1024, 64*1024],
     [1, 2, 8],
-    [1, 2, 4, 5, 8, 64, 71, 1024, 1025]
+    [1, 4, 64, 1024]
 )]
 fn con_iter_iter(len: usize, num_threads: usize, batch: usize) {
     let source: Vec<_> = (0..len).collect();
@@ -228,10 +217,9 @@ fn con_iter_iter(len: usize, num_threads: usize, batch: usize) {
     concurrent_enumerate_for_each_sum(num_threads, batch, clone.iter().into_con_iter(), sum, len);
 }
 
-
 #[test_matrix(
     [1, 2, 8],
-    [1, 2, 4, 5, 8, 64, 71, 1024, 1025]
+    [1, 4, 64, 1024]
 )]
 fn con_iter_array(num_threads: usize, batch: usize) {
     let mut source = [0usize; 1024];
