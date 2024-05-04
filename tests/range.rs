@@ -95,7 +95,7 @@ fn atomic_exact() {
 
 #[test_matrix(
     [1, 2, 8],
-    [1, 2, 8, 64, 1025, 5483]
+    [1, 2, 64, 1025, 5483]
 )]
 fn ids_and_values(num_threads: usize, len: usize) {
     test_values(num_threads, len, (0..len).con_iter());

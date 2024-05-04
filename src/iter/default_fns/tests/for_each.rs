@@ -13,7 +13,7 @@ fn any_for_each(len: usize, chunk_size: usize) {
 
     let iter = numbers.iter().skip(1).take(len - 1);
     let con_iter = iter.into_con_iter();
-    default_fns::for_each::any_for_each(&con_iter, chunk_size, |x| {
+    default_fns::for_each::for_each(&con_iter, chunk_size, |x| {
         sum += x;
     });
 
@@ -31,7 +31,7 @@ fn any_for_each_with_ids(len: usize, chunk_size: usize) {
     let mut indices = 0;
 
     let con_iter = numbers.into_con_iter();
-    default_fns::for_each::any_for_each_with_ids(&con_iter, chunk_size, |i, x| {
+    default_fns::for_each::for_each_with_ids(&con_iter, chunk_size, |i, x| {
         sum += x;
         indices -= i as i64;
     });
@@ -49,7 +49,7 @@ fn exact_for_each(len: usize, chunk_size: usize) {
     let expected: usize = numbers.iter().sum();
     let mut sum = 0;
 
-    default_fns::for_each::exact_for_each(&numbers.con_iter(), chunk_size, |x| {
+    default_fns::for_each::for_each(&numbers.con_iter(), chunk_size, |x| {
         sum += x;
     });
 
@@ -66,7 +66,7 @@ fn exact_for_each_with_ids(len: usize, chunk_size: usize) {
     let mut sum = 0;
     let mut indices = 0;
 
-    default_fns::for_each::exact_for_each_with_ids(&numbers.con_iter(), chunk_size, |i, x| {
+    default_fns::for_each::for_each_with_ids(&numbers.con_iter(), chunk_size, |i, x| {
         sum += x;
         indices -= i as i64;
     });
@@ -83,7 +83,7 @@ fn panics_any_for_each() {
     let mut sum = 0;
     let iter = numbers.iter().skip(1).take(8);
     let con_iter = iter.into_con_iter();
-    default_fns::for_each::any_for_each(&con_iter, 0, |x| {
+    default_fns::for_each::for_each(&con_iter, 0, |x| {
         sum += x;
     });
 }
@@ -95,7 +95,7 @@ fn panics_any_for_each_with_ids() {
     let mut sum = 0;
     let iter = numbers.iter().skip(1).take(8);
     let con_iter = iter.into_con_iter();
-    default_fns::for_each::any_for_each_with_ids(&con_iter, 0, |_i, x| {
+    default_fns::for_each::for_each_with_ids(&con_iter, 0, |_i, x| {
         sum += x;
     });
 }
@@ -105,7 +105,7 @@ fn panics_any_for_each_with_ids() {
 fn panics_exact_for_each() {
     let numbers: Vec<_> = (0..64).collect();
     let mut sum = 0;
-    default_fns::for_each::exact_for_each(&numbers.con_iter(), 0, |x| {
+    default_fns::for_each::for_each(&numbers.con_iter(), 0, |x| {
         sum += x;
     });
 }
@@ -115,7 +115,7 @@ fn panics_exact_for_each() {
 fn panics_exact_for_each_with_ids() {
     let numbers: Vec<_> = (0..64).collect();
     let mut sum = 0;
-    default_fns::for_each::exact_for_each_with_ids(&numbers.con_iter(), 0, |_i, x| {
+    default_fns::for_each::for_each_with_ids(&numbers.con_iter(), 0, |_i, x| {
         sum += x;
     });
 }

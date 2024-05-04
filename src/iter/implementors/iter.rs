@@ -1,6 +1,11 @@
 use crate::{
-    iter::{atomic_counter::AtomicCounter, atomic_iter::AtomicIter, default_fns},
-    ConcurrentIter, Next, NextChunk, NextMany,
+    iter::{
+        atomic_counter::AtomicCounter,
+        atomic_iter::AtomicIter,
+        buffered::{buffered_iter::BufferedIter, iter::BufferIter},
+    },
+    next::NextChunk,
+    ConcurrentIter, Next,
 };
 use std::{
     cell::UnsafeCell,
@@ -41,8 +46,13 @@ where
 
     #[inline(always)]
     #[allow(clippy::mut_from_ref)]
-    unsafe fn mut_iter(&self) -> &mut Iter {
+    pub(crate) unsafe fn mut_iter(&self) -> &mut Iter {
         unsafe { &mut *self.iter.get() }
+    }
+
+    #[inline(always)]
+    pub(crate) fn progress_yielded_counter(&self, num_yielded: usize) -> usize {
+        self.yielded_counter.fetch_and_add(num_yielded)
     }
 }
 
@@ -64,6 +74,35 @@ where
         &self.reserved_counter
     }
 
+    #[inline(always)]
+    fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
+        let begin_idx = self.counter().fetch_and_add(number_to_fetch);
+
+        dbg!(
+            begin_idx,
+            number_to_fetch,
+            self.counter(),
+            self.yielded_counter.current()
+        );
+
+        loop {
+            let yielded_count = self.yielded_counter.current();
+            match begin_idx.cmp(&yielded_count) {
+                // begin_idx==yielded_count => it is our job to provide the items
+                Ordering::Equal => return Some(begin_idx),
+
+                Ordering::Less => return None,
+
+                // begin_idx > yielded_count => we need the other items to be yielded
+                Ordering::Greater => {
+                    if self.completed.load(atomic::Ordering::Relaxed) {
+                        return None;
+                    }
+                }
+            }
+        }
+    }
+
     fn get(&self, item_idx: usize) -> Option<T> {
         loop {
             let yielded_count = self.yielded_counter.current();
@@ -72,13 +111,13 @@ where
                 Ordering::Equal => {
                     // SAFETY: no other thread has the valid condition to iterate, they are waiting
                     let next = unsafe { self.mut_iter() }.next();
-                    return if next.is_some() {
-                        _ = self.yielded_counter.fetch_and_increment();
-                        next
-                    } else {
-                        self.completed.store(true, atomic::Ordering::Relaxed);
-                        None
+                    match next.is_some() {
+                        true => {
+                            _ = self.yielded_counter.fetch_and_increment();
+                        }
+                        false => self.completed.store(true, atomic::Ordering::SeqCst),
                     };
+                    return next;
                 }
 
                 Ordering::Less => return None,
@@ -93,61 +132,32 @@ where
         }
     }
 
-    fn fetch_n(&self, n: usize) -> impl NextChunk<T> {
-        let begin_idx = self.counter().fetch_and_add(n);
+    fn fetch_n(&self, n: usize) -> Option<NextChunk<T, impl ExactSizeIterator<Item = T>>> {
+        self.progress_and_get_begin_idx(n).and_then(|begin_idx| {
+            // SAFETY: no other thread has the valid condition to iterate, they are waiting
+            let iter = unsafe { self.mut_iter() };
+            let end_idx = begin_idx + n;
+            let buffer = (begin_idx..end_idx)
+                .map(|_| iter.next())
+                .take_while(|x| x.is_some())
+                .map(|x| x.expect("is_some is checked"))
+                .collect::<Vec<_>>();
 
-        loop {
-            let yielded_count = self.yielded_counter.current();
-            match begin_idx.cmp(&yielded_count) {
-                // begin_idx==yielded_count => it is our job to provide the items
-                Ordering::Equal => {
-                    // SAFETY: no other thread has the valid condition to iterate, they are waiting
-                    let iter = unsafe { self.mut_iter() };
-                    let idx_range = begin_idx..(begin_idx + n);
-                    let values = idx_range
-                        .map(|_| iter.next())
-                        .take_while(|x| x.is_some())
-                        .map(|x| x.expect("is_some is checked"))
-                        .collect::<Vec<_>>();
-                    let older_count = self.yielded_counter.fetch_and_add(n);
+            match buffer.len() {
+                0 => {
+                    self.completed.store(true, atomic::Ordering::SeqCst);
+                    let older_count = self.progress_yielded_counter(n);
                     assert_eq!(older_count, begin_idx);
-
-                    return NextMany { begin_idx, values };
+                    None
                 }
-
-                Ordering::Less => {
-                    return NextMany {
-                        begin_idx,
-                        values: vec![],
-                    }
-                }
-
-                // begin_idx > yielded_count => we need the other items to be yielded
-                Ordering::Greater => {
-                    if self.completed.load(atomic::Ordering::Relaxed) {
-                        return NextMany {
-                            begin_idx,
-                            values: vec![],
-                        };
-                    }
+                _ => {
+                    let values = buffer.into_iter();
+                    let older_count = self.progress_yielded_counter(n);
+                    assert_eq!(older_count, begin_idx);
+                    Some(NextChunk { begin_idx, values })
                 }
             }
-        }
-    }
-
-    #[inline(always)]
-    fn for_each_n<F: FnMut(T)>(&self, chunk_size: usize, f: F) {
-        default_fns::for_each::any_for_each(self, chunk_size, f)
-    }
-
-    #[inline(always)]
-    fn enumerate_for_each_n<F: FnMut(usize, T)>(&self, chunk_size: usize, f: F) {
-        default_fns::for_each::any_for_each_with_ids(self, chunk_size, f)
-    }
-
-    #[inline(always)]
-    fn fold<B, F: FnMut(B, T) -> B>(&self, chunk_size: usize, initial: B, f: F) -> B {
-        default_fns::fold::any_fold(self, chunk_size, f, initial)
+        })
     }
 }
 
@@ -163,32 +173,24 @@ where
 {
     type Item = T;
 
+    type BufferedIter = BufferIter<T, Iter>;
+
     #[inline(always)]
     fn next_id_and_value(&self) -> Option<Next<Self::Item>> {
         self.fetch_one()
     }
 
     #[inline(always)]
-    fn next_chunk(&self, chunk_size: usize) -> impl NextChunk<Self::Item> {
+    fn next_chunk(
+        &self,
+        chunk_size: usize,
+    ) -> Option<NextChunk<Self::Item, impl ExactSizeIterator<Item = Self::Item>>> {
         self.fetch_n(chunk_size)
     }
 
-    #[inline(always)]
-    fn for_each_n<F: FnMut(Self::Item)>(&self, chunk_size: usize, f: F) {
-        <Self as AtomicIter<_>>::for_each_n(self, chunk_size, f)
-    }
-
-    #[inline(always)]
-    fn enumerate_for_each_n<F: FnMut(usize, Self::Item)>(&self, chunk_size: usize, f: F) {
-        <Self as AtomicIter<_>>::enumerate_for_each_n(self, chunk_size, f)
-    }
-
-    #[inline(always)]
-    fn fold<B, Fold>(&self, chunk_size: usize, neutral: B, fold: Fold) -> B
-    where
-        Fold: FnMut(B, Self::Item) -> B,
-    {
-        <Self as AtomicIter<_>>::fold(self, chunk_size, neutral, fold)
+    fn buffered_iter(&self, chunk_size: usize) -> BufferedIter<Self::Item, Self::BufferedIter> {
+        let buffered_iter = Self::BufferedIter::new(chunk_size);
+        BufferedIter::new(buffered_iter, self)
     }
 
     #[inline(always)]

@@ -1,9 +1,10 @@
 use crate::{
     iter::{
         atomic_iter::{AtomicIter, AtomicIterWithInitialLen},
-        default_fns,
+        buffered::{buffered_iter::BufferedIter, vec::BufferedVec},
     },
-    AtomicCounter, ConcurrentIter, ExactSizeConcurrentIter, Next, NextChunk, NextManyExact,
+    next::NextChunk,
+    AtomicCounter, ConcurrentIter, ExactSizeConcurrentIter, Next,
 };
 use std::{cell::UnsafeCell, cmp::Ordering};
 
@@ -27,7 +28,7 @@ impl<T: Send + Sync + Default> ConIterOfVec<T> {
 
     #[inline(always)]
     #[allow(clippy::mut_from_ref)]
-    unsafe fn mut_vec(&self) -> &mut Vec<T> {
+    pub(crate) unsafe fn mut_vec(&self) -> &mut Vec<T> {
         unsafe { &mut *self.vec.get() }
     }
 }
@@ -45,6 +46,15 @@ impl<T: Send + Sync + Default> AtomicIter<T> for ConIterOfVec<T> {
         &self.counter
     }
 
+    #[inline(always)]
+    fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
+        let begin_idx = self.counter().fetch_and_add(number_to_fetch);
+        match begin_idx.cmp(&self.initial_len()) {
+            Ordering::Less => Some(begin_idx),
+            _ => None,
+        }
+    }
+
     fn get(&self, item_idx: usize) -> Option<T> {
         match item_idx.cmp(&self.vec_len) {
             Ordering::Less => {
@@ -57,23 +67,22 @@ impl<T: Send + Sync + Default> AtomicIter<T> for ConIterOfVec<T> {
         }
     }
 
-    fn fetch_n(&self, n: usize) -> impl NextChunk<T> {
-        self.fetch_n_with_exact_len(n)
-    }
+    fn fetch_n(&self, n: usize) -> Option<NextChunk<T, impl ExactSizeIterator<Item = T>>> {
+        let vec = unsafe { self.mut_vec() };
 
-    #[inline(always)]
-    fn for_each_n<F: FnMut(T)>(&self, chunk_size: usize, f: F) {
-        default_fns::for_each::exact_for_each(self, chunk_size, f)
-    }
+        let begin_idx = self
+            .progress_and_get_begin_idx(n)
+            .unwrap_or(self.initial_len());
+        let end_idx = (begin_idx + n).min(self.initial_len()).max(begin_idx);
 
-    #[inline(always)]
-    fn enumerate_for_each_n<F: FnMut(usize, T)>(&self, chunk_size: usize, f: F) {
-        default_fns::for_each::exact_for_each_with_ids(self, chunk_size, f)
-    }
-
-    #[inline(always)]
-    fn fold<B, F: FnMut(B, T) -> B>(&self, chunk_size: usize, initial: B, f: F) -> B {
-        default_fns::fold::exact_fold(self, chunk_size, f, initial)
+        match begin_idx.cmp(&end_idx) {
+            Ordering::Equal => None,
+            _ => {
+                let idx_range = begin_idx..end_idx;
+                let values = idx_range.map(|i| unsafe { get_unchecked(vec, i) });
+                Some(NextChunk { begin_idx, values })
+            }
+        }
     }
 }
 
@@ -81,20 +90,6 @@ impl<T: Send + Sync + Default> AtomicIterWithInitialLen<T> for ConIterOfVec<T> {
     #[inline(always)]
     fn initial_len(&self) -> usize {
         self.vec_len
-    }
-
-    fn fetch_n_with_exact_len(
-        &self,
-        n: usize,
-    ) -> NextManyExact<T, impl ExactSizeIterator<Item = T>> {
-        let vec = unsafe { self.mut_vec() };
-
-        let begin_idx = self.counter().fetch_and_add(n);
-        let end_idx = (begin_idx + n).min(self.vec_len).max(begin_idx);
-        let idx_range = begin_idx..end_idx;
-        let values = idx_range.map(|i| unsafe { get_unchecked(vec, i) });
-
-        NextManyExact { begin_idx, values }
     }
 }
 
@@ -112,32 +107,24 @@ unsafe impl<T: Send + Sync + Default> Send for ConIterOfVec<T> {}
 impl<T: Send + Sync + Default> ConcurrentIter for ConIterOfVec<T> {
     type Item = T;
 
+    type BufferedIter = BufferedVec;
+
     #[inline(always)]
     fn next_id_and_value(&self) -> Option<Next<Self::Item>> {
         self.fetch_one()
     }
 
     #[inline(always)]
-    fn next_chunk(&self, chunk_size: usize) -> impl NextChunk<Self::Item> {
+    fn next_chunk(
+        &self,
+        chunk_size: usize,
+    ) -> Option<NextChunk<Self::Item, impl ExactSizeIterator<Item = Self::Item>>> {
         self.fetch_n(chunk_size)
     }
 
-    #[inline(always)]
-    fn for_each_n<F: FnMut(Self::Item)>(&self, chunk_size: usize, f: F) {
-        <Self as AtomicIter<_>>::for_each_n(self, chunk_size, f)
-    }
-
-    #[inline(always)]
-    fn enumerate_for_each_n<F: FnMut(usize, Self::Item)>(&self, chunk_size: usize, f: F) {
-        <Self as AtomicIter<_>>::enumerate_for_each_n(self, chunk_size, f)
-    }
-
-    #[inline(always)]
-    fn fold<B, Fold>(&self, chunk_size: usize, neutral: B, fold: Fold) -> B
-    where
-        Fold: FnMut(B, Self::Item) -> B,
-    {
-        <Self as AtomicIter<_>>::fold(self, chunk_size, neutral, fold)
+    fn buffered_iter(&self, chunk_size: usize) -> BufferedIter<Self::Item, Self::BufferedIter> {
+        let buffered_iter = Self::BufferedIter::new(chunk_size);
+        BufferedIter::new(buffered_iter, self)
     }
 
     #[inline(always)]
@@ -154,18 +141,6 @@ impl<T: Send + Sync + Default> ExactSizeConcurrentIter for ConIterOfVec<T> {
         match current.cmp(&initial_len) {
             std::cmp::Ordering::Less => initial_len - current,
             _ => 0,
-        }
-    }
-
-    fn next_exact_chunk(
-        &self,
-        chunk_size: usize,
-    ) -> Option<NextManyExact<Self::Item, impl ExactSizeIterator<Item = Self::Item>>> {
-        let next = <Self as AtomicIterWithInitialLen<_>>::fetch_n_with_exact_len(self, chunk_size);
-        if next.is_empty() {
-            None
-        } else {
-            Some(next)
         }
     }
 }

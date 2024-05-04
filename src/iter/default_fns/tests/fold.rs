@@ -12,7 +12,7 @@ fn any_fold(len: usize, chunk_size: usize) {
 
     let iter = numbers.iter().skip(1).take(len - 1);
     let con_iter = iter.into_con_iter();
-    let sum = default_fns::fold::any_fold(&con_iter, chunk_size, |a, b| a + *b as i64, 0i64);
+    let sum = default_fns::fold::fold(&con_iter, chunk_size, |a, b| a + *b as i64, 0i64);
 
     assert_eq!(sum, expected);
 }
@@ -25,8 +25,7 @@ fn exact_fold(len: usize, chunk_size: usize) {
     let numbers: Vec<_> = (0..len).collect();
     let expected = numbers.iter().sum::<usize>() as i64;
 
-    let sum =
-        default_fns::fold::exact_fold(&numbers.con_iter(), chunk_size, |a, b| a + *b as i64, 0i64);
+    let sum = default_fns::fold::fold(&numbers.con_iter(), chunk_size, |a, b| a + *b as i64, 0i64);
 
     assert_eq!(sum, expected);
 }
@@ -34,16 +33,9 @@ fn exact_fold(len: usize, chunk_size: usize) {
 // panics
 #[test]
 #[should_panic]
-fn panics_any_fold() {
+fn panics_fold_with_zero_chunk() {
     let numbers: Vec<_> = (0..64).collect();
     let iter = numbers.iter().skip(1).take(8);
     let con_iter = iter.into_con_iter();
-    let _ = default_fns::fold::any_fold(&con_iter, 0, |a, b| a + *b as i64, 0i64);
-}
-
-#[test]
-#[should_panic]
-fn panics_exact_fold() {
-    let numbers: Vec<_> = (0..64).collect();
-    let _ = default_fns::fold::exact_fold(&numbers.con_iter(), 0, |a, b| a + *b as i64, 0i64);
+    let _ = default_fns::fold::fold(&con_iter, 0, |a, b| a + *b as i64, 0i64);
 }

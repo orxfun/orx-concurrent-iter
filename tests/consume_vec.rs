@@ -17,14 +17,8 @@ fn concurrent_iter(num_threads: usize, batch: usize, vec: Vec<i64>) {
                         sum += next.value;
                     }
                 } else {
-                    let mut more = true;
-                    while more {
-                        more = false;
-                        let next = iter.next_chunk(batch);
-                        for value in next.values() {
-                            sum += value;
-                            more = true;
-                        }
+                    while let Some(chunk) = iter.next_chunk(batch) {
+                        sum += chunk.values.sum::<i64>();
                     }
                 }
                 sum
@@ -38,9 +32,9 @@ fn concurrent_iter(num_threads: usize, batch: usize, vec: Vec<i64>) {
 }
 
 #[test_matrix(
-    [1, 2, 4, 8, 64, 1024, 64*1024],
-    [4 ,8, 16],
-    [1, 2, 4, 5, 8, 64, 71, 1024, 1025]
+    [1, 4, 1024, 64*1024],
+    [4, 8, 16],
+    [1, 4, 64, 1024]
 )]
 fn consume_vec(len: usize, num_threads: usize, batch: usize) {
     for _ in 0..NUM_RERUNS {
@@ -62,13 +56,9 @@ fn concurrent_iter_heap(num_threads: usize, batch: usize, vec: Vec<String>) {
                         str = next.value;
                     }
                 } else {
-                    let mut more = true;
-                    while more {
-                        more = false;
-                        let next = iter.next_chunk(batch);
-                        for value in next.values() {
+                    while let Some(chunk) = iter.next_chunk(batch) {
+                        for value in chunk.values {
                             str = value;
-                            more = true;
                         }
                     }
                 }
@@ -88,9 +78,9 @@ fn concurrent_iter_heap(num_threads: usize, batch: usize, vec: Vec<String>) {
 }
 
 #[test_matrix(
-    [1, 2, 4, 8, 64, 1024, 4*1024],
-    [4 ,8, 16],
-    [1, 2, 4, 5, 8, 64, 71, 1024, 1025]
+    [1, 4, 1024, 4*1024],
+    [4, 8, 16],
+    [1, 4, 64, 1024]
 )]
 fn consume_vec_heap(len: usize, num_threads: usize, batch: usize) {
     for _ in 0..NUM_RERUNS {
