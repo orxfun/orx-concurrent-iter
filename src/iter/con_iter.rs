@@ -5,7 +5,7 @@ use super::{
 };
 use crate::{
     next::{Next, NextChunk},
-    ConIterIdsAndValues, IterIntoConcurrentIter,
+    ConIterIdsAndValues,
 };
 
 /// Trait defining a concurrent iterator with `next` and `next_id_and_chunk` methods which can safely be called my multiple threads concurrently.
