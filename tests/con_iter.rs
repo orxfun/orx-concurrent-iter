@@ -103,7 +103,7 @@ fn concurrent_enumerate_for_each_sum<I>(
                 s.spawn(move || {
                     let mut sum = 0;
                     let mut sum_indices = 0;
-                    iter.enumerate_for_each_n(batch, |idx, value| {
+                    iter.enumerate_for_each(batch, |idx, value| {
                         sum = sum + value;
                         sum_indices += idx;
                     });

@@ -129,6 +129,10 @@ pub trait ConcurrentIter: Send + Sync {
     /// It allocates a buffer of `chunk_size` only once when created, only if the source data requires it.
     /// This buffer is used over and over until the concurrent iterator is consumed.
     ///
+    /// # Panics
+    ///
+    /// Panics if `chunk_size` is zero; chunk size is required to be strictly positive.
+    ///
     /// # Example
     ///
     /// Example below illustrates a parallel sum operation.
@@ -330,6 +334,10 @@ pub trait ConcurrentIter: Send + Sync {
     /// At each iteration of the loop, this method pulls `chunk_size` elements from the iterator.
     /// Under the hood, this method will loop using the buffered chunks iterator, pulling items as batches of the given `chunk_size`.
     ///
+    /// # Panics
+    ///
+    /// Panics if `chunk_size` is zero; chunk size is required to be strictly positive.
+    ///
     /// # Examples
     ///
     /// ```rust
@@ -377,6 +385,10 @@ pub trait ConcurrentIter: Send + Sync {
     /// At each iteration of the loop, this method pulls `chunk_size` elements from the iterator.
     /// Under the hood, this method will loop using the buffered chunks iterator, pulling items as batches of the given `chunk_size`.
     ///
+    /// # Panics
+    ///
+    /// Panics if `chunk_size` is zero; chunk size is required to be strictly positive.
+    ///
     /// # Examples
     ///
     /// ```rust
@@ -396,7 +408,7 @@ pub trait ConcurrentIter: Send + Sync {
     /// std::thread::scope(|s| {
     ///     for _ in 0..num_threads {
     ///         s.spawn(move || {
-    ///             con_iter.enumerate_for_each_n(chunk_size, |i, c| {
+    ///             con_iter.enumerate_for_each(chunk_size, |i, c| {
     ///                 let expected_value = char::from_digit(i as u32, 10).unwrap();
     ///                 assert_eq!(c, &expected_value);
     ///
@@ -412,7 +424,7 @@ pub trait ConcurrentIter: Send + Sync {
     /// let sum: u32 = outputs.into_inner().iter().sum();
     /// assert_eq!(sum, (0..8).sum());
     /// ```
-    fn enumerate_for_each_n<Fun: FnMut(usize, Self::Item)>(&self, chunk_size: usize, fun: Fun)
+    fn enumerate_for_each<Fun: FnMut(usize, Self::Item)>(&self, chunk_size: usize, fun: Fun)
     where
         Self: Sized,
     {
