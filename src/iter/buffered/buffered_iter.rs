@@ -18,6 +18,11 @@ where
     B: BufferedChunk<T>,
 {
     pub(crate) fn new(buffered_iter: B, atomic_iter: &'a B::ConIter) -> Self {
+        assert!(
+            buffered_iter.chunk_size() > 0,
+            "Chunk size must be positive."
+        );
+
         Self {
             buffered_iter,
             atomic_iter,
