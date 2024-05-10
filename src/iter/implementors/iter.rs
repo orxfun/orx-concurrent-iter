@@ -152,6 +152,11 @@ where
             }
         })
     }
+
+    fn early_exit(&self) {
+        self.counter().store(usize::MAX);
+        self.completed.store(true, atomic::Ordering::SeqCst);
+    }
 }
 
 unsafe impl<T: Send + Sync, Iter> Sync for ConIterOfIter<T, Iter> where Iter: Iterator<Item = T> {}
@@ -189,5 +194,9 @@ where
     #[inline(always)]
     fn try_get_len(&self) -> Option<usize> {
         None
+    }
+
+    fn skip_to_end(&self) {
+        self.early_exit()
     }
 }

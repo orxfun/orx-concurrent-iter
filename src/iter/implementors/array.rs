@@ -83,6 +83,10 @@ impl<const N: usize, T: Send + Sync + Default> AtomicIter<T> for ConIterOfArray<
             }
         }
     }
+
+    fn early_exit(&self) {
+        self.counter().store(N)
+    }
 }
 
 impl<const N: usize, T: Send + Sync + Default> AtomicIterWithInitialLen<T>
@@ -131,6 +135,10 @@ impl<const N: usize, T: Send + Sync + Default> ConcurrentIter for ConIterOfArray
     #[inline(always)]
     fn try_get_len(&self) -> Option<usize> {
         Some(<Self as ExactSizeConcurrentIter>::len(self))
+    }
+
+    fn skip_to_end(&self) {
+        self.early_exit()
     }
 }
 
