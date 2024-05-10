@@ -78,13 +78,6 @@ where
     fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
         let begin_idx = self.counter().fetch_and_add(number_to_fetch);
 
-        dbg!(
-            begin_idx,
-            number_to_fetch,
-            self.counter(),
-            self.yielded_counter.current()
-        );
-
         loop {
             let yielded_count = self.yielded_counter.current();
             match begin_idx.cmp(&yielded_count) {
