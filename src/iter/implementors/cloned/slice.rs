@@ -91,6 +91,10 @@ impl<'a, T: Send + Sync + Clone> AtomicIter<T> for ClonedConIterOfSlice<'a, T> {
             }
         }
     }
+
+    fn early_exit(&self) {
+        self.counter().store(self.slice.len())
+    }
 }
 
 impl<'a, T: Send + Sync + Clone> AtomicIterWithInitialLen<T> for ClonedConIterOfSlice<'a, T> {
@@ -132,6 +136,10 @@ impl<'a, T: Send + Sync + Clone> ConcurrentIter for ClonedConIterOfSlice<'a, T> 
     #[inline(always)]
     fn try_get_len(&self) -> Option<usize> {
         Some(<Self as ExactSizeConcurrentIter>::len(self))
+    }
+
+    fn skip_to_end(&self) {
+        self.early_exit()
     }
 }
 

@@ -5,12 +5,12 @@ const NUM_RERUNS: usize = 1;
 
 fn concurrent_iter(num_threads: usize, batch: usize, array: [i64; 1024]) {
     let expected_sum: i64 = array.iter().sum();
-    let iter = &array.into_con_iter();
+    let iter = array.into_con_iter();
 
     let sum: i64 = std::thread::scope(|s| {
         let mut handles = vec![];
         for _ in 0..num_threads {
-            handles.push(s.spawn(move || {
+            handles.push(s.spawn(|| {
                 let mut sum = 0i64;
                 if batch == 1 {
                     while let Some(next) = iter.next_id_and_value() {

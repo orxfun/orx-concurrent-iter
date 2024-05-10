@@ -326,6 +326,63 @@ pub trait ConcurrentIter: Send + Sync {
         self.into()
     }
 
+    /// Skips all remaining elements of the iterator and assumes that the end of the iterator is reached.
+    ///
+    /// This method establishes a very primitive, convenient and critical communication among threads for search scenarios with an early exit condition.
+    /// Assume, for instance, that we are trying to `find` an element satisfying a predicate using multiple threads.
+    /// Whenever a threads finds a match, it can call this method and return the found value.
+    /// Then, when the other threads try to pull next element from the iterator, they will observe that the iterator has ended.
+    /// Therefore, they will as well return early as desired.
+    ///
+    /// # Examples
+    ///
+    /// As discussed above, a straightforward use case is the `find` iterator method. You may find a very simple & convenient example implementation below.
+    /// Likewise, it might be used to stop an infinite parallel search; for instance, when trying to find a feasible solution to an optimization problem using a randomized search.
+    ///
+    /// ```rust
+    /// use orx_concurrent_iter::*;
+    ///
+    /// fn par_find<I, P>(iter: I, predicate: P, n_threads: usize) -> Option<(usize, I::Item)>
+    /// where
+    ///     I: ConcurrentIter,
+    ///     P: Fn(&I::Item) -> bool + Send + Sync,
+    /// {
+    ///     std::thread::scope(|s| {
+    ///         let handles = (0..n_threads).map(|_| {
+    ///             s.spawn(|| {
+    ///                 for (i, x) in iter.ids_and_values() {
+    ///                     if predicate(&x) {
+    ///                         // let's all other threads to early-exit
+    ///                         iter.skip_to_end();
+    ///                         return Some((i, x));
+    ///                     }
+    ///                 }
+    ///                 None
+    ///             })
+    ///         });
+    ///
+    ///         handles
+    ///             .into_iter()
+    ///             .flat_map(|x| x.join().expect("-"))
+    ///             .min_by_key(|x| x.0)
+    ///     })
+    /// }
+    ///
+    /// let mut names: Vec<_> = (0..8785).map(|x| x.to_string()).collect();
+    /// names[42] = "foo".to_string();
+    ///
+    /// let iter = names.con_iter();
+    /// let starts_with_f = |x: &&String| x.starts_with('f');
+    ///
+    /// let found = par_find(iter, starts_with_f, 4);
+    /// assert_eq!(found, Some((42, &"foo".to_string())));
+    /// ```
+    ///
+    /// Notice that in the example above, only one among 8785 elements satisfies the predicate.
+    /// If the thread that finds "foo" did not call `skip_to_end`, the other threads would traverse through all elements and check the condition.
+    /// On the other hand, once `skip_to_end` is called, none of the threads can find any more elements to pull, and hence, immediately exit in their next `next` call.
+    fn skip_to_end(&self);
+
     /// Applies the function `fun` to each element of the iterator concurrently.
     ///
     /// Note that this method might be called on the same iterator at the same time from different threads.

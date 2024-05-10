@@ -84,6 +84,10 @@ impl<T: Send + Sync + Default> AtomicIter<T> for ConIterOfVec<T> {
             }
         }
     }
+
+    fn early_exit(&self) {
+        self.counter().store(self.vec_len)
+    }
 }
 
 impl<T: Send + Sync + Default> AtomicIterWithInitialLen<T> for ConIterOfVec<T> {
@@ -130,6 +134,10 @@ impl<T: Send + Sync + Default> ConcurrentIter for ConIterOfVec<T> {
     #[inline(always)]
     fn try_get_len(&self) -> Option<usize> {
         Some(<Self as ExactSizeConcurrentIter>::len(self))
+    }
+
+    fn skip_to_end(&self) {
+        self.early_exit()
     }
 }
 

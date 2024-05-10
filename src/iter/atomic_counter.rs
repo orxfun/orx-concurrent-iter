@@ -29,6 +29,12 @@ impl AtomicCounter {
     pub fn current(&self) -> usize {
         self.current.load(Ordering::Relaxed)
     }
+
+    /// Updates the value of the current value of the counter as the given `new_value`.
+    #[inline(always)]
+    pub fn store(&self, new_value: usize) {
+        self.current.store(new_value, Ordering::SeqCst)
+    }
 }
 
 impl Default for AtomicCounter {

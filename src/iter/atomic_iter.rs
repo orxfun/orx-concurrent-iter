@@ -27,6 +27,15 @@ pub trait AtomicIter<T: Send + Sync>: Send + Sync {
     /// Returns an iterator of the next `n` **consecutive items** that the iterator yields.
     /// It might return an iterator of less or no items if the iteration does not have sufficient elements left.
     fn fetch_n(&self, n: usize) -> Option<NextChunk<T, impl ExactSizeIterator<Item = T>>>;
+
+    /// Skips all remaining elements of the iterator and assumes that the end of the iterator is reached.
+    ///
+    /// This method establishes a very primitive, convenient and critical communication among threads for search scenarios with an early exit condition.
+    /// Assume, for instance, that we are trying to `find` an element satisfying a predicate using multiple threads.
+    /// Whenever a threads finds a match, it can call this method and return the found value.
+    /// Then, when the other threads try to pull next element from the iterator, they will observe that the iterator has ended.
+    /// Therefore, they will as well return early as desired.
+    fn early_exit(&self);
 }
 
 /// An atomic counter based iterator with exactly known initial length.
