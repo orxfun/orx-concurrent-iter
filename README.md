@@ -23,21 +23,15 @@ fn fake_work<T: Debug>(_x: T) {
 }
 
 /// `process` elements of `con_iter` concurrently using `num_threads`
-fn process_concurrently<T, ConIter, Fun>(
-    process: &Fun,
-    num_threads: usize,
-    concurrent_iter: ConIter,
-) where
+fn process_concurrently<T, I, F>(process: &F, num_threads: usize, iter: I)
+where
     T: Send + Sync,
-    Fun: Fn(T) + Send + Sync,
-    ConIter: ConcurrentIter<Item = T>,
+    F: Fn(T) + Send + Sync,
+    I: ConcurrentIter<Item = T>,
 {
-    // just take a reference and share among threads
-    let iter = &concurrent_iter;
-
     std::thread::scope(|s| {
         for _ in 0..num_threads {
-            s.spawn(move || {
+            s.spawn(|| {
                 // concurrently iterate over values in a `for` loop
                 for value in iter.values() {
                     process(value);
@@ -47,8 +41,8 @@ fn process_concurrently<T, ConIter, Fun>(
     });
 }
 
-/// just fix process and num_threads for brevity
-fn con_run<T: Send + Sync + Debug>(concurrent_iter: impl ConcurrentIter<Item = T>) {
+/// executes `fake_work` concurrently on all elements of the `concurrent_iter`
+fn run<T: Send + Sync + Debug>(concurrent_iter: impl ConcurrentIter<Item = T>) {
     process_concurrently(&fake_work, 8, concurrent_iter)
 }
 
@@ -58,23 +52,23 @@ let names: [String; 3] = [
     String::from("bar"),
     String::from("baz"),
 ];
-con_run::<&String>(names.con_iter());
+run::<&String>(names.con_iter());
 
 let values: Vec<i32> = (0..8).map(|x| 3 * x + 1).collect();
-con_run::<&i32>(values.con_iter());
+run::<&i32>(values.con_iter());
 
 let slice: &[i32] = values.as_slice();
-con_run::<&i32>(slice.con_iter());
+run::<&i32>(slice.con_iter());
 
 // consuming iteration over values
-con_run::<String>(names.into_con_iter());
-con_run::<i32>(values.into_con_iter());
+run::<String>(names.into_con_iter());
+run::<i32>(values.into_con_iter());
 
 // any Iterator into ConcurrentIter
 let values: Vec<i32> = (0..1024).collect();
 
 let iter_ref = values.iter().filter(|x| *x % 2 == 0);
-con_run::<&i32>(iter_ref.into_con_iter());
+run::<&i32>(iter_ref.into_con_iter());
 
 let iter_val = values
     .iter()
@@ -82,27 +76,73 @@ let iter_val = values
     .map(|x| (7 * x + 3) as usize)
     .skip(2)
     .take(5);
-
-con_run::<usize>(iter_val.into_con_iter());
+run::<usize>(iter_val.into_con_iter());
 ```
 
-[`ConcurrentIter::next`] method is the concurrent counterpart of `Iterator::next` method, which can be called by a shared reference. Note that regular `Iterator`s cannot be consumed by multiple threads due to `&mut self` requirement, and hence, `ConcurrentIter` does not implement `Iterator`. However, it can be used in a similar way as follows:
+### Ways to Loop
 
-```rust ignore
-while let Some(value) = con_iter.next() {
-    process(value);
+`ConcurrentIter`s implement the `next` method, which is a concurrent counterpart of `Iterator::next`. Therefore, the iterator can be used almost the same as a regular `Iterator` safely across multiple threads. `ConcurrentIter` provides different ways to loop through the elements as follows depending on the requirement, which are demonstrated in the following example.
+
+```rust
+use orx_concurrent_iter::*;
+use std::fmt::Debug;
+
+fn process_concurrently<T, I, F>(process: &F, num_threads: usize, iter: I)
+where
+    T: Send + Sync + Debug,
+    F: Fn(T) + Send + Sync,
+    I: ConcurrentIter<Item = T>,
+{
+    std::thread::scope(|s| {
+        for _ in 0..num_threads {
+            s.spawn(|| {
+                // a.1 -> pull elements 1-by-1
+                for value in iter.values() {
+                    dbg!(&value);
+                }
+
+                while let Some(value) = iter.next() {
+                    dbg!(&value);
+                }
+
+                // a.2 -> pull elements and their indices 1-by-1
+                for (idx, value) in iter.ids_and_values() {
+                    dbg!(idx, value);
+                }
+
+                while let Some(x) = iter.next_id_and_value() {
+                    dbg!(x.idx, x.value);
+                }
+
+                // b.1 -> pull elements 16-by-16
+                let mut chunk_iter = iter.buffered_iter(16);
+                while let Some(chunk) = chunk_iter.next() {
+                    for value in chunk.values {
+                        dbg!(value);
+                    }
+                }
+
+                // b.2 -> pull elements and their indices 16-by-16
+                let mut chunk_iter = iter.buffered_iter(16);
+                while let Some(chunk) = chunk_iter.next() {
+                    for (i, value) in chunk.values.enumerate() {
+                        let idx = chunk.begin_idx + i;
+                        dbg!(idx, value);
+                    }
+                }
+            });
+        }
+    });
 }
 ```
 
-Or even with `for` loop using the `values` method:
+* `for` and `while let` loops of **a.1** demonstrate the most basic usage where threads will pull the next element of the iterator whenever they completed processing the prior element.
+* The loops in **a.2** can be considered as the `enumerate`d counterpart. Note that each thread will pull different elements at different positions of the iterator depending on how fast they finish the execution inside the loop. Therefore, an `enumerate` call inside the thread, or counting the pulled elements by that particular thread, does not provide the index of the element in the original data source. `ConcurrentIter` additionally provides the original index with `ids_and_values` or `next_id_and_value` methods.
+* Whenever the work to be done inside the loop is too small (like just the `dbg` call in the above example), taking elements 1-by-1 might be suboptimal. In such cases, a better idea is to pull elements in batches. In **b.1**, we create a buffered chunk iterator which pulls 16 (or less, if not enough left) **consecutive** elements at each `next` call. Note that `chunk` returned by `chunk_iter.next()` is an `ExactSizeIterator` with a know `len`.
+* Similar to before, **b.2** is the counterpart of **b.1** which allows us to use the original `idx` of the elements. `chunk.begin_idx` represents the original index of the first element of the returned `chunk.values` iterator. Note that `chunk.values` is always non-empty; i.e., always has at least one element, otherwise, `next` returns `None`. Further, since the chunk iterator pulls consecutive elements. Hence, can get the original indices of all elements by combining `chunk.begin_idx` with the local indices of the current `chunk` obtained by the `chunk.values.enumerate`; i.e., `let idx = chunk.begin_idx + i`.
 
-```rust ignore
-for value in con_iter.values() {
-    process(value);
-}
-```
 
-### Parallel Computing, Almost Trivial
+### Parallel Fold
 
 Considering the elements of the iteration as inputs of a process, `ConcurrentIter` conveniently allows distribution of tasks to multiple threads.
 
@@ -110,54 +150,37 @@ Considering the elements of the iteration as inputs of a process, `ConcurrentIte
 use orx_concurrent_iter::*;
 
 fn compute(input: u64) -> u64 {
-    std::thread::sleep(std::time::Duration::from_nanos(2));
-    input
+    input * 2
 }
 
 fn fold(aggregated: u64, value: u64) -> u64 {
     aggregated + value
 }
 
-fn parallel_fold(num_threads: usize, inputs_iter: impl ConcurrentIter<Item = u64>) -> u64 {
-    let inputs = &inputs_iter;
-    let mut global_result = 0u64;
-
+fn par_fold(num_threads: usize, inputs: impl ConcurrentIter<Item = u64>) -> u64 {
     std::thread::scope(|s| {
-        let handles: Vec<_> = (0..num_threads)
-            .map(|_| s.spawn(move || inputs.values().map(compute).fold(0u64, fold)))
-            .collect();
-
-        for h in handles {
-            let thread_result = h.join().expect("o");
-            global_result = fold(global_result, thread_result);
-        }
-    });
-    global_result
+        (0..num_threads)
+            .map(|_| s.spawn(|| inputs.values().map(compute).fold(0u64, fold)))
+            .map(|x| x.join().expect("failed-to-join-thread"))
+            .fold(0u64, fold)
+    })
 }
 
-// test
+// validate
 for num_threads in [1, 2, 4, 8] {
     let values = (0..1024).map(|x| 2 * x);
-    assert_eq!(
-        parallel_fold(num_threads, values.into_con_iter()),
-        1023 * 1024
-    );
+    let par_result = par_fold(num_threads, values.into_con_iter());
+    assert_eq!(par_result, 2 * 1023 * 1024);
 }
 ```
 
-Higher level functions may provide further simplifications. For instance, the `handles` above could also be collected as follows using the concurrent `fold` method:
+Notes on the implementation:
+* The entire parallel fold implementation is 7 lines.
+* Parallel fold operation is defined as two fold operations. This is straightforward and easy to reason about.
+  * The first `.map(_).fold(_)` defines the parallel fold operation executed by `num_threads` threads. Each thread returns its own aggregated result.
+  * The second `map(_).fold(_)` defines the final sequential fold operation executed to fold over the `num_threads` results obtained by each thread.
 
-```rust ignore
-fn map_fold(aggregated: u64, input: u64) -> u64 {
-    fold(aggregated, compute(input))
-}
-
-// ...
-
-let handles: Vec<_> = (0..num_threads)
-    .map(|_| s.spawn(move || inputs.fold(1, 0u64, map_fold)))
-    .collect();
-```
+### Parallel Map
 
 Parallel map can also be implemented by merging returned transformed collections, such as vectors. Especially for larger data types, a more efficient approach could be to pair `ConcurrentIter` with a concurrent collection such as [`orx_concurrent_bag::ConcurrentBag`](https://crates.io/crates/orx-concurrent-bag) which allows to efficiently collect results concurrently without copies.
 
@@ -165,144 +188,95 @@ Parallel map can also be implemented by merging returned transformed collections
 use orx_concurrent_iter::*;
 use orx_concurrent_bag::*;
 
-type Input = u64;
-type Output = [u64; 1];
-
-fn map(input: Input) -> Output {
-    [input]
+fn map(input: u64) -> String {
+    input.to_string()
 }
 
-fn parallel_map(
-    num_threads: usize,
-    inputs_iter: impl ConcurrentIter<Item = u64>,
-) -> SplitVec<Output> {
-    let output_bag = ConcurrentBag::new();
-    let outputs = &output_bag;
-    let inputs = &inputs_iter;
-
+fn parallel_map(num_threads: usize, iter: impl ConcurrentIter<Item = u64>) -> SplitVec<String> {
+    let outputs = ConcurrentBag::new();
     std::thread::scope(|s| {
         for _ in 0..num_threads {
-            s.spawn(move || {
-                for output in inputs.values().map(map) {
+            s.spawn(|| {
+                for output in iter.values().map(map) {
                     outputs.push(output);
                 }
             });
         }
     });
-    output_bag.into_inner()
+    outputs.into_inner()
 }
 
 // test
 for num_threads in [1, 2, 4, 8] {
     let inputs = (0..1024).map(|x| 2 * x);
     let outputs = parallel_map(num_threads, inputs.into_con_iter());
-    assert_eq!(1024, outputs.len())
+    assert_eq!(1024, outputs.len());
 }
 ```
 
-Note that due to parallelization, `outputs` is not guaranteed to be in the same order as `inputs`. In order to preserve the order of the input in the output, [`ConcurrentIter::ids_and_values`] method can be used, rather than the `values`, to get indices of values while iterating (see the explanation in the next section). Similarly, `ConcurrentBag` can be replaced with [`orx_concurrent_bag::ConcurrentOrderedBag`](https://crates.io/crates/orx-concurrent-ordered-bag) to guarantee that the order is preserved.
+Note that due to the way how the concurrent iterator works, this parallel map implementation is suitable for heterogeneous work situations without any care, as illustrated below:
+* Assume that our input `iter` contains 10 elements which can all be mapped homogeneously in exactly 1s, except for the first element.
+* The first element takes 5 seconds to map; i.e., to process.
+* Further assume that we have 2 threads available, threads `A` and `B`, and thread `A` will pick the first element. Then, the parallel execution will likely happen in the following manner:
+  * `A` works on mapping element 0 in intervals [t1, t5].
+  * Meanwhile, `B` pulls and maps elements 1, 2, ..., 5 in intervals [t1, t5].
+  * In interval [t6, t7], both threads will pull and map elements 6, 7, 8, 9 in arbitrary order.
+* As you notice, since the threads pull elements as soon as they are idle, this implementation leads to an efficient parallelization strategy without any assumption or knowledge about the duration of the individual tasks.
 
-### Iteration with Indices
+Note that due to parallelization, `outputs` is not guaranteed to be in the same order as `inputs`. In order to preserve the order of the input in the output, iteration with indices can be used to sort the result accordingly. Alternative to post-sorting, `ConcurrentBag` can be replaced with [`orx_concurrent_bag::ConcurrentOrderedBag`](https://crates.io/crates/orx-concurrent-ordered-bag) to already collect in order.
 
-In a single-threaded regular `Iterator`, values can be paired up with their indices easily by calling `enumerate` on the iterator. We can also call `inputs.values().enumerate()`; however, this would have a different meaning in a multi-threaded execution. It would pair up the values with the indices of the iteration local to that thread. In other words, the first value of every thread will be zero.
+### Parallel Find, A Little Communication Among Threads
 
-Actual iteration index of values can be obtained simply by using [`ConcurrentIter::ids_and_values`] instead of [`ConcurrentIter::values`].
+As illustrated above, parallel implementations of many methods are very convenient, almost trivial, with `ConcurrentIter`, yet efficient. There is a only one bit of information shared among threads which is the elements left in the iterator. In scenarios where we do not need to iterate over all elements, we can use, actually change, this information to share a message among threads. We might call such cases as **early-exit** scenarios. An obvious example is the `find` method, where we are looking for an element and we want to terminate the search as soon as we find a match.
+
+You may see a parallel implementation of the find method below.
 
 ```rust
 use orx_concurrent_iter::*;
 
-fn get_all_indices(num_threads: usize, inputs_iter: impl ConcurrentIter) -> Vec<usize> {
-    let mut all_indices = vec![];
-    let inputs = &inputs_iter;
-
+fn par_find<I, P>(iter: I, predicate: P, n_threads: usize) -> Option<(usize, I::Item)>
+where
+    I: ConcurrentIter,
+    P: Fn(&I::Item) -> bool + Send + Sync,
+{
     std::thread::scope(|s| {
-        let handles: Vec<_> = (0..num_threads)
-            .map(move |_| {
+        (0..n_threads)
+            .map(|_| {
                 s.spawn(|| {
-                    inputs
-                        .ids_and_values()
-                        .map(|(i, _value)| i)
-                        .collect::<Vec<_>>()
+                    for (i, x) in iter.ids_and_values() {
+                        if predicate(&x) {
+                            iter.skip_to_end();
+                            return Some((i, x));
+                        }
+                    }
+                    None
                 })
             })
-            .collect();
-
-        for handle in handles {
-            let indices_for_thread = handle.join().expect("-");
-            all_indices.extend(indices_for_thread);
-        }
-    });
-
-    all_indices.sort();
-    all_indices
+            .flat_map(|x| x.join().expect("-"))
+            .min_by_key(|x| x.0)
+    })
 }
 
-// test
-let inputs = ['a', 'b', 'c', 'd', 'e', 'f'];
-let indices = get_all_indices(4, inputs.into_con_iter());
-assert_eq!(indices, [0, 1, 2, 3, 4, 5]);
+let mut names: Vec<_> = (0..8785).map(|x| x.to_string()).collect();
+names[42] = "foo".to_string();
+
+let result = par_find(names.con_iter(), |x| x.starts_with('x'), 4);
+assert_eq!(result, None);
+
+let result = par_find(names.con_iter(), |x| x.starts_with('f'), 4);
+assert_eq!(result, Some((42, &"foo".to_string())));
 ```
 
-Notice that:
-* `indices_for_thread` vectors collected for each thread are internally in ascending order. In other words, each thread receives elements in order.
-* However, `indices_for_thread` vectors have gaps corresponding to indices of elements pulled by other threads.
-* No index appears more than once in any of the `indices_for_thread` vectors.
-* And union of these vectors give the indices from 0 to `n-1` where n is the number of yielded elements.
+Notice that the parallel find implementation is in two folds:
+* (parallel search) Inside each thread, we loop through the elements of the concurrent iterator and return the first value satisfying the `predicate` together with its index.
+* (sequential wrap up) Since this is a parallel execution, we might end up receiving multiple matches from multiple threads. In the second part, we investigate the thread results and return the one with the minimum position index (`min_by_key(|x| x.0)`) since that is the one which appear first in the original iterator.
 
-### Iteration in Chunks
+So far, this is straightforward and similar to the parallel fold implementation. The difference; however, is the additional `iter.skip_to_end()` call. This call will immediately consume all remaining elements of the iterator. Therefore, whenever, another thread tries to advance the iterator in the `for (i, x) in iter.ids_and_values()`, it will not receive any further elements. Hence, they will as well return as soon as they complete processing their last pulled element. This establishes a very trivial communication among threads, which is critical in achieving efficiency in early exit scenarios, as the find method. To demonstrate, assume the case we didn't use `iter.skip_to_end()` in the above implementation.
+* In the second example, the iterator has 8785 elements where there exists only one element satisfying the predicate, "foo" at position 42.
+* One of the 4 threads used, say `A`, will find this element and return immediately.
+* The other 3 threads will never see this element, since it is pulled by `A`. They will iterate over all remaining elements and will eventually return `None`.
+* The final result will be correct. However, this implementation will evaluate all elements of the iterator regardless of where the first matching element is. Although parallelized, this would be a very inefficient implementation.
 
-In the default iteration using `for` together with `values` and `ids_and_values` methods, the threads pull elements one by one. Note that these iterators internally call `ConcurrentIter::next` and `ConcurrentIter::next_id_and_value` methods, respectively.
-
-Further, it is also possible to iterate in chunks with `ConcurrentIter::next_chunk` and `ExactSizeConcurrentIter::next_exact_chunk` methods. These methods differ from `next` and `next_id_and_value` in the following:
-* They receive the `chunk_size` parameter.
-* They return an `Iterator` or `ExactSizeIterator` which yields the next `chunk_size` or fewer **consecutive** elements.
-* Further, they additionally return the index of the first element that the returned iterator will yield. Note that the index of the remaining elements can be known since the iterator will return consecutive elements.
-
-The advantage of `ExactSizeConcurrentIter` over `ConcurrentIter`, or `next_exact_chunk` over `next_chunk` is that it returns an iterator with an exact known size, which allows to return `None` when the iterator is empty. This has ergonomic benefits such as allowing `if let Some` or `while let Some` as demonstrated below. However, as expected, sources only with known lengths allow for it.
- 
-```rust
-use orx_concurrent_iter::*;
-
-fn lag(millis: u64) {
-    std::thread::sleep(std::time::Duration::from_millis(millis));
-}
-
-let inputs = vec!['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-let characters = &inputs.con_iter();
-
-let [first, second] = std::thread::scope(|s| {
-    let first = s.spawn(move || {
-        let mut chars: Vec<char> = vec![];
-        while let Some(chunk) = characters.next_chunk(3) {
-            chars.extend(chunk.values.copied());
-            lag(100);
-        }
-        chars
-    });
-
-    let second = s.spawn(move || {
-        lag(50);
-        let mut chars: Vec<char> = vec![];
-        while let Some(chunk) = characters.next_chunk(3) {
-            chars.extend(chunk.values.copied());
-            lag(100);
-        }
-        chars
-    });
-
-    let first = first.join().expect("-");
-    let second = second.join().expect("o");
-    [first, second]
-});
-
-// Events in chronological order:
-// * first pulls 3 consecutive elements [a, b, c]
-// * second pulls 3 consecutive elements [d, e, f]
-// * first pulls remaining 2 consecutive elements [h, i]
-
-assert_eq!(first, ['a', 'b', 'c', 'g', 'h']);
-assert_eq!(second, ['d', 'e', 'f']);
-```
 
 ## Traits and Implementors
 
