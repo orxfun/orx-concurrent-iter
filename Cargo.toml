@@ -1,6 +1,6 @@
 [package]
 name = "orx-concurrent-iter"
-version = "1.12.1"
+version = "1.12.2"
 edition = "2021"
 authors = ["orxfun <orx.ugur.arikan@gmail.com>"]
 description = "A thread-safe, ergonomic and lightweight concurrent iterator trait and efficient implementations."

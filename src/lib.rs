@@ -81,7 +81,7 @@
 //!
 //! ### Ways to Loop
 //!
-//! `ConcurrentIter`s implement the `next` method, which is a concurrent counterpart of `Iterator::next`. Therefore, the iterator can be used almost the same as a regular `Iterator` safely across multiple threads. `ConcurrentIter` provides different ways to loop through the elements as follows depending on the requirement, which are demonstrated in the following example.
+//! `ConcurrentIter`s implement the `next` method, which is a concurrent counterpart of `Iterator::next`. Therefore, the iterator can be used almost the same as a regular `Iterator` safely across multiple threads. Slight difference of different ways to iterate over a `ConcurrentIter` are demonstrated and explained in the following example.
 //!
 //! ```rust
 //! use orx_concurrent_iter::*;
@@ -136,15 +136,15 @@
 //! }
 //! ```
 //!
-//! * `for` and `while let` loops of **a.1** demonstrate the most basic usage where threads will pull the next element of the iterator whenever they completed processing the prior element.
+//! * `for` and `while let` loops of **a.1** demonstrate the most basic usage where threads will pull the next element of the iterator whenever they complete processing the prior element.
 //! * The loops in **a.2** can be considered as the `enumerate`d counterpart. Note that each thread will pull different elements at different positions of the iterator depending on how fast they finish the execution inside the loop. Therefore, an `enumerate` call inside the thread, or counting the pulled elements by that particular thread, does not provide the index of the element in the original data source. `ConcurrentIter` additionally provides the original index with `ids_and_values` or `next_id_and_value` methods.
-//! * Whenever the work to be done inside the loop is too small (like just the `dbg` call in the above example), taking elements 1-by-1 might be suboptimal. In such cases, a better idea is to pull elements in batches. In **b.1**, we create a buffered chunk iterator which pulls 16 (or less, if not enough left) **consecutive** elements at each `next` call. Note that `chunk` returned by `chunk_iter.next()` is an `ExactSizeIterator` with a know `len`.
-//! * Similar to before, **b.2** is the counterpart of **b.1** which allows us to use the original `idx` of the elements. `chunk.begin_idx` represents the original index of the first element of the returned `chunk.values` iterator. Note that `chunk.values` is always non-empty; i.e., always has at least one element, otherwise, `next` returns `None`. Further, since the chunk iterator pulls consecutive elements. Hence, can get the original indices of all elements by combining `chunk.begin_idx` with the local indices of the current `chunk` obtained by the `chunk.values.enumerate`; i.e., `let idx = chunk.begin_idx + i`.
+//! * Whenever the work to be done inside the loop is too small (like just the `dbg` call in the above example), taking elements 1-by-1 might be suboptimal. In such cases, a better idea is to pull elements in batches. In **b.1**, we create a buffered chunk iterator which pulls 16 (or less, if not enough left) **consecutive** elements at each `next` call. Note that `chunk` returned by `chunk_iter.next()` is an `ExactSizeIterator` with a known `len`.
+//! * Similar to before, **b.2** is the counterpart of **b.1** which allows us to use the original `idx` of the elements. `chunk.begin_idx` represents the original index of the first element of the returned `chunk.values` iterator. Note that `chunk.values` is always non-empty; i.e., always has at least one element, otherwise, `next` returns `None`. Further, the chunk iterator contains consecutive elements. Hence, we can get the original indices of all elements by combining `chunk.begin_idx` with the local indices of the current `chunk` obtained by the `chunk.values.enumerate`; i.e., `let idx = chunk.begin_idx + i`.
 //!
 //!
 //! ### Parallel Fold
 //!
-//! Considering the elements of the iteration as inputs of a process, `ConcurrentIter` conveniently allows distribution of tasks to multiple threads.
+//! Considering the elements of the iteration as inputs of a process, `ConcurrentIter` conveniently allows distribution of tasks to multiple threads. See below a parallel fold implementation using the concurrent iterator.
 //!
 //! ```rust
 //! use orx_concurrent_iter::*;
@@ -214,20 +214,20 @@
 //! }
 //! ```
 //!
-//! Note that due to the way how the concurrent iterator works, this parallel map implementation is suitable for heterogeneous work situations without any care, as illustrated below:
+//! Note that due to the way how the concurrent iterator works, this parallel map implementation is suitable for heterogeneous inputs without requiring much care, as illustrated below:
 //! * Assume that our input `iter` contains 10 elements which can all be mapped homogeneously in exactly 1s, except for the first element.
 //! * The first element takes 5 seconds to map; i.e., to process.
 //! * Further assume that we have 2 threads available, threads `A` and `B`, and thread `A` will pick the first element. Then, the parallel execution will likely happen in the following manner:
 //!   * `A` works on mapping element 0 in intervals [t1, t5].
 //!   * Meanwhile, `B` pulls and maps elements 1, 2, ..., 5 in intervals [t1, t5].
 //!   * In interval [t6, t7], both threads will pull and map elements 6, 7, 8, 9 in arbitrary order.
-//! * As you notice, since the threads pull elements as soon as they are idle, this implementation leads to an efficient parallelization strategy without any assumption or knowledge about the duration of the individual tasks.
+//! * Since the threads pull elements as soon as they are idle, this implementation leads to an efficient parallelization strategy without any assumption or knowledge about the duration of the individual tasks.
 //!
 //! Note that due to parallelization, `outputs` is not guaranteed to be in the same order as `inputs`. In order to preserve the order of the input in the output, iteration with indices can be used to sort the result accordingly. Alternative to post-sorting, `ConcurrentBag` can be replaced with [`orx_concurrent_bag::ConcurrentOrderedBag`](https://crates.io/crates/orx-concurrent-ordered-bag) to already collect in order.
 //!
 //! ### Parallel Find, A Little Communication Among Threads
 //!
-//! As illustrated above, parallel implementations of many methods are very convenient, almost trivial, with `ConcurrentIter`, yet efficient. There is a only one bit of information shared among threads which is the elements left in the iterator. In scenarios where we do not need to iterate over all elements, we can use, actually change, this information to share a message among threads. We might call such cases as **early-exit** scenarios. An obvious example is the `find` method, where we are looking for an element and we want to terminate the search as soon as we find a match.
+//! As illustrated above, efficient parallel implementations of many methods are conveniently possible with `ConcurrentIter`. There is a only one bit of information implicitly shared among threads which is the elements left in the iterator. In scenarios where we do not need to iterate over all elements, we can use, actually change, this information to share a message among threads. We might call such cases as **early-exit** scenarios. An obvious example is the `find` method, where we are looking for an element and we want to terminate the search as soon as we find a match.
 //!
 //! You may see a parallel implementation of the find method below.
 //!
@@ -269,7 +269,7 @@
 //!
 //! Notice that the parallel find implementation is in two folds:
 //! * (parallel search) Inside each thread, we loop through the elements of the concurrent iterator and return the first value satisfying the `predicate` together with its index.
-//! * (sequential wrap up) Since this is a parallel execution, we might end up receiving multiple matches from multiple threads. In the second part, we investigate the thread results and return the one with the minimum position index (`min_by_key(|x| x.0)`) since that is the one which appear first in the original iterator.
+//! * (sequential wrap up) Since this is a parallel execution, we might end up receiving multiple matches from multiple threads. In the second part, we investigate the thread results and return the one with the minimum position index (`min_by_key(|x| x.0)`) since that is the element which appears first in the original iterator.
 //!
 //! So far, this is straightforward and similar to the parallel fold implementation. The difference; however, is the additional `iter.skip_to_end()` call. This call will immediately consume all remaining elements of the iterator. Therefore, whenever, another thread tries to advance the iterator in the `for (i, x) in iter.ids_and_values()`, it will not receive any further elements. Hence, they will as well return as soon as they complete processing their last pulled element. This establishes a very trivial communication among threads, which is critical in achieving efficiency in early exit scenarios, as the find method. To demonstrate, assume the case we didn't use `iter.skip_to_end()` in the above implementation.
 //! * In the second example, the iterator has 8785 elements where there exists only one element satisfying the predicate, "foo" at position 42.
@@ -329,25 +329,3 @@ pub use iter::implementors::{
 };
 pub use iter::wrappers::{ids_and_values::ConIterIdsAndValues, values::ConIterValues};
 pub use next::{Next, NextChunk};
-
-#[cfg(test)]
-#[test]
-fn abc() {
-    use crate::*;
-    use orx_concurrent_bag::*;
-
-    let num_threads = 2;
-    let numbers = vec![3, 4, 1, 9];
-
-    let iter = numbers.con_iter();
-    let neutral = 0; // neutral for i32 & add
-
-    let sum = std::thread::scope(|s| {
-        (0..num_threads)
-            .map(|_| s.spawn(|| iter.fold(1, neutral, |x, y| x + y))) // parallel fold
-            .map(|x| x.join().unwrap())
-            .fold(neutral, |x, y| x + y) // sequential fold
-    });
-
-    assert_eq!(sum, 17);
-}
