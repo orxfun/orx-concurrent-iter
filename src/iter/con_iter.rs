@@ -26,30 +26,32 @@ pub trait ConcurrentIter: Send + Sync {
     /// use orx_concurrent_iter::*;
     /// use orx_concurrent_bag::*;
     ///
-    /// let num_threads = 4;
-    /// let characters = vec!['0', '1', '2', '3', '4', '5', '6', '7'];
-    /// let slice = characters.as_slice();
+    /// fn to_str(num: usize) -> String {
+    ///     num.to_string()
+    /// }
     ///
-    /// let outputs = ConcurrentBag::new();
+    /// let (num_threads, chunk_size) = (4, 32);
+    /// let strings: Vec<_> = (0..1024).map(to_str).collect();
+    /// let bag = ConcurrentBag::new();
     ///
-    /// let con_iter = &slice.con_iter();
-    /// let bag = &outputs;
+    /// let iter = strings.con_iter();
     /// std::thread::scope(|s| {
     ///     for _ in 0..num_threads {
-    ///         s.spawn(move || {
-    ///             while let Some(next) = con_iter.next_id_and_value() {
-    ///                 let expected_value = char::from_digit(next.idx as u32, 10).unwrap();
-    ///                 assert_eq!(next.value, &expected_value);
-    ///
-    ///                 bag.push(*next.value);
+    ///         s.spawn(|| {
+    ///             while let Some(next) = iter.next_id_and_value() {
+    ///                 // idx is the original position in `characters`
+    ///                 assert_eq!(next.value, &to_str(next.idx));
+    ///                 bag.push((next.idx, next.value.len()));
     ///             }
     ///         });
     ///     }
     /// });
     ///
-    /// let mut outputs: Vec<char> = outputs.into_inner().into();
-    /// outputs.sort();
-    /// assert_eq!(characters, outputs);
+    /// let mut outputs: Vec<_> = bag.into_inner().into();
+    /// outputs.sort_by_key(|x| x.0); // sort to original order
+    /// for (x, y) in outputs.iter().map(|x| x.1).zip(&strings) {
+    ///     assert_eq!(x, y.len());
+    /// }
     /// ```
     fn next_id_and_value(&self) -> Option<Next<Self::Item>>;
 
@@ -80,34 +82,35 @@ pub trait ConcurrentIter: Send + Sync {
     /// use orx_concurrent_iter::*;
     /// use orx_concurrent_bag::*;
     ///
-    /// let num_threads = 4;
+    /// fn to_str(num: usize) -> String {
+    ///     num.to_string()
+    /// }
     ///
-    /// let characters = vec!['0', '1', '2', '3', '4', '5', '6', '7'];
-    /// let slice = characters.as_slice();
-    /// let outputs = ConcurrentBag::new();
+    /// let (num_threads, chunk_size) = (4, 32);
+    /// let strings: Vec<_> = (0..1024).map(to_str).collect();
+    /// let bag = ConcurrentBag::new();
     ///
-    /// let iter = &slice.con_iter();
-    /// let bag = &outputs;
+    /// let iter = strings.con_iter();
     /// std::thread::scope(|s| {
     ///     for _ in 0..num_threads {
-    ///         s.spawn(move || {
-    ///             while let Some(chunk) = iter.next_chunk(2) {
+    ///         s.spawn(|| {
+    ///             while let Some(chunk) = iter.next_chunk(chunk_size) {
     ///                 for (i, value) in chunk.values.enumerate() {
-    ///                     // we have access to the original index in `slice`
+    ///                     // idx is the original position in `characters`
     ///                     let idx = chunk.begin_idx + i;
-    ///                     let expected_value = char::from_digit(idx as u32, 10).unwrap();
-    ///                     assert_eq!(value, &expected_value);
-    ///
-    ///                     bag.push(*value);
+    ///                     assert_eq!(value, &to_str(idx));
+    ///                     bag.push((idx, value.len()));
     ///                 }
     ///             }
     ///         });
     ///     }
     /// });
     ///
-    /// let mut outputs: Vec<char> = outputs.into_inner().into();
-    /// outputs.sort();
-    /// assert_eq!(characters, outputs);
+    /// let mut outputs: Vec<_> = bag.into_inner().into();
+    /// outputs.sort_by_key(|x| x.0); // sort to original order
+    /// for (x, y) in outputs.iter().map(|x| x.1).zip(&strings) {
+    ///     assert_eq!(x, y.len());
+    /// }
     /// ```
     fn next_chunk(
         &self,
@@ -141,26 +144,21 @@ pub trait ConcurrentIter: Send + Sync {
     /// ```rust
     /// use orx_concurrent_iter::*;
     ///
-    /// let num_threads = 4;
-    ///
-    /// let numbers = (0..16384).map(|x| x * 2);
-    /// let iter = &numbers.into_con_iter();
+    /// let (num_threads, chunk_size) = (4, 64);
+    /// let iter = (0..16384).map(|x| x * 2).into_con_iter();
     ///
     /// let sum = std::thread::scope(|s| {
-    ///     let mut handles = vec![];
-    ///     for _ in 0..num_threads {
-    ///         handles.push(s.spawn(move || {
-    ///             let mut buffered = iter.buffered_iter(16);
-    ///             let mut sum = 0;
-    ///             while let Some(chunk) = buffered.next() {
-    ///                 sum += chunk.values.sum::<usize>();
-    ///             }
-    ///             sum
-    ///         }));
-    ///     }
-    ///
-    ///     handles
-    ///         .into_iter()
+    ///     (0..num_threads)
+    ///         .map(|_| {
+    ///             s.spawn(|| {
+    ///                 let mut sum = 0;
+    ///                 let mut buffered = iter.buffered_iter(chunk_size);
+    ///                 while let Some(chunk) = buffered.next() {
+    ///                     sum += chunk.values.sum::<usize>();
+    ///                 }
+    ///                 sum
+    ///             })
+    ///         })
     ///         .map(|x| x.join().expect("-"))
     ///         .sum::<usize>()
     /// });
@@ -202,27 +200,27 @@ pub trait ConcurrentIter: Send + Sync {
     /// use orx_concurrent_iter::*;
     /// use orx_concurrent_bag::*;
     ///
+    /// fn to_str(num: usize) -> String {
+    ///     num.to_string()
+    /// }
+    ///
     /// let num_threads = 4;
-    /// let characters = vec!['0', '1', '2', '3', '4', '5', '6', '7'];
-    /// let slice = characters.as_slice();
+    /// let strings: Vec<_> = (0..1024).map(to_str).collect();
+    /// let bag = ConcurrentBag::new();
     ///
-    /// let outputs = ConcurrentBag::new();
-    ///
-    /// let con_iter = &slice.con_iter();
-    /// let bag = &outputs;
+    /// let iter = strings.con_iter();
     /// std::thread::scope(|s| {
     ///     for _ in 0..num_threads {
-    ///         s.spawn(move || {
-    ///             while let Some(value) = con_iter.next() {
-    ///                 bag.push(*value);
+    ///         s.spawn(|| {
+    ///             while let Some(value) = iter.next() {
+    ///                 bag.push(value.len());
     ///             }
     ///         });
     ///     }
     /// });
     ///
-    /// let mut outputs: Vec<char> = outputs.into_inner().into();
-    /// outputs.sort();
-    /// assert_eq!(characters, outputs);
+    /// let outputs: Vec<_> = bag.into_inner().into();
+    /// assert_eq!(outputs.len(), strings.len());
     /// ```
     #[inline(always)]
     fn next(&self) -> Option<Self::Item> {
@@ -244,30 +242,27 @@ pub trait ConcurrentIter: Send + Sync {
     /// use orx_concurrent_iter::*;
     /// use orx_concurrent_bag::*;
     ///
+    /// fn to_str(num: usize) -> String {
+    ///     num.to_string()
+    /// }
+    ///
     /// let num_threads = 4;
-    /// let characters = vec!['0', '1', '2', '3', '4', '5', '6', '7'];
-    /// let slice = characters.as_slice();
+    /// let strings: Vec<_> = (0..1024).map(to_str).collect();
+    /// let bag = ConcurrentBag::new();
     ///
-    /// let outputs = ConcurrentBag::new();
-    ///
-    /// let con_iter = &slice.con_iter();
-    /// let bag = &outputs;
+    /// let iter = strings.con_iter();
     /// std::thread::scope(|s| {
     ///     for _ in 0..num_threads {
-    ///         s.spawn(move || {
-    ///             for value in con_iter.values() {
-    ///                 bag.push(*value);
+    ///         s.spawn(|| {
+    ///             for value in iter.values() {
+    ///                 bag.push(value.len());
     ///             }
     ///         });
     ///     }
     /// });
     ///
-    /// // parent concurrent iterator is completely consumed
-    /// assert!(con_iter.values().next().is_none());
-    ///
-    /// let mut outputs: Vec<char> = outputs.into_inner().into();
-    /// outputs.sort();
-    /// assert_eq!(characters, outputs);
+    /// let outputs: Vec<_> = bag.into_inner().into();
+    /// assert_eq!(outputs.len(), strings.len());
     /// ```
     fn values(&self) -> ConIterValues<Self>
     where
@@ -291,33 +286,32 @@ pub trait ConcurrentIter: Send + Sync {
     /// use orx_concurrent_iter::*;
     /// use orx_concurrent_bag::*;
     ///
+    /// fn to_str(num: usize) -> String {
+    ///     num.to_string()
+    /// }
+    ///
     /// let num_threads = 4;
-    /// let characters = vec!['0', '1', '2', '3', '4', '5', '6', '7'];
-    /// let slice = characters.as_slice();
+    /// let strings: Vec<_> = (0..1024).map(to_str).collect();
+    /// let bag = ConcurrentBag::new();
     ///
-    /// let outputs = ConcurrentBag::new();
-    ///
-    /// let con_iter = &slice.con_iter();
-    /// let bag = &outputs;
+    /// let iter = strings.con_iter();
     /// std::thread::scope(|s| {
     ///     for _ in 0..num_threads {
-    ///         s.spawn(move || {
-    ///             for (idx, value) in con_iter.ids_and_values() {
-    ///                 let expected_value = char::from_digit(idx as u32, 10).unwrap();
-    ///                 assert_eq!(value, &expected_value);
-    ///
-    ///                 bag.push(*value);
+    ///         s.spawn(|| {
+    ///             for (idx, value) in iter.ids_and_values() {
+    ///                 // idx is the original position in `characters`
+    ///                 assert_eq!(value, &to_str(idx));
+    ///                 bag.push((idx, value.len()));
     ///             }
     ///         });
     ///     }
     /// });
     ///
-    /// // parent concurrent iterator is completely consumed
-    /// assert!(con_iter.ids_and_values().next().is_none());
-    ///
-    /// let mut outputs: Vec<char> = outputs.into_inner().into();
-    /// outputs.sort();
-    /// assert_eq!(characters, outputs);
+    /// let mut outputs: Vec<_> = bag.into_inner().into();
+    /// outputs.sort_by_key(|x| x.0); // sort to original order
+    /// for (x, y) in outputs.iter().map(|x| x.1).zip(&strings) {
+    ///     assert_eq!(x, y.len());
+    /// }
     /// ```
     fn ids_and_values(&self) -> ConIterIdsAndValues<Self>
     where
@@ -348,21 +342,18 @@ pub trait ConcurrentIter: Send + Sync {
     ///     P: Fn(&I::Item) -> bool + Send + Sync,
     /// {
     ///     std::thread::scope(|s| {
-    ///         let handles = (0..n_threads).map(|_| {
-    ///             s.spawn(|| {
-    ///                 for (i, x) in iter.ids_and_values() {
-    ///                     if predicate(&x) {
-    ///                         // let's all other threads to early-exit
-    ///                         iter.skip_to_end();
-    ///                         return Some((i, x));
+    ///         (0..n_threads)
+    ///             .map(|_| {
+    ///                 s.spawn(|| {
+    ///                     for (i, x) in iter.ids_and_values() {
+    ///                         if predicate(&x) {
+    ///                             iter.skip_to_end();
+    ///                             return Some((i, x));
+    ///                         }
     ///                     }
-    ///                 }
-    ///                 None
+    ///                     None
+    ///                 })
     ///             })
-    ///         });
-    ///
-    ///         handles
-    ///             .into_iter()
     ///             .flat_map(|x| x.join().expect("-"))
     ///             .min_by_key(|x| x.0)
     ///     })
@@ -371,11 +362,11 @@ pub trait ConcurrentIter: Send + Sync {
     /// let mut names: Vec<_> = (0..8785).map(|x| x.to_string()).collect();
     /// names[42] = "foo".to_string();
     ///
-    /// let iter = names.con_iter();
-    /// let starts_with_f = |x: &&String| x.starts_with('f');
+    /// let result = par_find(names.con_iter(), |x| x.starts_with('x'), 4);
+    /// assert_eq!(result, None);
     ///
-    /// let found = par_find(iter, starts_with_f, 4);
-    /// assert_eq!(found, Some((42, &"foo".to_string())));
+    /// let result = par_find(names.con_iter(), |x| x.starts_with('f'), 4);
+    /// assert_eq!(result, Some((42, &"foo".to_string())));
     /// ```
     ///
     /// Notice that in the example above, only one among 8785 elements satisfies the predicate.
@@ -401,20 +392,16 @@ pub trait ConcurrentIter: Send + Sync {
     /// use orx_concurrent_iter::*;
     /// use orx_concurrent_bag::*;
     ///
-    /// let chunk_size = 2;
-    /// let num_threads = 4;
+    /// let (num_threads, chunk_size) = (4, 2);
     /// let characters = vec!['0', '1', '2', '3', '4', '5', '6', '7'];
-    /// let slice = characters.as_slice();
     ///
-    /// let outputs = ConcurrentBag::new();
-    ///
-    /// let con_iter = &slice.con_iter();
-    /// let bag = &outputs;
+    /// let iter = characters.con_iter();
+    /// let bag = ConcurrentBag::new();
     ///
     /// std::thread::scope(|s| {
     ///     for _ in 0..num_threads {
-    ///         s.spawn(move || {
-    ///             con_iter.for_each(chunk_size, |c| {
+    ///         s.spawn(|| {
+    ///             iter.for_each(chunk_size, |c| {
     ///                 bag.push(c.to_digit(10).unwrap());
     ///             });
     ///         });
@@ -422,9 +409,9 @@ pub trait ConcurrentIter: Send + Sync {
     /// });
     ///
     /// // parent concurrent iterator is completely consumed
-    /// assert!(con_iter.next().is_none());
+    /// assert!(iter.next().is_none());
     ///
-    /// let sum: u32 = outputs.into_inner().iter().sum();
+    /// let sum: u32 = bag.into_inner().iter().sum();
     /// assert_eq!(sum, (0..8).sum());
     /// ```
     fn for_each<Fun: FnMut(Self::Item)>(&self, chunk_size: usize, fun: Fun)
@@ -452,20 +439,16 @@ pub trait ConcurrentIter: Send + Sync {
     /// use orx_concurrent_iter::*;
     /// use orx_concurrent_bag::*;
     ///
-    /// let chunk_size = 2;
-    /// let num_threads = 4;
+    /// let (num_threads, chunk_size) = (4, 2);
     /// let characters = vec!['0', '1', '2', '3', '4', '5', '6', '7'];
-    /// let slice = characters.as_slice();
     ///
-    /// let outputs = ConcurrentBag::new();
-    ///
-    /// let con_iter = &slice.con_iter();
-    /// let bag = &outputs;
+    /// let iter = characters.con_iter();
+    /// let bag = ConcurrentBag::new();
     ///
     /// std::thread::scope(|s| {
     ///     for _ in 0..num_threads {
-    ///         s.spawn(move || {
-    ///             con_iter.enumerate_for_each(chunk_size, |i, c| {
+    ///         s.spawn(|| {
+    ///             iter.enumerate_for_each(chunk_size, |i, c| {
     ///                 let expected_value = char::from_digit(i as u32, 10).unwrap();
     ///                 assert_eq!(c, &expected_value);
     ///
@@ -476,9 +459,9 @@ pub trait ConcurrentIter: Send + Sync {
     /// });
     ///
     /// // parent concurrent iterator is completely consumed
-    /// assert!(con_iter.next().is_none());
+    /// assert!(iter.next().is_none());
     ///
-    /// let sum: u32 = outputs.into_inner().iter().sum();
+    /// let sum: u32 = bag.into_inner().iter().sum();
     /// assert_eq!(sum, (0..8).sum());
     /// ```
     fn enumerate_for_each<Fun: FnMut(usize, Self::Item)>(&self, chunk_size: usize, fun: Fun)
@@ -529,16 +512,14 @@ pub trait ConcurrentIter: Send + Sync {
     /// use orx_concurrent_iter::*;
     ///
     /// let num_threads = 2;
-    ///
     /// let numbers = vec![3, 4, 1, 9];
-    /// let slice = numbers.as_slice();
-    /// let iter = &slice.con_iter();
     ///
+    /// let iter = numbers.con_iter();
     /// let neutral = 0; // neutral for i32 & add
     ///
     /// let sum = std::thread::scope(|s| {
     ///     (0..num_threads)
-    ///         .map(|_| s.spawn(move || iter.fold(1, neutral, |x, y| x + y))) // parallel fold
+    ///         .map(|_| s.spawn(|| iter.fold(1, neutral, |x, y| x + y))) // parallel fold
     ///         .map(|x| x.join().unwrap())
     ///         .fold(neutral, |x, y| x + y) // sequential fold
     /// });
