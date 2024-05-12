@@ -227,7 +227,7 @@
 //!
 //! ### Parallel Find, A Little Communication Among Threads
 //!
-//! As illustrated above, efficient parallel implementations of many methods are conveniently possible with `ConcurrentIter`. There is a only one bit of information implicitly shared among threads which is the elements left in the iterator. In scenarios where we do not need to iterate over all elements, we can use, actually change, this information to share a message among threads. We might call such cases as **early-exit** scenarios. An obvious example is the `find` method, where we are looking for an element and we want to terminate the search as soon as we find a match.
+//! As illustrated above, efficient parallel implementations of many methods are conveniently possible with `ConcurrentIter`. There is only one bit of information implicitly shared among threads by the concurrent iterator: the elements left. In scenarios where we do not need to iterate over all elements, we can use, actually change, this information to share a message among threads. We might call such cases as **early-return** scenarios. An obvious example is the `find` method, where we are looking for an element and we want to terminate the search as soon as we find a match.
 //!
 //! You may see a parallel implementation of the find method below.
 //!
@@ -265,13 +265,17 @@
 //!
 //! let result = par_find(names.con_iter(), |x| x.starts_with('f'), 4);
 //! assert_eq!(result, Some((42, &"foo".to_string())));
+//!
+//! names[43] = "foo_second_match".to_string();
+//! let result = par_find(names.con_iter(), |x| x.starts_with('f'), 4);
+//! assert_eq!(result, Some((42, &"foo".to_string())));
 //! ```
 //!
 //! Notice that the parallel find implementation is in two folds:
 //! * (parallel search) Inside each thread, we loop through the elements of the concurrent iterator and return the first value satisfying the `predicate` together with its index.
 //! * (sequential wrap up) Since this is a parallel execution, we might end up receiving multiple matches from multiple threads. In the second part, we investigate the thread results and return the one with the minimum position index (`min_by_key(|x| x.0)`) since that is the element which appears first in the original iterator.
 //!
-//! So far, this is straightforward and similar to the parallel fold implementation. The difference; however, is the additional `iter.skip_to_end()` call. This call will immediately consume all remaining elements of the iterator. Therefore, whenever, another thread tries to advance the iterator in the `for (i, x) in iter.ids_and_values()`, it will not receive any further elements. Hence, they will as well return as soon as they complete processing their last pulled element. This establishes a very trivial communication among threads, which is critical in achieving efficiency in early exit scenarios, as the find method. To demonstrate, assume the case we didn't use `iter.skip_to_end()` in the above implementation.
+//! So far, this is straightforward and similar to the parallel fold implementation. The difference; however, is the additional `iter.skip_to_end()` call. This call will immediately consume all remaining elements of the iterator. Therefore, whenever, another thread tries to advance the iterator in the `for (i, x) in iter.ids_and_values()`, it will not receive any further elements. Hence, they will as well return as soon as they complete processing their last pulled element. This establishes a very trivial communication among threads, which is critical in achieving efficiency in early return scenarios, as the find method. To demonstrate, assume the case we didn't use `iter.skip_to_end()` in the above implementation.
 //! * In the second example, the iterator has 8785 elements where there exists only one element satisfying the predicate, "foo" at position 42.
 //! * One of the 4 threads used, say `A`, will find this element and return immediately.
 //! * The other 3 threads will never see this element, since it is pulled by `A`. They will iterate over all remaining elements and will eventually return `None`.
