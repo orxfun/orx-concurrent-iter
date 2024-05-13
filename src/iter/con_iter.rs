@@ -354,7 +354,9 @@ pub trait ConcurrentIter: Send + Sync {
     ///                     None
     ///                 })
     ///             })
-    ///             .flat_map(|x| x.join().expect("-"))
+    ///             .collect::<Vec<_>>()
+    ///             .into_iter()
+    ///             .flat_map(|x| x.join().expect("failed to join thread"))
     ///             .min_by_key(|x| x.0)
     ///     })
     /// }

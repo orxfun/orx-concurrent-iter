@@ -252,6 +252,8 @@ where
                     None
                 })
             })
+            .collect::<Vec<_>>()
+            .into_iter()
             .flat_map(|x| x.join().expect("-"))
             .min_by_key(|x| x.0)
     })
