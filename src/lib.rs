@@ -161,7 +161,9 @@
 //!     std::thread::scope(|s| {
 //!         (0..num_threads)
 //!             .map(|_| s.spawn(|| inputs.values().map(compute).fold(0u64, fold)))
-//!             .map(|x| x.join().expect("failed-to-join-thread"))
+//!             .collect::<Vec<_>>()
+//!             .into_iter()
+//!             .map(|x| x.join().expect("-_-"))
 //!             .fold(0u64, fold)
 //!     })
 //! }
@@ -254,7 +256,7 @@
 //!             })
 //!             .collect::<Vec<_>>()
 //!             .into_iter()
-//!             .flat_map(|x| x.join().expect("failed to join thread"))
+//!             .flat_map(|x| x.join().expect("(-)"))
 //!             .min_by_key(|x| x.0)
 //!     })
 //! }
