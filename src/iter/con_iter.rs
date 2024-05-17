@@ -16,6 +16,16 @@ pub trait ConcurrentIter: Send + Sync {
     /// Type of the buffered iterator returned by the `chunk_iter` method when elements are fetched in chunks by each thread.
     type BufferedIter: BufferedChunk<Self::Item, ConIter = Self>;
 
+    /// Type of the items that the `SeqIter` yields.
+    type SeqIterItem;
+
+    /// Inner type which sources the data to be iterated.
+    type SeqIter: Iterator<Item = Self::SeqIterItem>;
+
+    /// Converts the concurrent iterator back to the original wrapped type which is the source of the elements to be iterated.
+    /// Already progressed elements are skipped.
+    fn into_seq_iter(self) -> Self::SeqIter;
+
     /// Advances the iterator and returns the next value together with its enumeration index.
     ///
     /// Returns [None] when iteration is finished.

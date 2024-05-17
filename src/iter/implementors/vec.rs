@@ -113,6 +113,48 @@ impl<T: Send + Sync + Default> ConcurrentIter for ConIterOfVec<T> {
 
     type BufferedIter = BufferedVec;
 
+    type SeqIterItem = T;
+
+    type SeqIter = std::iter::Skip<std::vec::IntoIter<T>>;
+
+    /// Converts the concurrent iterator back to the original wrapped type which is the source of the elements to be iterated.
+    /// Already progressed elements are skipped.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use orx_concurrent_iter::*;
+    ///
+    /// let vec: Vec<_> = (0..1024).map(|x| x.to_string()).collect();
+    /// let con_iter = vec.into_con_iter();
+    ///
+    /// std::thread::scope(|s| {
+    ///     s.spawn(|| {
+    ///         for _ in 0..42 {
+    ///             _ = con_iter.next();
+    ///         }
+    ///
+    ///         let mut buffered = con_iter.buffered_iter(32);
+    ///         let _chunk = buffered.next().unwrap();
+    ///     });
+    /// });
+    ///
+    /// let num_used = 42 + 32;
+    ///
+    /// // converts the remaining elements into a sequential iterator
+    /// let seq_iter = con_iter.into_seq_iter();
+    ///
+    /// assert_eq!(seq_iter.len(), 1024 - num_used);
+    /// for (i, x) in seq_iter.enumerate() {
+    ///     assert_eq!(x, (num_used + i).to_string());
+    /// }
+    /// ```
+    fn into_seq_iter(self) -> Self::SeqIter {
+        let current = self.counter().current();
+        let vec = self.vec.into_inner();
+        vec.into_iter().skip(current)
+    }
+
     #[inline(always)]
     fn next_id_and_value(&self) -> Option<Next<Self::Item>> {
         self.fetch_one()
