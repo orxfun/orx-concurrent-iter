@@ -114,6 +114,51 @@ impl<const N: usize, T: Send + Sync + Default> ConcurrentIter for ConIterOfArray
 
     type BufferedIter = BufferedArray<N>;
 
+    type SeqIterItem = T;
+
+    type SeqIter = std::iter::Skip<std::array::IntoIter<T, N>>;
+
+    /// Converts the concurrent iterator back to the original wrapped type which is the source of the elements to be iterated.
+    /// Already progressed elements are skipped.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use orx_concurrent_iter::*;
+    ///
+    /// let mut array = [0; 1024];
+    /// for (i, x) in array.iter_mut().enumerate() {
+    ///     *x = i;
+    /// }
+    /// let con_iter = array.into_con_iter();
+    ///
+    /// std::thread::scope(|s| {
+    ///     s.spawn(|| {
+    ///         for _ in 0..42 {
+    ///             _ = con_iter.next();
+    ///         }
+    ///
+    ///         let mut buffered = con_iter.buffered_iter(32);
+    ///         let _chunk = buffered.next().unwrap();
+    ///     });
+    /// });
+    ///
+    /// let num_used = 42 + 32;
+    ///
+    /// // converts the remaining elements into a sequential iterator
+    /// let seq_iter = con_iter.into_seq_iter();
+    ///
+    /// assert_eq!(seq_iter.len(), 1024 - num_used);
+    /// for (i, x) in seq_iter.enumerate() {
+    ///     assert_eq!(x, num_used + i);
+    /// }
+    /// ```
+    fn into_seq_iter(self) -> Self::SeqIter {
+        let current = self.counter().current();
+        let array = self.array.into_inner();
+        array.into_iter().skip(current)
+    }
+
     #[inline(always)]
     fn next_id_and_value(&self) -> Option<Next<Self::Item>> {
         self.fetch_one()
