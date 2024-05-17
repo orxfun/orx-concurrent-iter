@@ -24,6 +24,7 @@ where
         + Add<Idx, Output = Idx>
         + Sub<Idx, Output = Idx>
         + Ord,
+    Range<Idx>: Iterator<Item = Idx>,
 {
     range: Range<Idx>,
     counter: AtomicCounter,
@@ -40,6 +41,7 @@ where
         + Add<Idx, Output = Idx>
         + Sub<Idx, Output = Idx>
         + Ord,
+    Range<Idx>: Iterator<Item = Idx>,
 {
     /// Creates a concurrent iterator for the given `range`.
     pub fn new(range: Range<Idx>) -> Self {
@@ -65,6 +67,7 @@ where
         + Add<Idx, Output = Idx>
         + Sub<Idx, Output = Idx>
         + Ord,
+    Range<Idx>: Iterator<Item = Idx>,
 {
     /// Creates a concurrent iterator for the given `range`.
     fn from(range: Range<Idx>) -> Self {
@@ -83,6 +86,7 @@ where
         + Add<Idx, Output = Idx>
         + Sub<Idx, Output = Idx>
         + Ord,
+    Range<Idx>: Iterator<Item = Idx>,
 {
     #[inline(always)]
     fn counter(&self) -> &AtomicCounter {
@@ -146,6 +150,7 @@ where
         + Add<Idx, Output = Idx>
         + Sub<Idx, Output = Idx>
         + Ord,
+    Range<Idx>: Iterator<Item = Idx>,
 {
     #[inline(always)]
     fn initial_len(&self) -> usize {
@@ -153,7 +158,8 @@ where
     }
 }
 
-unsafe impl<Idx> Sync for ConIterOfRange<Idx> where
+unsafe impl<Idx> Sync for ConIterOfRange<Idx>
+where
     Idx: Send
         + Sync
         + Clone
@@ -162,11 +168,13 @@ unsafe impl<Idx> Sync for ConIterOfRange<Idx> where
         + Into<usize>
         + Add<Idx, Output = Idx>
         + Sub<Idx, Output = Idx>
-        + Ord
+        + Ord,
+    Range<Idx>: Iterator<Item = Idx>,
 {
 }
 
-unsafe impl<Idx> Send for ConIterOfRange<Idx> where
+unsafe impl<Idx> Send for ConIterOfRange<Idx>
+where
     Idx: Send
         + Sync
         + Clone
@@ -175,7 +183,8 @@ unsafe impl<Idx> Send for ConIterOfRange<Idx> where
         + Into<usize>
         + Add<Idx, Output = Idx>
         + Sub<Idx, Output = Idx>
-        + Ord
+        + Ord,
+    Range<Idx>: Iterator<Item = Idx>,
 {
 }
 
@@ -192,14 +201,13 @@ where
         + Add<Idx, Output = Idx>
         + Sub<Idx, Output = Idx>
         + Ord,
+    Range<Idx>: Iterator<Item = Idx>,
 {
     type Item = Idx;
 
     type BufferedIter = BufferedRange;
 
-    type SeqIterItem = usize;
-
-    type SeqIter = Range<usize>;
+    type SeqIter = Range<Idx>;
 
     /// Converts the concurrent iterator back to the original wrapped type which is the source of the elements to be iterated.
     /// Already progressed elements are skipped.
@@ -235,7 +243,7 @@ where
     /// ```
     fn into_seq_iter(self) -> Self::SeqIter {
         let current = self.counter().current();
-        current..self.range.end.into()
+        current.into()..self.range.end
     }
 
     #[inline(always)]
@@ -277,6 +285,7 @@ where
         + Add<Idx, Output = Idx>
         + Sub<Idx, Output = Idx>
         + Ord,
+    Range<Idx>: Iterator<Item = Idx>,
 {
     #[inline(always)]
     fn len(&self) -> usize {

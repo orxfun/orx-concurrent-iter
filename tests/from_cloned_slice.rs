@@ -81,7 +81,7 @@ fn into_seq_iter_used_singly() {
 
     assert_eq!(seq_iter.len(), 1024 - 114);
     for (i, x) in seq_iter.enumerate() {
-        assert_eq!(x, &(114 + i).to_string());
+        assert_eq!(x, (114 + i).to_string());
     }
 }
 
@@ -107,7 +107,7 @@ fn into_seq_iter_used_in_batches() {
 
     assert_eq!(seq_iter.len(), 1024 - 44 - 33);
     for (i, x) in seq_iter.enumerate() {
-        assert_eq!(x, &(44 + 33 + i).to_string());
+        assert_eq!(x, (44 + 33 + i).to_string());
     }
 }
 
@@ -135,6 +135,6 @@ fn into_seq_iter_doc() {
 
     assert_eq!(seq_iter.len(), 1024 - num_used);
     for (i, x) in seq_iter.enumerate() {
-        assert_eq!(x, &(num_used + i).to_string());
+        assert_eq!(x, (num_used + i).to_string());
     }
 }

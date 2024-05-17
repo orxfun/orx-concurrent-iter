@@ -173,8 +173,6 @@ where
 
     type BufferedIter = BufferIter<T, Iter>;
 
-    type SeqIterItem = T;
-
     type SeqIter = Iter;
 
     /// Converts the concurrent iterator back to the original wrapped type which is the source of the elements to be iterated.

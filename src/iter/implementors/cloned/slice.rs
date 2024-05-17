@@ -115,9 +115,7 @@ impl<'a, T: Send + Sync + Clone> ConcurrentIter for ClonedConIterOfSlice<'a, T> 
 
     type BufferedIter = BufferedSliceCloned<'a>;
 
-    type SeqIterItem = &'a T;
-
-    type SeqIter = std::iter::Skip<std::slice::Iter<'a, T>>;
+    type SeqIter = std::iter::Cloned<std::iter::Skip<std::slice::Iter<'a, T>>>;
 
     /// Converts the concurrent iterator back to the original wrapped type which is the source of the elements to be iterated.
     /// Already progressed elements are skipped.
@@ -149,12 +147,12 @@ impl<'a, T: Send + Sync + Clone> ConcurrentIter for ClonedConIterOfSlice<'a, T> 
     ///
     /// assert_eq!(seq_iter.len(), 1024 - num_used);
     /// for (i, x) in seq_iter.enumerate() {
-    ///     assert_eq!(x, &(num_used + i).to_string());
+    ///     assert_eq!(x, (num_used + i).to_string());
     /// }
     /// ```
     fn into_seq_iter(self) -> Self::SeqIter {
         let current = self.counter().current();
-        self.slice.into_iter().skip(current)
+        self.slice.into_iter().skip(current).cloned()
     }
 
     #[inline(always)]
