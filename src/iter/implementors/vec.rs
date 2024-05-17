@@ -113,8 +113,6 @@ impl<T: Send + Sync + Default> ConcurrentIter for ConIterOfVec<T> {
 
     type BufferedIter = BufferedVec;
 
-    type SeqIterItem = T;
-
     type SeqIter = std::iter::Skip<std::vec::IntoIter<T>>;
 
     /// Converts the concurrent iterator back to the original wrapped type which is the source of the elements to be iterated.

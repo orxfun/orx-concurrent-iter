@@ -2,7 +2,7 @@ use super::buffered_chunk::BufferedChunk;
 use crate::ConIterOfRange;
 use std::{
     cmp::Ordering,
-    ops::{Add, Sub},
+    ops::{Add, Range, Sub},
 };
 
 pub struct BufferedRange {
@@ -26,6 +26,7 @@ where
         + Add<Idx, Output = Idx>
         + Sub<Idx, Output = Idx>
         + Ord,
+    Range<Idx>: Iterator<Item = Idx>,
 {
     type ConIter = ConIterOfRange<Idx>;
 

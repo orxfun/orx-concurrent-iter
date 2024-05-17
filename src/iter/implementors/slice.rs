@@ -115,8 +115,6 @@ impl<'a, T: Send + Sync> ConcurrentIter for ConIterOfSlice<'a, T> {
 
     type BufferedIter = BufferedSlice;
 
-    type SeqIterItem = &'a T;
-
     type SeqIter = std::iter::Skip<std::slice::Iter<'a, T>>;
 
     /// Converts the concurrent iterator back to the original wrapped type which is the source of the elements to be iterated.

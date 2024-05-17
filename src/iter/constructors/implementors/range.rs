@@ -20,6 +20,7 @@ where
         + Add<Idx, Output = Idx>
         + Sub<Idx, Output = Idx>
         + Ord,
+    Range<Idx>: Iterator<Item = Idx>,
 {
     type Item<'i> = Idx where Self: 'i;
 
@@ -41,6 +42,7 @@ where
         + Add<Idx, Output = Idx>
         + Sub<Idx, Output = Idx>
         + Ord,
+    Range<Idx>: Iterator<Item = Idx>,
 {
     type Item = Idx;
 
@@ -67,6 +69,7 @@ where
         + Add<Idx, Output = Idx>
         + Sub<Idx, Output = Idx>
         + Ord,
+    Range<Idx>: Iterator<Item = Idx>,
 {
     type Item = Idx;
 
