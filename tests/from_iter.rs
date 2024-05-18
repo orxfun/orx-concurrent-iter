@@ -50,10 +50,10 @@ fn len() {
     assert_eq!(con_iter.try_get_len(), None);
 
     _ = con_iter.next();
-    assert_eq!(con_iter.try_get_len(), None);
+    assert_eq!(con_iter.try_get_len(), Some(0));
 
     _ = con_iter.next();
-    assert_eq!(con_iter.try_get_len(), None);
+    assert_eq!(con_iter.try_get_len(), Some(0));
 }
 
 #[test]
