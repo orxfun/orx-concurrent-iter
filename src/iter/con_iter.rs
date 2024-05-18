@@ -4,6 +4,7 @@ use super::{
     wrappers::values::ConIterValues,
 };
 use crate::{
+    has_more::HasMore,
     next::{Next, NextChunk},
     ConIterIdsAndValues,
 };
@@ -576,6 +577,63 @@ pub trait ConcurrentIter: Send + Sync {
 
     /// Returns Some of the remaining length of the iterator if it is known; returns None otherwise.
     fn try_get_len(&self) -> Option<usize>;
+
+    /// Returns whether or not the concurrent iterator has more elements to yield.
+    ///
+    /// # Examples
+    ///
+    /// An exact size concurrent iterator will always be certain about this query and will return either `HasMore::No` or `HasMore::Yes(n)` where `n` is the number of remaining elements.
+    ///
+    /// ```rust
+    /// use orx_concurrent_iter::*;
+    ///
+    /// let vec: Vec<_> = (0..512).collect();
+    /// let iter = vec.into_con_iter();
+    ///
+    /// assert_eq!(iter.has_more(), HasMore::Yes(512));
+    ///
+    /// for _ in 0..500 {
+    ///     _ = iter.next();
+    /// }
+    ///
+    /// assert_eq!(iter.has_more(), HasMore::Yes(12));
+    ///
+    /// while let Some(_) = iter.next() {}
+    ///
+    /// assert_eq!(iter.has_more(), HasMore::No);
+    /// ```
+    ///
+    /// An non-exact-size concurrent iterator will return:
+    /// * either `HasMore::Maybe` when there are elements in the data source to check, or work to do, but not guaranteed that they will be yielded,
+    /// * or `HasMore::No` when the iterator has terminated.
+    ///
+    /// ```rust
+    /// use orx_concurrent_iter::*;
+    ///
+    /// let regular_iter = (0..512).map(|x| x + 1).filter(|x| x % 2 == 1);
+    /// let iter = regular_iter.into_con_iter();
+    ///
+    /// assert_eq!(iter.has_more(), HasMore::Maybe);
+    ///
+    /// for _ in 0..250 {
+    ///     _ = iter.next();
+    /// }
+    ///
+    /// assert_eq!(iter.has_more(), HasMore::Maybe);
+    ///
+    /// while let Some(_) = iter.next() {}
+    ///
+    /// assert_eq!(iter.has_more(), HasMore::No);
+    /// ```
+    fn has_more(&self) -> HasMore {
+        match self.try_get_len() {
+            None => HasMore::Maybe,
+            Some(n) => match n {
+                0 => HasMore::No,
+                _ => HasMore::Yes(n),
+            },
+        }
+    }
 }
 
 /// A concurrent iterator that knows its exact length.

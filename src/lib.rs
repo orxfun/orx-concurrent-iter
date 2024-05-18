@@ -321,10 +321,12 @@
     clippy::todo
 )]
 
+mod has_more;
 /// Module defining concurrent iterator traits and implementations.
 pub mod iter;
 mod next;
 
+pub use has_more::HasMore;
 pub use iter::atomic_counter::AtomicCounter;
 pub use iter::con_iter::{ConcurrentIter, ExactSizeConcurrentIter};
 pub use iter::constructors::con_iterable::ConcurrentIterable;

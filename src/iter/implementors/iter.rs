@@ -231,7 +231,10 @@ where
 
     #[inline(always)]
     fn try_get_len(&self) -> Option<usize> {
-        None
+        match self.completed.load(atomic::Ordering::SeqCst) {
+            true => Some(0),
+            false => None,
+        }
     }
 
     fn skip_to_end(&self) {
