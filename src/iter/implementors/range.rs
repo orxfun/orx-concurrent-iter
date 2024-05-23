@@ -115,20 +115,17 @@ where
         let begin_idx = self
             .progress_and_get_begin_idx(n)
             .unwrap_or(self.initial_len());
-
-        let begin_value = self.range.start + begin_idx.into();
-
-        let end_value = match begin_value.cmp(&self.range.end) {
-            Ordering::Less => (begin_value + n.into()).min(self.range.end),
+        let begin_value = begin_idx + self.range.start.into();
+        let end_value = match begin_value.cmp(&self.range.end.into()) {
+            Ordering::Less => (begin_value + n).min(self.range.end.into()),
             _ => begin_value,
         };
-
-        let end_idx: usize = (end_value - self.range.start).into();
+        let end_idx: usize = end_value - self.range.start.into();
 
         match begin_idx.cmp(&end_idx) {
             Ordering::Equal => None,
             _ => {
-                let values = (begin_idx..end_idx).map(Idx::from);
+                let values = (begin_value..end_value).map(Idx::from);
                 Some(NextChunk { begin_idx, values })
             }
         }
@@ -154,7 +151,9 @@ where
 {
     #[inline(always)]
     fn initial_len(&self) -> usize {
-        (self.range.end - self.range.start).into()
+        let start: usize = self.range.start.into();
+        let end: usize = self.range.end.into();
+        end.saturating_sub(start)
     }
 }
 

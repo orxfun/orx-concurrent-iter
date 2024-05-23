@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use orx_concurrent_iter::*;
 use test_case::test_matrix;
 
@@ -177,4 +179,23 @@ fn into_seq_iter_used(begin: usize, end: usize, take: usize) {
     let expected: Vec<_> = iter.collect();
 
     assert_eq!(remaining, expected);
+}
+
+#[test_matrix([0, 42], [0, 1, 42, 43, 100], [1, 10, 100])]
+fn buffered(begin: usize, end: usize, chunk_size: usize) {
+    let iter = (begin..end).con_iter();
+    let mut buffered = iter.buffered_iter(chunk_size);
+
+    let mut current = begin;
+    while let Some(chunk) = buffered.next() {
+        for value in chunk.values {
+            assert_eq!(value, current);
+            current += 1;
+        }
+    }
+
+    match end.cmp(&begin) {
+        Ordering::Less => assert_eq!(current, begin),
+        _ => assert_eq!(current, end),
+    }
 }

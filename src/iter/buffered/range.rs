@@ -40,13 +40,11 @@ where
         begin_idx: usize,
     ) -> Option<impl ExactSizeIterator<Item = Idx>> {
         let range = iter.range();
-        let begin_value = range.start + begin_idx.into();
-
-        match begin_value.cmp(&range.end) {
+        let begin_value = begin_idx + range.start.into();
+        match begin_value.cmp(&range.end.into()) {
             Ordering::Less => {
-                let end_value = (begin_value + self.chunk_size.into()).min(range.end);
-                let end_idx: usize = (end_value - range.start).into();
-                let values = (begin_idx..end_idx).map(Idx::from);
+                let end_value = (begin_value + self.chunk_size).min(range.end.into());
+                let values = (begin_value..end_value).map(Idx::from);
                 Some(values)
             }
             _ => None,
