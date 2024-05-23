@@ -243,7 +243,7 @@ where
     /// ```
     fn into_seq_iter(self) -> Self::SeqIter {
         let current = self.counter().current();
-        current.into()..self.range.end
+        (self.range.start + current.into())..self.range.end
     }
 
     #[inline(always)]
