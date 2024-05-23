@@ -195,3 +195,23 @@ fn into_seq_iter_used(take: usize) {
 
     assert_eq!(result, expected);
 }
+
+#[test_matrix([1, 10, 100])]
+fn buffered(chunk_size: usize) {
+    let mut values = [0; 1024];
+    for (i, x) in values.iter_mut().enumerate() {
+        *x = 100 + i;
+    }
+    let iter = values.into_con_iter();
+    let mut buffered = iter.buffered_iter(chunk_size);
+
+    let mut current = 100;
+    while let Some(chunk) = buffered.next() {
+        for value in chunk.values {
+            assert_eq!(value, current);
+            current += 1;
+        }
+    }
+
+    assert_eq!(current, 100 + 1024);
+}

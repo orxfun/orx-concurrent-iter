@@ -169,3 +169,20 @@ fn into_seq_iter_used(len: usize, take: usize) {
 
     assert_eq!(result, expected);
 }
+
+#[test_matrix([1, 8, 64, 1025, 5483], [1, 10, 100])]
+fn buffered(len: usize, chunk_size: usize) {
+    let values: Vec<_> = (100..(100 + len)).collect();
+    let iter = values.con_iter().cloned();
+    let mut buffered = iter.buffered_iter(chunk_size);
+
+    let mut current = 100;
+    while let Some(chunk) = buffered.next() {
+        for value in chunk.values {
+            assert_eq!(value, current);
+            current += 1;
+        }
+    }
+
+    assert_eq!(current, 100 + len);
+}
