@@ -1,4 +1,5 @@
 use orx_concurrent_iter::*;
+use test_case::test_matrix;
 
 #[test]
 fn con_iter() {
@@ -144,4 +145,34 @@ fn into_seq_iter_doc() {
     for (i, x) in seq_iter.enumerate() {
         assert_eq!(x, &(num_used + i).to_string());
     }
+}
+
+#[test_matrix([1, 8, 64, 1025, 5483])]
+fn into_seq_iter_not_used(len: usize) {
+    let values: Vec<_> = (100..(100 + len)).collect();
+    let slice = values.as_slice();
+    let iter = slice.con_iter().into_seq_iter();
+    let result: Vec<_> = iter.map(|x| *x).collect();
+
+    assert_eq!(result, values);
+}
+
+#[test_matrix([1, 8, 64, 1025, 5483], [1, 10, 100, ])]
+fn into_seq_iter_used(len: usize, take: usize) {
+    let values: Vec<_> = (100..(100 + len)).collect();
+
+    let slice = values.as_slice();
+    let iter = slice.con_iter();
+    for _ in 0..take {
+        _ = iter.next();
+    }
+    let result: Vec<_> = iter.into_seq_iter().map(|x| *x).collect();
+
+    let mut iter = values.into_iter();
+    for _ in 0..take {
+        _ = iter.next();
+    }
+    let expected: Vec<_> = iter.collect();
+
+    assert_eq!(result, expected);
 }
