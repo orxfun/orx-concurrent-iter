@@ -145,7 +145,7 @@ impl<'a, T: Send + Sync> ConcurrentIter for ConIterOfSlice<'a, T> {
     /// ```
     fn into_seq_iter(self) -> Self::SeqIter {
         let current = self.counter().current();
-        self.slice.into_iter().skip(current)
+        self.slice.iter().skip(current)
     }
 
     #[inline(always)]
