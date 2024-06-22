@@ -3,6 +3,8 @@ use crate::iter::atomic_iter::AtomicIter;
 pub trait BufferedChunk<T: Send + Sync> {
     type ConIter: AtomicIter<T>;
 
+    fn new(chunk_size: usize) -> Self;
+
     fn chunk_size(&self) -> usize;
 
     fn pull(

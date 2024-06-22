@@ -1,7 +1,7 @@
 use crate::{
     iter::{
         atomic_iter::{AtomicIter, AtomicIterWithInitialLen},
-        buffered::{buffered_iter::BufferedIter, vec::BufferedVec},
+        buffered::{buffered_chunk::BufferedChunk, buffered_iter::BufferedIter, vec::BufferedVec},
     },
     next::NextChunk,
     AtomicCounter, ConcurrentIter, ExactSizeConcurrentIter, Next,
@@ -111,7 +111,7 @@ unsafe impl<T: Send + Sync + Default> Send for ConIterOfVec<T> {}
 impl<T: Send + Sync + Default> ConcurrentIter for ConIterOfVec<T> {
     type Item = T;
 
-    type BufferedIter = BufferedVec;
+    type BufferedIter = BufferedVec<T>;
 
     type SeqIter = std::iter::Skip<std::vec::IntoIter<T>>;
 

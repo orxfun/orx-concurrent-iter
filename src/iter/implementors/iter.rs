@@ -2,7 +2,7 @@ use crate::{
     iter::{
         atomic_counter::AtomicCounter,
         atomic_iter::AtomicIter,
-        buffered::{buffered_iter::BufferedIter, iter::BufferIter},
+        buffered::{buffered_chunk::BufferedChunk, buffered_iter::BufferedIter, iter::BufferIter},
     },
     next::NextChunk,
     ConcurrentIter, Next,

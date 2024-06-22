@@ -1,9 +1,10 @@
-use super::cloned::slice::ClonedConIterOfSlice;
 use crate::{
     iter::{
         atomic_counter::AtomicCounter,
         atomic_iter::{AtomicIter, AtomicIterWithInitialLen},
-        buffered::{buffered_iter::BufferedIter, slice::BufferedSlice},
+        buffered::{
+            buffered_chunk::BufferedChunk, buffered_iter::BufferedIter, slice::BufferedSlice,
+        },
     },
     next::NextChunk,
     ConcurrentIter, ExactSizeConcurrentIter, Next,
@@ -24,14 +25,6 @@ impl<'a, T: Send + Sync> ConIterOfSlice<'a, T> {
             slice,
             counter: AtomicCounter::new(),
         }
-    }
-
-    /// A concurrent iterator over a slice yielding references to clones of the elements.
-    pub fn cloned(self) -> ClonedConIterOfSlice<'a, T>
-    where
-        T: Clone,
-    {
-        self.into()
     }
 
     /// Returns a reference to the underlying slice.
@@ -113,7 +106,7 @@ unsafe impl<'a, T: Send + Sync> Send for ConIterOfSlice<'a, T> {}
 impl<'a, T: Send + Sync> ConcurrentIter for ConIterOfSlice<'a, T> {
     type Item = &'a T;
 
-    type BufferedIter = BufferedSlice;
+    type BufferedIter = BufferedSlice<T>;
 
     type SeqIter = std::iter::Skip<std::slice::Iter<'a, T>>;
 

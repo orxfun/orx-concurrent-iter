@@ -1,7 +1,9 @@
 use crate::{
     iter::{
         atomic_iter::{AtomicIter, AtomicIterWithInitialLen},
-        buffered::{array::BufferedArray, buffered_iter::BufferedIter},
+        buffered::{
+            array::BufferedArray, buffered_chunk::BufferedChunk, buffered_iter::BufferedIter,
+        },
     },
     next::NextChunk,
     AtomicCounter, ConcurrentIter, ExactSizeConcurrentIter, Next,
@@ -112,7 +114,7 @@ unsafe impl<const N: usize, T: Send + Sync + Default> Send for ConIterOfArray<N,
 impl<const N: usize, T: Send + Sync + Default> ConcurrentIter for ConIterOfArray<N, T> {
     type Item = T;
 
-    type BufferedIter = BufferedArray<N>;
+    type BufferedIter = BufferedArray<N, T>;
 
     type SeqIter = std::iter::Skip<std::array::IntoIter<T, N>>;
 

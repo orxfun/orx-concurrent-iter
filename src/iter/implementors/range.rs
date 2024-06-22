@@ -1,7 +1,9 @@
 use crate::{
     iter::{
         atomic_iter::{AtomicIter, AtomicIterWithInitialLen},
-        buffered::{buffered_iter::BufferedIter, range::BufferedRange},
+        buffered::{
+            buffered_chunk::BufferedChunk, buffered_iter::BufferedIter, range::BufferedRange,
+        },
     },
     next::NextChunk,
     AtomicCounter, ConcurrentIter, ExactSizeConcurrentIter, Next,

@@ -1,22 +1,24 @@
 use super::buffered_chunk::BufferedChunk;
 use crate::ConIterOfSlice;
-use std::cmp::Ordering;
+use std::{cmp::Ordering, marker::PhantomData};
 
-pub struct BufferedSlice {
+pub struct BufferedSlice<T> {
     chunk_size: usize,
+    phantom: PhantomData<T>,
 }
 
-impl BufferedSlice {
-    pub fn new(chunk_size: usize) -> Self {
-        Self { chunk_size }
-    }
-}
-
-impl<'a, T> BufferedChunk<&'a T> for BufferedSlice
+impl<'a, T> BufferedChunk<&'a T> for BufferedSlice<T>
 where
     T: Send + Sync,
 {
     type ConIter = ConIterOfSlice<'a, T>;
+
+    fn new(chunk_size: usize) -> Self {
+        Self {
+            chunk_size,
+            phantom: Default::default(),
+        }
+    }
 
     fn chunk_size(&self) -> usize {
         self.chunk_size
