@@ -12,25 +12,19 @@ where
     phantom: PhantomData<Iter>,
 }
 
-impl<T, Iter> BufferIter<T, Iter>
-where
-    T: Send + Sync,
-    Iter: Iterator<Item = T>,
-{
-    pub fn new(chunk_size: usize) -> Self {
-        Self {
-            values: (0..chunk_size).map(|_| None).collect(),
-            phantom: Default::default(),
-        }
-    }
-}
-
 impl<T, Iter> BufferedChunk<T> for BufferIter<T, Iter>
 where
     T: Send + Sync,
     Iter: Iterator<Item = T>,
 {
     type ConIter = ConIterOfIter<T, Iter>;
+
+    fn new(chunk_size: usize) -> Self {
+        Self {
+            values: (0..chunk_size).map(|_| None).collect(),
+            phantom: Default::default(),
+        }
+    }
 
     fn chunk_size(&self) -> usize {
         self.values.len()

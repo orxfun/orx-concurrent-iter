@@ -9,12 +9,6 @@ pub struct BufferedRange {
     chunk_size: usize,
 }
 
-impl BufferedRange {
-    pub fn new(chunk_size: usize) -> Self {
-        Self { chunk_size }
-    }
-}
-
 impl<Idx> BufferedChunk<Idx> for BufferedRange
 where
     Idx: Send
@@ -29,6 +23,10 @@ where
     Range<Idx>: Iterator<Item = Idx>,
 {
     type ConIter = ConIterOfRange<Idx>;
+
+    fn new(chunk_size: usize) -> Self {
+        Self { chunk_size }
+    }
 
     fn chunk_size(&self) -> usize {
         self.chunk_size
