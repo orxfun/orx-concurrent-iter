@@ -169,7 +169,6 @@ fn con_iter_slice(len: usize, num_threads: usize, batch: usize) {
 
     let collected: Vec<&usize> = concurrent_iter(num_threads, batch, slice.con_iter());
     assert_eq!(source, collected.into_iter().copied().collect::<Vec<_>>());
-    assert_eq!(slice.try_get_exact_len(), Some(len));
 
     concurrent_sum(num_threads, batch, clone.as_slice().con_iter(), sum);
     concurrent_for_each_sum(num_threads, batch, clone.as_slice().con_iter(), sum);
@@ -188,7 +187,6 @@ fn con_iter_vec(len: usize, num_threads: usize, batch: usize) {
 
     let collected: Vec<usize> = concurrent_iter(num_threads, batch, source.clone().into_con_iter());
     assert_eq!(source, collected.into_iter().collect::<Vec<_>>());
-    assert_eq!(source.try_get_exact_len(), Some(len));
 
     concurrent_sum(num_threads, batch, source.clone().into_con_iter(), sum);
     concurrent_for_each_sum(num_threads, batch, source.clone().into_con_iter(), sum);
@@ -209,7 +207,6 @@ fn con_iter_iter(len: usize, num_threads: usize, batch: usize) {
 
     let collected: Vec<&usize> = concurrent_iter(num_threads, batch, clone.iter().into_con_iter());
     assert_eq!(source, collected.into_iter().copied().collect::<Vec<_>>());
-    assert_eq!(source.try_get_exact_len(), Some(len));
 
     concurrent_sum(num_threads, batch, clone.iter().into_con_iter(), sum);
     concurrent_for_each_sum(num_threads, batch, clone.iter().into_con_iter(), sum);
@@ -230,7 +227,6 @@ fn con_iter_array(num_threads: usize, batch: usize) {
 
     let collected: Vec<usize> = concurrent_iter(num_threads, batch, source.into_con_iter());
     assert_eq!(source.as_slice(), collected.into_iter().collect::<Vec<_>>());
-    assert_eq!(source.try_get_exact_len(), Some(1024));
 
     concurrent_sum(num_threads, batch, source.into_con_iter(), sum);
     concurrent_for_each_sum(num_threads, batch, source.into_con_iter(), sum);

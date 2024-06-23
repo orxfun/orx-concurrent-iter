@@ -339,3 +339,18 @@ pub use iter::implementors::{
 };
 pub use iter::wrappers::{ids_and_values::ConIterIdsAndValues, values::ConIterValues};
 pub use next::{Next, NextChunk};
+
+mod tests {
+    use crate::*;
+
+    #[test]
+    fn abc() {
+        let vec = vec![0, 1, 2, 3, 4];
+        let source = vec.iter().map(|x| 2 * x);
+        assert_eq!(source.size_hint(), (5, Some(5)));
+        // assert_eq!(source.try_get_exact_len(), Some(5));
+        let iter = source.into_con_iter();
+
+        // assert_eq!(iter.try_get_len(), Some(5));
+    }
+}

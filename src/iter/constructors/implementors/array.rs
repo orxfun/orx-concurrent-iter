@@ -26,10 +26,6 @@ impl<const N: usize, T: Send + Sync + Default> IntoConcurrentIter for [T; N] {
     fn into_con_iter(self) -> Self::ConIter {
         Self::ConIter::new(self)
     }
-
-    fn try_get_exact_len(&self) -> Option<usize> {
-        Some(self.len())
-    }
 }
 
 impl<const N: usize, T: Send + Sync + Default> IntoExactSizeConcurrentIter for [T; N] {
