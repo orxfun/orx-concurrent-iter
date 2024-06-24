@@ -54,44 +54,12 @@ where
     }
 }
 
-pub(crate) fn atomic_exact_fetch_one<T, A>(iter: A)
+pub(crate) fn atomic_initial_len<T, A>(iter: A)
 where
-    A: AtomicIterWithInitialLen<T> + ExactSizeConcurrentIter<Item = T>,
+    A: AtomicIterWithInitialLen<T>,
     T: Add<usize, Output = usize> + Send + Sync,
 {
-    let mut remaining = ATOMIC_TEST_LEN;
-
-    assert!(!iter.is_empty());
-    assert_eq!(iter.len(), remaining);
-
-    while iter.fetch_one().is_some() {
-        remaining -= 1;
-        assert_eq!(iter.len(), remaining);
-    }
-
-    assert_eq!(iter.len(), 0);
-    assert!(iter.is_empty());
-}
-
-pub(crate) fn atomic_exact_fetch_n<T, A>(iter: A, n: usize)
-where
-    A: AtomicIterWithInitialLen<T> + ExactSizeConcurrentIter<Item = T>,
-    T: Add<usize, Output = usize> + Send + Sync,
-{
-    let mut remaining = ATOMIC_TEST_LEN;
-
-    assert!(!iter.is_empty());
-    assert_eq!(iter.len(), remaining);
-
-    while let Some(chunk) = iter.fetch_n(n) {
-        let num_fetched = chunk.values.len();
-        remaining -= num_fetched;
-
-        assert_eq!(iter.len(), remaining);
-    }
-
-    assert_eq!(iter.len(), 0);
-    assert!(iter.is_empty());
+    assert_eq!(iter.initial_len(), ATOMIC_TEST_LEN);
 }
 
 pub(crate) fn test_values<C: ConcurrentIter>(num_threads: usize, len: usize, con_iter: C)

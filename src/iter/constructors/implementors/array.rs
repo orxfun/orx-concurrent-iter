@@ -1,10 +1,5 @@
 use crate::{
-    iter::{
-        constructors::{
-            into_con_iter::IntoConcurrentIter, into_exact_con_iter::IntoExactSizeConcurrentIter,
-        },
-        implementors::array::ConIterOfArray,
-    },
+    iter::{constructors::into_con_iter::IntoConcurrentIter, implementors::array::ConIterOfArray},
     ConIterOfSlice, ConcurrentIterable,
 };
 
@@ -25,19 +20,5 @@ impl<const N: usize, T: Send + Sync + Default> IntoConcurrentIter for [T; N] {
 
     fn into_con_iter(self) -> Self::ConIter {
         Self::ConIter::new(self)
-    }
-}
-
-impl<const N: usize, T: Send + Sync + Default> IntoExactSizeConcurrentIter for [T; N] {
-    type Item = T;
-
-    type ConIter = ConIterOfArray<N, T>;
-
-    fn into_exact_con_iter(self) -> Self::ConIter {
-        Self::ConIter::new(self)
-    }
-
-    fn exact_len(&self) -> usize {
-        self.len()
     }
 }

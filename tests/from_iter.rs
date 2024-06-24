@@ -36,23 +36,23 @@ fn len() {
     let values = ['a', 'b', 'c', 'd'];
     let iter = values.iter();
 
-    let con_iter = iter.into_con_iter();
-    assert_eq!(con_iter.try_get_len(), None);
+    let iter = iter.into_con_iter();
+    assert_eq!(iter.try_get_len(), Some(4));
 
-    _ = con_iter.next();
-    assert_eq!(con_iter.try_get_len(), None);
+    _ = iter.next();
+    assert_eq!(iter.try_get_len(), Some(3));
 
-    _ = con_iter.next_chunk(2);
-    assert_eq!(con_iter.try_get_len(), None);
+    _ = iter.next_chunk(2);
+    assert_eq!(iter.try_get_len(), Some(1));
 
-    _ = con_iter.next_chunk(2);
-    assert_eq!(con_iter.try_get_len(), None);
+    _ = iter.next_chunk(2);
+    assert_eq!(iter.try_get_len(), Some(0));
 
-    _ = con_iter.next();
-    assert_eq!(con_iter.try_get_len(), Some(0));
+    _ = iter.next();
+    assert_eq!(iter.try_get_len(), Some(0));
 
-    _ = con_iter.next();
-    assert_eq!(con_iter.try_get_len(), Some(0));
+    _ = iter.next();
+    assert_eq!(iter.try_get_len(), Some(0));
 }
 
 #[test]

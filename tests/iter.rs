@@ -38,14 +38,14 @@ fn debug() {
 
     assert_eq!(
             format!("{:?}", con_iter),
-            "ConIterOfIter { iter: UnsafeCell { .. }, reserved_counter: AtomicCounter { current: 0 }, yielded_counter: AtomicCounter { current: 0 }, completed: false }"
+            "ConIterOfIter { iter: UnsafeCell { .. }, initial_len: Some(3), reserved_counter: AtomicCounter { current: 0 }, yielded_counter: AtomicCounter { current: 0 }, completed: false }"
         );
 
     assert_eq!(con_iter.next(), Some(&'a'));
 
     assert_eq!(
             format!("{:?}", con_iter),
-            "ConIterOfIter { iter: UnsafeCell { .. }, reserved_counter: AtomicCounter { current: 1 }, yielded_counter: AtomicCounter { current: 1 }, completed: false }"
+            "ConIterOfIter { iter: UnsafeCell { .. }, initial_len: Some(3), reserved_counter: AtomicCounter { current: 1 }, yielded_counter: AtomicCounter { current: 1 }, completed: false }"
         );
 
     assert_eq!(con_iter.next(), Some(&'b'));
@@ -53,21 +53,21 @@ fn debug() {
 
     assert_eq!(
             format!("{:?}", con_iter),
-            "ConIterOfIter { iter: UnsafeCell { .. }, reserved_counter: AtomicCounter { current: 3 }, yielded_counter: AtomicCounter { current: 3 }, completed: false }"
+            "ConIterOfIter { iter: UnsafeCell { .. }, initial_len: Some(3), reserved_counter: AtomicCounter { current: 3 }, yielded_counter: AtomicCounter { current: 3 }, completed: false }"
         );
 
     assert_eq!(con_iter.next(), None);
 
     assert_eq!(
             format!("{:?}", con_iter),
-            "ConIterOfIter { iter: UnsafeCell { .. }, reserved_counter: AtomicCounter { current: 4 }, yielded_counter: AtomicCounter { current: 3 }, completed: true }"
+            "ConIterOfIter { iter: UnsafeCell { .. }, initial_len: Some(3), reserved_counter: AtomicCounter { current: 4 }, yielded_counter: AtomicCounter { current: 3 }, completed: true }"
         );
 
     assert_eq!(con_iter.next(), None);
 
     assert_eq!(
             format!("{:?}", con_iter),
-            "ConIterOfIter { iter: UnsafeCell { .. }, reserved_counter: AtomicCounter { current: 5 }, yielded_counter: AtomicCounter { current: 3 }, completed: true }"
+            "ConIterOfIter { iter: UnsafeCell { .. }, initial_len: Some(3), reserved_counter: AtomicCounter { current: 5 }, yielded_counter: AtomicCounter { current: 3 }, completed: true }"
         );
 }
 

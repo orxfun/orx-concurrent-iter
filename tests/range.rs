@@ -1,8 +1,8 @@
 mod atomic;
 
 use atomic::{
-    atomic_exact_fetch_n, atomic_exact_fetch_one, atomic_fetch_n, atomic_fetch_one,
-    test_ids_and_values, test_values, ATOMIC_FETCH_N, ATOMIC_TEST_LEN,
+    atomic_fetch_n, atomic_fetch_one, atomic_initial_len, test_ids_and_values, test_values,
+    ATOMIC_FETCH_N, ATOMIC_TEST_LEN,
 };
 use orx_concurrent_iter::iter::atomic_iter::*;
 use orx_concurrent_iter::*;
@@ -87,10 +87,7 @@ fn atomic() {
 
 #[test]
 fn atomic_exact() {
-    atomic_exact_fetch_one(ConIterOfRange::new(0..ATOMIC_TEST_LEN));
-    for n in ATOMIC_FETCH_N {
-        atomic_exact_fetch_n(ConIterOfRange::new(0..ATOMIC_TEST_LEN), n);
-    }
+    atomic_initial_len(ConIterOfRange::new(0..ATOMIC_TEST_LEN));
 }
 
 #[test_matrix(

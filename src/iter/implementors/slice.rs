@@ -7,7 +7,7 @@ use crate::{
         },
     },
     next::NextChunk,
-    ConcurrentIter, ExactSizeConcurrentIter, Next,
+    ConcurrentIter, Next,
 };
 use std::cmp::Ordering;
 
@@ -168,22 +168,15 @@ impl<'a, T: Send + Sync> ConcurrentIter for ConIterOfSlice<'a, T> {
 
     #[inline(always)]
     fn try_get_len(&self) -> Option<usize> {
-        Some(<Self as ExactSizeConcurrentIter>::len(self))
-    }
-
-    fn skip_to_end(&self) {
-        self.early_exit()
-    }
-}
-
-impl<'a, T: Send + Sync> ExactSizeConcurrentIter for ConIterOfSlice<'a, T> {
-    #[inline(always)]
-    fn len(&self) -> usize {
         let current = <Self as AtomicIter<_>>::counter(self).current();
         let initial_len = <Self as AtomicIterWithInitialLen<_>>::initial_len(self);
-        match current.cmp(&initial_len) {
+        let len = match current.cmp(&initial_len) {
             std::cmp::Ordering::Less => initial_len - current,
             _ => 0,
-        }
+        };
+        Some(len)
+    }
+    fn skip_to_end(&self) {
+        self.early_exit()
     }
 }

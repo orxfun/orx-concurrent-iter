@@ -5,7 +5,7 @@ use super::{
         cloned_buffered_chunk::ClonedBufferedChunk,
     },
 };
-use crate::{ConcurrentIter, ExactSizeConcurrentIter, NextChunk};
+use crate::{ConcurrentIter, NextChunk};
 use std::marker::PhantomData;
 
 /// An concurrent iterator, backed with an atomic iterator, that clones the elements of an underlying iterator.
@@ -134,21 +134,6 @@ where
     #[inline(always)]
     fn try_get_len(&self) -> Option<usize> {
         self.iter.try_get_len()
-    }
-}
-
-impl<'a, T, A> ExactSizeConcurrentIter for Cloned<'a, T, A>
-where
-    T: Send + Sync + Clone,
-    A: AtomicIter<&'a T> + AtomicIterWithInitialLen<&'a T> + ConcurrentIter<Item = &'a T>,
-{
-    fn len(&self) -> usize {
-        let current = <Self as AtomicIter<_>>::counter(self).current();
-        let initial_len = <Self as AtomicIterWithInitialLen<_>>::initial_len(self);
-        match current.cmp(&initial_len) {
-            std::cmp::Ordering::Less => initial_len - current,
-            _ => 0,
-        }
     }
 }
 

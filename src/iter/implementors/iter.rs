@@ -25,6 +25,7 @@ where
     Iter: Iterator<Item = T>,
 {
     iter: UnsafeCell<Iter>,
+    initial_len: Option<usize>,
     reserved_counter: AtomicCounter,
     yielded_counter: AtomicCounter,
     completed: AtomicBool,
@@ -36,8 +37,15 @@ where
 {
     /// Creates a concurrent iterator for the given `iter`.
     pub fn new(iter: Iter) -> Self {
+        let initial_len = match iter.size_hint() {
+            (_, None) => None,
+            (lower, Some(upper)) if lower == upper => Some(lower),
+            _ => None,
+        };
+
         Self {
             iter: iter.into(),
+            initial_len,
             reserved_counter: AtomicCounter::new(),
             yielded_counter: AtomicCounter::new(),
             completed: false.into(),
@@ -233,7 +241,13 @@ where
     fn try_get_len(&self) -> Option<usize> {
         match self.completed.load(atomic::Ordering::SeqCst) {
             true => Some(0),
-            false => None,
+            false => self.initial_len.map(|initial_len| {
+                let current = <Self as AtomicIter<_>>::counter(self).current();
+                match current.cmp(&initial_len) {
+                    std::cmp::Ordering::Less => initial_len - current,
+                    _ => 0,
+                }
+            }),
         }
     }
 

@@ -5,7 +5,7 @@
 //!
 //! A thread-safe, ergonomic and lightweight concurrent iterator trait and efficient implementations.
 //!
-//! * **ergonomic**: An iterator implementing `ConcurrentIter` can safely be shared among threads. It may be iterated over concurrently from multiple threads with `for` or `while let`. It further provides higher level methods such as `for_each` and `fold` which allow for safe, simple and efficient parallelism.
+//! * **ergonomic**: An iterator implementing `ConcurrentIter` can safely be shared among threads. It may be iterated over concurrently by multiple threads with `for` or `while let`. It further provides higher level methods such as `for_each` and `fold` which allow for safe, simple and efficient parallelism.
 //! * **efficient** and **lightweight**: All concurrent iterator implementations provided in this crate extend atomic iterators which are lock-free and depend only on atomic primitives.
 //!
 //! ## Examples
@@ -22,7 +22,7 @@
 //!     std::thread::sleep(std::time::Duration::from_nanos(10));
 //! }
 //!
-//! /// `process` elements of `con_iter` concurrently using `num_threads`
+//! /// `process` elements of `iter` concurrently using `num_threads` threads
 //! fn process_concurrently<T, I, F>(process: &F, num_threads: usize, iter: I)
 //! where
 //!     T: Send + Sync,
@@ -59,6 +59,7 @@
 //!
 //! let slice: &[i32] = values.as_slice();
 //! run::<&i32>(slice.con_iter());
+//! run::<i32>(slice.con_iter().cloned());
 //!
 //! // consuming iteration over values
 //! run::<String>(names.into_con_iter());
@@ -67,8 +68,11 @@
 //! // any Iterator into ConcurrentIter
 //! let values: Vec<i32> = (0..1024).collect();
 //!
-//! let iter_ref = values.iter().filter(|x| *x % 2 == 0);
-//! run::<&i32>(iter_ref.into_con_iter());
+//! let evens = values.iter().filter(|x| *x % 2 == 0);
+//! run::<&i32>(evens.into_con_iter());
+//!
+//! let evens = values.iter().filter(|x| *x % 2 == 0);
+//! run::<i32>(evens.into_con_iter().cloned());
 //!
 //! let iter_val = values
 //!     .iter()
@@ -81,13 +85,13 @@
 //!
 //! ### Ways to Loop
 //!
-//! `ConcurrentIter`s implement the `next` method, which is a concurrent counterpart of `Iterator::next`. Therefore, the iterator can be used almost the same as a regular `Iterator` safely across multiple threads. Slight difference of different ways to iterate over a `ConcurrentIter` are demonstrated and explained in the following example.
+//! `ConcurrentIter`s implement the `next` method, which is the concurrent counterpart of `Iterator::next`. Therefore, the iterator can be used almost the same as a regular `Iterator` safely across multiple threads. Slight difference of different ways to iterate over a `ConcurrentIter` are demonstrated and explained in the following example.
 //!
 //! ```rust
 //! use orx_concurrent_iter::*;
 //! use std::fmt::Debug;
 //!
-//! fn process_concurrently<T, I, F>(process: &F, num_threads: usize, iter: I)
+//! fn process_one_by_one<T, I, F>(process: &F, num_threads: usize, iter: &I)
 //! where
 //!     T: Send + Sync + Debug,
 //!     F: Fn(T) + Send + Sync,
@@ -96,50 +100,72 @@
 //!     std::thread::scope(|s| {
 //!         for _ in 0..num_threads {
 //!             s.spawn(|| {
-//!                 // a.1 -> pull elements 1-by-1
+//!                 // pull values 1 by 1
 //!                 for value in iter.values() {
-//!                     dbg!(&value);
+//!                     process(value);
 //!                 }
 //!
 //!                 while let Some(value) = iter.next() {
-//!                     dbg!(&value);
+//!                     process(value);
 //!                 }
 //!
-//!                 // a.2 -> pull elements and their indices 1-by-1
+//!                 // pull values and corresponding index 1 by 1
 //!                 for (idx, value) in iter.ids_and_values() {
-//!                     dbg!(idx, value);
+//!                     dbg!(idx);
+//!                     process(value);
 //!                 }
 //!
 //!                 while let Some(x) = iter.next_id_and_value() {
-//!                     dbg!(x.idx, x.value);
+//!                     dbg!(x.idx);
+//!                     process(x.value);
 //!                 }
+//!             });
+//!         }
+//!     });
+//! }
 //!
-//!                 // b.1 -> pull elements 16-by-16
+//! fn process_in_chunks<T, I, F>(
+//!     process: &F,
+//!     num_threads: usize,
+//!     iter: &I,
+//!     chunk_size: usize,
+//! ) where
+//!     T: Send + Sync + Debug,
+//!     F: Fn(T) + Send + Sync,
+//!     I: ConcurrentIter<Item = T>,
+//! {
+//!     std::thread::scope(|s| {
+//!         for _ in 0..num_threads {
+//!             s.spawn(|| {
+//!                 // pull values in chunks of `chunk_size`
 //!                 let mut chunk_iter = iter.buffered_iter(16);
 //!                 while let Some(chunk) = chunk_iter.next() {
-//!                     for value in chunk.values {
-//!                         dbg!(value);
-//!                     }
-//!                 }
+//!                     assert!(chunk.values.len() <= chunk_size);
 //!
-//!                 // b.2 -> pull elements and their indices 16-by-16
-//!                 let mut chunk_iter = iter.buffered_iter(16);
-//!                 while let Some(chunk) = chunk_iter.next() {
 //!                     for (i, value) in chunk.values.enumerate() {
 //!                         let idx = chunk.begin_idx + i;
-//!                         dbg!(idx, value);
+//!
+//!                         dbg!(idx);
+//!                         process(value);
 //!                     }
 //!                 }
 //!             });
 //!         }
 //!     });
 //! }
+//!
+//! let process = |x| {
+//!     dbg!(x);
+//! };
+//!
+//! process_one_by_one(&process, 8, &(0..1024).con_iter());
+//! process_in_chunks(&process, 8, &(0..1024).con_iter(), 64);
 //! ```
 //!
-//! * `for` and `while let` loops of **a.1** demonstrate the most basic usage where threads will pull the next element of the iterator whenever they complete processing the prior element.
-//! * The loops in **a.2** can be considered as the `enumerate`d counterpart. Note that each thread will pull different elements at different positions of the iterator depending on how fast they finish the execution inside the loop. Therefore, an `enumerate` call inside the thread, or counting the pulled elements by that particular thread, does not provide the index of the element in the original data source. `ConcurrentIter` additionally provides the original index with `ids_and_values` or `next_id_and_value` methods.
-//! * Whenever the work to be done inside the loop is too small (like just the `dbg` call in the above example), taking elements 1-by-1 might be suboptimal. In such cases, a better idea is to pull elements in batches. In **b.1**, we create a buffered chunk iterator which pulls 16 (or less, if not enough left) **consecutive** elements at each `next` call. Note that `chunk` returned by `chunk_iter.next()` is an `ExactSizeIterator` with a known `len`.
-//! * Similar to before, **b.2** is the counterpart of **b.1** which allows us to use the original `idx` of the elements. `chunk.begin_idx` represents the original index of the first element of the returned `chunk.values` iterator. Note that `chunk.values` is always non-empty; i.e., always has at least one element, otherwise, `next` returns `None`. Further, the chunk iterator contains consecutive elements. Hence, we can get the original indices of all elements by combining `chunk.begin_idx` with the local indices of the current `chunk` obtained by the `chunk.values.enumerate`; i.e., `let idx = chunk.begin_idx + i`.
+//! * `for` and `while let` loops of `process_one_by_one` demonstrate the most basic usage where threads will pull the next element of the iterator whenever they complete processing the prior element.
+//! * Note that each thread will pull different elements at different positions of the iterator depending on how fast they finish the execution of the task inside the loop. Therefore, an `enumerate` call inside the thread, or counting the pulled elements by that particular thread, does **not** provide the index of the element in the original data source. `ConcurrentIter` additionally provides the original index with `ids_and_values` or `next_id_and_value` methods.
+//! * Whenever the work to be done inside the loop is too small (like just the `dbg` call in the above example), taking elements 1-by-1 might be suboptimal. In such cases, a better idea is to pull elements in chunks. In `process_in_chunks`, we create a buffered chunk iterator which pulls `chunk_size` (or less, if not enough left) **consecutive** elements at each `next` call. Note that `chunk` returned by `chunk_iter.next()` is an `ExactSizeIterator` with a known `len`.
+//! * While iterating in chunks, we can still access the original `idx` of the elements. `chunk.begin_idx` represents the original index of the first element of the returned `chunk.values` iterator. Note that `chunk.values` is always non-empty; i.e., always has at least one element, otherwise, `next` returns `None`. Further, the chunk iterator contains consecutive elements. Hence, we can get the original indices of all elements by combining `chunk.begin_idx` with the local indices of the current `chunk` obtained by the `chunk.values.enumerate`; i.e., `let idx = chunk.begin_idx + i`.
 //!
 //!
 //! ### Parallel Fold
@@ -177,8 +203,8 @@
 //! ```
 //!
 //! Notes on the implementation:
-//! * The entire parallel fold implementation is 7 lines.
-//! * Parallel fold operation is defined as two fold operations. This is straightforward and easy to reason about.
+//! * Concurrent iterator allows for a simple 7-line parallel fold implementation.
+//! * Parallel fold operation is defined as two fold operations.
 //!   * The first `.map(_).fold(_)` defines the parallel fold operation executed by `num_threads` threads. Each thread returns its own aggregated result.
 //!   * The second `map(_).fold(_)` defines the final sequential fold operation executed to fold over the `num_threads` results obtained by each thread.
 //!
@@ -216,20 +242,11 @@
 //! }
 //! ```
 //!
-//! Note that due to the way how the concurrent iterator works, this parallel map implementation is suitable for heterogeneous inputs without requiring much care, as illustrated below:
-//! * Assume that our input `iter` contains 10 elements which can all be mapped homogeneously in exactly 1s, except for the first element.
-//! * The first element takes 5 seconds to map; i.e., to process.
-//! * Further assume that we have 2 threads available, threads `A` and `B`, and thread `A` will pick the first element. Then, the parallel execution will likely happen in the following manner:
-//!   * `A` works on mapping element 0 in intervals [t1, t5].
-//!   * Meanwhile, `B` pulls and maps elements 1, 2, ..., 5 in intervals [t1, t5].
-//!   * In interval [t6, t7], both threads will pull and map elements 6, 7, 8, 9 in arbitrary order.
-//! * Since the threads pull elements as soon as they are idle, this implementation leads to an efficient parallelization strategy without any assumption or knowledge about the duration of the individual tasks.
-//!
 //! Note that due to parallelization, `outputs` is not guaranteed to be in the same order as `inputs`. In order to preserve the order of the input in the output, iteration with indices can be used to sort the result accordingly. Alternative to post-sorting, `ConcurrentBag` can be replaced with [`orx_concurrent_bag::ConcurrentOrderedBag`](https://crates.io/crates/orx-concurrent-ordered-bag) to already collect in order.
 //!
 //! ### Parallel Find, A Little Communication Among Threads
 //!
-//! As illustrated above, efficient parallel implementations of many methods are conveniently possible with `ConcurrentIter`. There is only one bit of information implicitly shared among threads by the concurrent iterator: the elements left. In scenarios where we do not need to iterate over all elements, we can use, actually change, this information to share a message among threads. We might call such cases as **early-return** scenarios. An obvious example is the `find` method, where we are looking for an element and we want to terminate the search as soon as we find a match.
+//! As illustrated above, efficient parallel implementations of different methods are conveniently possible with `ConcurrentIter`. There is only one bit of information implicitly shared among threads by the concurrent iterator: the elements left. In scenarios where we do not need to iterate over all elements, we can use this information to share a message among threads. We might call such cases as **early-return** scenarios. A common example is the `find` method, where we are looking for a matching element and we want to terminate the search as soon as we find one.
 //!
 //! You may see a parallel implementation of the find method below.
 //!
@@ -288,7 +305,7 @@
 //!
 //! ## Traits and Implementors
 //!
-//! As discussed so far, the trait defining types that can be safely be iterated concurrently by multiple threads is `ConcurrentIter`.
+//! The trait defining types that can be safely be iterated concurrently by multiple threads is `ConcurrentIter`.
 //!
 //! Further, there are two traits which define types that can provide a `ConcurrentIter`.
 //! * A `ConcurrentIterable` type implements the **`con_iter(&self)`** method which returns a concurrent iterator without consuming the type itself.
@@ -296,14 +313,15 @@
 //!
 //! The following table summarizes the implementations of the standard types in this crate.
 //!
-//! | Type | ConcurrentIterable <br/> `con_iter()` element type | IntoConcurrentIter <br/> `into_con_iter()` element type | Cloned <br/> `con_iter().cloned()` |
-//! |---|---|---|---|
-//! | `&'a [T]` | `&'a T` | `&'a T` | `T` |
-//! | `Range<Idx>` | `Idx` | `Idx` | |
-//! | `Vec<T>` | `&T` | `T` | |
-//! | `[T; N]` | `&T` | `T` | |
-//! | `Iter: Iterator<Item = T>` | - | `T` | |
+//! | Type | ConcurrentIterable <br/> `con_iter()` element type | IntoConcurrentIter <br/> `into_con_iter()` element type |
+//! |---|---|---|
+//! | `&'a [T]` | `&'a T` | `&'a T` |
+//! | `Range<Idx>` | `Idx` | `Idx` |
+//! | `Vec<T>` | `&T` | `T` |
+//! | `[T; N]` | `&T` | `T` |
+//! | `Iter: Iterator<Item = T>` | - | `T` |
 //!
+//! Finally, concurrent iterators having an element type which is a reference to a cloneable type, have the `cloned()` method, allowing to iterate over cloned values.
 //!
 //! ## License
 //!
@@ -329,28 +347,12 @@ mod next;
 pub use has_more::HasMore;
 pub use iter::atomic_counter::AtomicCounter;
 pub use iter::cloned::{Cloned, IntoCloned};
-pub use iter::con_iter::{ConcurrentIter, ExactSizeConcurrentIter};
+pub use iter::con_iter::ConcurrentIter;
 pub use iter::constructors::con_iterable::ConcurrentIterable;
 pub use iter::constructors::into_con_iter::{IntoConcurrentIter, IterIntoConcurrentIter};
-pub use iter::constructors::into_exact_con_iter::IntoExactSizeConcurrentIter;
 pub use iter::implementors::{
     array::ConIterOfArray, iter::ConIterOfIter, range::ConIterOfRange, slice::ConIterOfSlice,
     vec::ConIterOfVec,
 };
 pub use iter::wrappers::{ids_and_values::ConIterIdsAndValues, values::ConIterValues};
 pub use next::{Next, NextChunk};
-
-mod tests {
-    use crate::*;
-
-    #[test]
-    fn abc() {
-        let vec = vec![0, 1, 2, 3, 4];
-        let source = vec.iter().map(|x| 2 * x);
-        assert_eq!(source.size_hint(), (5, Some(5)));
-        // assert_eq!(source.try_get_exact_len(), Some(5));
-        let iter = source.into_con_iter();
-
-        // assert_eq!(iter.try_get_len(), Some(5));
-    }
-}
