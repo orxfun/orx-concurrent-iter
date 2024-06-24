@@ -6,7 +6,7 @@ use crate::{
         },
     },
     next::NextChunk,
-    AtomicCounter, ConcurrentIter, ExactSizeConcurrentIter, Next,
+    AtomicCounter, ConcurrentIter, Next,
 };
 use std::{
     cmp::Ordering,
@@ -267,34 +267,16 @@ where
 
     #[inline(always)]
     fn try_get_len(&self) -> Option<usize> {
-        Some(<Self as ExactSizeConcurrentIter>::len(self))
+        let current = <Self as AtomicIter<_>>::counter(self).current();
+        let initial_len = <Self as AtomicIterWithInitialLen<_>>::initial_len(self);
+        let len = match current.cmp(&initial_len) {
+            std::cmp::Ordering::Less => initial_len - current,
+            _ => 0,
+        };
+        Some(len)
     }
 
     fn skip_to_end(&self) {
         self.early_exit()
-    }
-}
-
-impl<Idx> ExactSizeConcurrentIter for ConIterOfRange<Idx>
-where
-    Idx: Send
-        + Sync
-        + Clone
-        + Copy
-        + From<usize>
-        + Into<usize>
-        + Add<Idx, Output = Idx>
-        + Sub<Idx, Output = Idx>
-        + Ord,
-    Range<Idx>: Iterator<Item = Idx>,
-{
-    #[inline(always)]
-    fn len(&self) -> usize {
-        let current = <Self as AtomicIter<_>>::counter(self).current();
-        let initial_len = <Self as AtomicIterWithInitialLen<_>>::initial_len(self);
-        match current.cmp(&initial_len) {
-            std::cmp::Ordering::Less => initial_len - current,
-            _ => 0,
-        }
     }
 }

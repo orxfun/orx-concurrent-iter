@@ -1,8 +1,7 @@
 mod atomic;
 
 use atomic::{
-    atomic_exact_fetch_n, atomic_exact_fetch_one, atomic_fetch_n, atomic_fetch_one, ATOMIC_FETCH_N,
-    ATOMIC_TEST_LEN,
+    atomic_fetch_n, atomic_fetch_one, atomic_initial_len, ATOMIC_FETCH_N, ATOMIC_TEST_LEN,
 };
 use orx_concurrent_iter::*;
 
@@ -68,8 +67,5 @@ fn atomic_exact() {
     for (i, elem) in values.iter_mut().enumerate() {
         *elem = i;
     }
-    atomic_exact_fetch_one(ConIterOfArray::new(values));
-    for n in ATOMIC_FETCH_N {
-        atomic_exact_fetch_n(ConIterOfArray::new(values), n);
-    }
+    atomic_initial_len(ConIterOfArray::new(values));
 }

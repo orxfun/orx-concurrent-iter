@@ -1,8 +1,7 @@
 mod atomic;
 
 use atomic::{
-    atomic_exact_fetch_n, atomic_exact_fetch_one, atomic_fetch_n, atomic_fetch_one, ATOMIC_FETCH_N,
-    ATOMIC_TEST_LEN,
+    atomic_fetch_n, atomic_fetch_one, atomic_initial_len, ATOMIC_FETCH_N, ATOMIC_TEST_LEN,
 };
 use orx_concurrent_iter::*;
 
@@ -62,8 +61,5 @@ fn atomic() {
 #[test]
 fn atomic_exact() {
     let values: Vec<_> = (0..ATOMIC_TEST_LEN).collect();
-    atomic_exact_fetch_one(ConIterOfVec::new(values.clone()));
-    for n in ATOMIC_FETCH_N {
-        atomic_exact_fetch_n(ConIterOfVec::new(values.clone()), n);
-    }
+    atomic_initial_len(ConIterOfVec::new(values.clone()));
 }

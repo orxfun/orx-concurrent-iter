@@ -39,9 +39,7 @@ where
 
         let mut i = 0;
         loop {
-            debug_assert!(self.values[i].is_none());
-            let next = core_iter.next();
-            match next {
+            match core_iter.next() {
                 Some(x) => self.values[i] = Some(x),
                 None => break,
             }

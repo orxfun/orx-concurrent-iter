@@ -4,7 +4,7 @@ use crate::{
         buffered::{buffered_chunk::BufferedChunk, buffered_iter::BufferedIter, vec::BufferedVec},
     },
     next::NextChunk,
-    AtomicCounter, ConcurrentIter, ExactSizeConcurrentIter, Next,
+    AtomicCounter, ConcurrentIter, Next,
 };
 use std::{cell::UnsafeCell, cmp::Ordering};
 
@@ -173,22 +173,16 @@ impl<T: Send + Sync + Default> ConcurrentIter for ConIterOfVec<T> {
 
     #[inline(always)]
     fn try_get_len(&self) -> Option<usize> {
-        Some(<Self as ExactSizeConcurrentIter>::len(self))
+        let current = <Self as AtomicIter<_>>::counter(self).current();
+        let initial_len = <Self as AtomicIterWithInitialLen<_>>::initial_len(self);
+        let len = match current.cmp(&initial_len) {
+            std::cmp::Ordering::Less => initial_len - current,
+            _ => 0,
+        };
+        Some(len)
     }
 
     fn skip_to_end(&self) {
         self.early_exit()
-    }
-}
-
-impl<T: Send + Sync + Default> ExactSizeConcurrentIter for ConIterOfVec<T> {
-    #[inline(always)]
-    fn len(&self) -> usize {
-        let current = <Self as AtomicIter<_>>::counter(self).current();
-        let initial_len = <Self as AtomicIterWithInitialLen<_>>::initial_len(self);
-        match current.cmp(&initial_len) {
-            std::cmp::Ordering::Less => initial_len - current,
-            _ => 0,
-        }
     }
 }

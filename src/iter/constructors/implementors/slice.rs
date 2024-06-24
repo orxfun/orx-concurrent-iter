@@ -1,8 +1,5 @@
 use crate::{
-    iter::constructors::{
-        con_iterable::ConcurrentIterable, into_exact_con_iter::IntoExactSizeConcurrentIter,
-    },
-    ConIterOfSlice, IntoConcurrentIter,
+    iter::constructors::con_iterable::ConcurrentIterable, ConIterOfSlice, IntoConcurrentIter,
 };
 
 impl<'a, T: Send + Sync> ConcurrentIterable for &'a [T] {
@@ -24,23 +21,5 @@ impl<'a, T: Send + Sync> IntoConcurrentIter for &'a [T] {
 
     fn into_con_iter(self) -> Self::ConIter {
         Self::ConIter::new(self)
-    }
-
-    fn try_get_exact_len(&self) -> Option<usize> {
-        Some(self.len())
-    }
-}
-
-impl<'a, T: Send + Sync> IntoExactSizeConcurrentIter for &'a [T] {
-    type Item = &'a T;
-
-    type ConIter = ConIterOfSlice<'a, T>;
-
-    fn into_exact_con_iter(self) -> Self::ConIter {
-        Self::ConIter::new(self)
-    }
-
-    fn exact_len(&self) -> usize {
-        self.len()
     }
 }

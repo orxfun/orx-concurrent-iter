@@ -628,21 +628,8 @@ pub trait ConcurrentIter: Send + Sync {
     fn has_more(&self) -> HasMore {
         match self.try_get_len() {
             None => HasMore::Maybe,
-            Some(n) => match n {
-                0 => HasMore::No,
-                _ => HasMore::Yes(n),
-            },
+            Some(0) => HasMore::No,
+            Some(n) => HasMore::Yes(n),
         }
-    }
-}
-
-/// A concurrent iterator that knows its exact length.
-pub trait ExactSizeConcurrentIter: ConcurrentIter {
-    /// Returns the exact remaining length of the concurrent iterator.
-    fn len(&self) -> usize;
-
-    /// Returns true if the iterator is empty.
-    fn is_empty(&self) -> bool {
-        self.len() == 0
     }
 }

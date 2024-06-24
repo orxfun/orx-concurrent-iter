@@ -23,16 +23,16 @@ fn len() {
     let values = vec!['a', 'b', 'c', 'd'];
 
     let iter = values.iter().into_con_iter().cloned();
-    assert_eq!(iter.try_get_len(), None);
+    assert_eq!(iter.try_get_len(), Some(4));
 
     _ = iter.next();
-    assert_eq!(iter.try_get_len(), None);
+    assert_eq!(iter.try_get_len(), Some(3));
 
     _ = iter.next_chunk(2);
-    assert_eq!(iter.try_get_len(), None);
+    assert_eq!(iter.try_get_len(), Some(1));
 
     _ = iter.next();
-    assert_eq!(iter.try_get_len(), None);
+    assert_eq!(iter.try_get_len(), Some(0));
 
     _ = iter.next();
     assert_eq!(iter.try_get_len(), Some(0));
