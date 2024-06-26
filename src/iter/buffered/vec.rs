@@ -9,7 +9,7 @@ pub struct BufferedVec<T> {
 
 impl<T> BufferedChunk<T> for BufferedVec<T>
 where
-    T: Send + Sync + Default,
+    T: Send + Sync,
 {
     type ConIter = ConIterOfVec<T>;
 
@@ -29,10 +29,6 @@ where
         iter: &Self::ConIter,
         begin_idx: usize,
     ) -> Option<impl ExactSizeIterator<Item = T>> {
-        let vec = unsafe { iter.mut_vec() };
-        let end_idx = (begin_idx + self.chunk_size).min(vec.len()).max(begin_idx);
-        let idx_range = begin_idx..end_idx;
-        let values = idx_range.map(|i| std::mem::take(&mut vec[i]));
-        Some(values)
+        Some(unsafe { iter.take_slice(begin_idx, self.chunk_size) })
     }
 }
