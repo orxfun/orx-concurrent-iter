@@ -24,11 +24,8 @@ pub struct ConIterOfArray<const N: usize, T: Send + Sync> {
 impl<const N: usize, T: Send + Sync> Drop for ConIterOfArray<N, T> {
     fn drop(&mut self) {
         let current = self.counter().current();
-        match current.cmp(&N) {
-            Ordering::Less => {
-                let _remaining_vec_to_be_dropped = unsafe { self.split_off_right(current) };
-            }
-            _ => {}
+        if current <= N {
+            let _remaining_vec_to_be_dropped = unsafe { self.split_off_right(current) };
         }
     }
 }
@@ -77,7 +74,7 @@ impl<const N: usize, T: Send + Sync> ConIterOfArray<N, T> {
         let right_vec = vec.split_off(left_len);
 
         *man_array = ManuallyDrop::new(array);
-        return right_vec;
+        right_vec
     }
 }
 
