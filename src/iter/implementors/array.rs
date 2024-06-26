@@ -8,39 +8,87 @@ use crate::{
     next::NextChunk,
     AtomicCounter, ConcurrentIter, Next,
 };
-use std::{cell::UnsafeCell, cmp::Ordering};
+use std::{
+    cell::UnsafeCell,
+    cmp::Ordering,
+    mem::{ManuallyDrop, MaybeUninit},
+};
 
 /// A concurrent iterator over an array, consuming the array and yielding its elements.
 #[derive(Debug)]
-pub struct ConIterOfArray<const N: usize, T: Send + Sync + Default> {
-    array: UnsafeCell<[T; N]>,
+pub struct ConIterOfArray<const N: usize, T: Send + Sync> {
+    array: UnsafeCell<ManuallyDrop<[T; N]>>,
     counter: AtomicCounter,
 }
 
-impl<const N: usize, T: Send + Sync + Default> ConIterOfArray<N, T> {
+impl<const N: usize, T: Send + Sync> Drop for ConIterOfArray<N, T> {
+    fn drop(&mut self) {
+        let current = self.counter().current();
+        match current.cmp(&N) {
+            Ordering::Less => {
+                let _remaining_vec_to_be_dropped = unsafe { self.split_off_right(current) };
+            }
+            _ => {}
+        }
+    }
+}
+
+impl<const N: usize, T: Send + Sync> ConIterOfArray<N, T> {
     /// Consumes and creates a concurrent iterator of the given `array`.
     pub fn new(array: [T; N]) -> Self {
         Self {
-            array: array.into(),
+            array: ManuallyDrop::new(array).into(),
             counter: AtomicCounter::new(),
         }
     }
 
-    #[inline(always)]
-    #[allow(clippy::mut_from_ref)]
-    pub(crate) unsafe fn mut_array(&self) -> &mut [T; N] {
-        unsafe { &mut *self.array.get() }
+    unsafe fn take_one(&self, item_idx: usize) -> T {
+        let array = &mut *self.array.get();
+        let src_ptr = array.as_mut_ptr().add(item_idx);
+
+        let mut value = MaybeUninit::<T>::uninit();
+        let dst_ptr = value.as_mut_ptr();
+
+        dst_ptr.write(src_ptr.read());
+        value.assume_init()
+    }
+
+    pub(crate) unsafe fn take_slice(
+        &self,
+        begin_idx: usize,
+        len: usize,
+    ) -> impl ExactSizeIterator<Item = T> {
+        let array = &mut *self.array.get();
+        let end_idx = (begin_idx + len).min(array.len());
+        let len = end_idx - begin_idx;
+
+        let ptr = array.as_mut_ptr().add(begin_idx);
+        let vec = Vec::from_raw_parts(ptr, len, 0);
+        vec.into_iter()
+    }
+
+    unsafe fn split_off_right(&self, left_len: usize) -> Vec<T> {
+        debug_assert!(left_len <= N);
+
+        let man_array = &mut *self.array.get();
+        let mut array = ManuallyDrop::take(man_array);
+
+        let mut vec = Vec::from_raw_parts(array.as_mut_ptr(), N, 0);
+        let right_vec = vec.split_off(left_len);
+
+        *man_array = ManuallyDrop::new(array);
+        return right_vec;
     }
 }
 
-impl<const N: usize, T: Send + Sync + Default> From<[T; N]> for ConIterOfArray<N, T> {
+impl<const N: usize, T: Send + Sync> From<[T; N]> for ConIterOfArray<N, T> {
     /// Consumes and creates a concurrent iterator of the given `array`.
     fn from(array: [T; N]) -> Self {
         Self::new(array)
     }
 }
 
-impl<const N: usize, T: Send + Sync + Default> AtomicIter<T> for ConIterOfArray<N, T> {
+impl<const N: usize, T: Send + Sync> AtomicIter<T> for ConIterOfArray<N, T> {
     #[inline(always)]
     fn counter(&self) -> &AtomicCounter {
         &self.counter
@@ -57,12 +105,8 @@ impl<const N: usize, T: Send + Sync + Default> AtomicIter<T> for ConIterOfArray<
 
     fn get(&self, item_idx: usize) -> Option<T> {
         match item_idx.cmp(&N) {
-            Ordering::Less => {
-                // SAFETY: only one thread can access the `item_idx`-th position and `item_idx` is in bounds
-                let array = unsafe { self.mut_array() };
-                let value = std::mem::take(&mut array[item_idx]);
-                Some(value)
-            }
+            // SAFETY: only one thread can access the `item_idx`-th position and `item_idx` is in bounds
+            Ordering::Less => Some(unsafe { self.take_one(item_idx) }),
             _ => None,
         }
     }
@@ -72,15 +116,12 @@ impl<const N: usize, T: Send + Sync + Default> AtomicIter<T> for ConIterOfArray<
         let begin_idx = self
             .progress_and_get_begin_idx(n)
             .unwrap_or(self.initial_len());
-        let array = unsafe { self.mut_array() };
-
         let end_idx = (begin_idx + n).min(N).max(begin_idx);
 
         match begin_idx.cmp(&end_idx) {
             Ordering::Equal => None,
             _ => {
-                let idx_range = begin_idx..end_idx;
-                let values = idx_range.map(|i| unsafe { get_unchecked(array, i) });
+                let values = unsafe { self.take_slice(begin_idx, n) };
                 Some(NextChunk { begin_idx, values })
             }
         }
@@ -91,32 +132,25 @@ impl<const N: usize, T: Send + Sync + Default> AtomicIter<T> for ConIterOfArray<
     }
 }
 
-impl<const N: usize, T: Send + Sync + Default> AtomicIterWithInitialLen<T>
-    for ConIterOfArray<N, T>
-{
+impl<const N: usize, T: Send + Sync> AtomicIterWithInitialLen<T> for ConIterOfArray<N, T> {
     #[inline(always)]
     fn initial_len(&self) -> usize {
         N
     }
 }
 
-#[inline(always)]
-unsafe fn get_unchecked<const N: usize, T: Default>(array: &mut [T; N], item_idx: usize) -> T {
-    std::mem::take(&mut array[item_idx])
-}
+unsafe impl<const N: usize, T: Send + Sync> Sync for ConIterOfArray<N, T> {}
 
-unsafe impl<const N: usize, T: Send + Sync + Default> Sync for ConIterOfArray<N, T> {}
-
-unsafe impl<const N: usize, T: Send + Sync + Default> Send for ConIterOfArray<N, T> {}
+unsafe impl<const N: usize, T: Send + Sync> Send for ConIterOfArray<N, T> {}
 
 // AtomicIter -> ConcurrentIter
 
-impl<const N: usize, T: Send + Sync + Default> ConcurrentIter for ConIterOfArray<N, T> {
+impl<const N: usize, T: Send + Sync> ConcurrentIter for ConIterOfArray<N, T> {
     type Item = T;
 
     type BufferedIter = BufferedArray<N, T>;
 
-    type SeqIter = std::iter::Skip<std::array::IntoIter<T, N>>;
+    type SeqIter = std::vec::IntoIter<T>;
 
     /// Converts the concurrent iterator back to the original wrapped type which is the source of the elements to be iterated.
     /// Already progressed elements are skipped.
@@ -155,8 +189,8 @@ impl<const N: usize, T: Send + Sync + Default> ConcurrentIter for ConIterOfArray
     /// ```
     fn into_seq_iter(self) -> Self::SeqIter {
         let current = self.counter().current();
-        let array = self.array.into_inner();
-        array.into_iter().skip(current)
+        let remaining_vec = unsafe { self.split_off_right(current.min(N)) };
+        remaining_vec.into_iter()
     }
 
     #[inline(always)]
