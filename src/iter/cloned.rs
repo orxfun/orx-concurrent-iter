@@ -28,7 +28,7 @@ where
     pub(crate) fn new(iter: A) -> Self {
         Self {
             iter,
-            phantom: Default::default(),
+            phantom: PhantomData,
         }
     }
 

@@ -21,7 +21,7 @@ where
     fn new(chunk_size: usize) -> Self {
         Self {
             chunk: C::new(chunk_size),
-            phantom: Default::default(),
+            phantom: PhantomData,
         }
     }
 
