@@ -3,7 +3,7 @@ use crate::{
     ConIterOfSlice, ConcurrentIterable,
 };
 
-impl<const N: usize, T: Send + Sync + Default> ConcurrentIterable for [T; N] {
+impl<const N: usize, T: Send + Sync> ConcurrentIterable for [T; N] {
     type Item<'i> = &'i T where Self: 'i;
 
     type ConIter<'i> = ConIterOfSlice<'i, T> where Self: 'i;
@@ -13,7 +13,7 @@ impl<const N: usize, T: Send + Sync + Default> ConcurrentIterable for [T; N] {
     }
 }
 
-impl<const N: usize, T: Send + Sync + Default> IntoConcurrentIter for [T; N] {
+impl<const N: usize, T: Send + Sync> IntoConcurrentIter for [T; N] {
     type Item = T;
 
     type ConIter = ConIterOfArray<N, T>;

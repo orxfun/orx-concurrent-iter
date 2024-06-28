@@ -26,7 +26,7 @@ where
         Self {
             buffered_iter,
             atomic_iter,
-            phantom: Default::default(),
+            phantom: PhantomData,
         }
     }
 

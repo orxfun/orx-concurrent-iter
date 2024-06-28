@@ -77,3 +77,15 @@ fn vec_usize_skip_to_end(len: usize, num_threads: usize, batch: usize) {
     let vec: Vec<_> = (0..len).map(|i| i as usize).collect();
     run(&vec.into_con_iter(), num_threads, batch);
 }
+
+#[test_matrix(
+    [4, 8, 16],
+    [1, 4, 64, 1024]
+)]
+fn array_usize_skip_to_end(num_threads: usize, batch: usize) {
+    let mut array = [0i64; 1024];
+    for (i, x) in array.iter_mut().enumerate() {
+        *x = i as i64;
+    }
+    run(&array.into_con_iter(), num_threads, batch);
+}

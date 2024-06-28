@@ -22,7 +22,7 @@ where
     fn new(chunk_size: usize) -> Self {
         Self {
             values: (0..chunk_size).map(|_| None).collect(),
-            phantom: Default::default(),
+            phantom: PhantomData,
         }
     }
 

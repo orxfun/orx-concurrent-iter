@@ -23,11 +23,8 @@ pub struct ConIterOfVec<T: Send + Sync> {
 impl<T: Send + Sync> Drop for ConIterOfVec<T> {
     fn drop(&mut self) {
         let current = self.counter().current();
-        match current.cmp(&self.vec_len) {
-            Ordering::Less => {
-                let _remaining_vec_to_be_dropped = unsafe { self.split_off_right(current) };
-            }
-            _ => {}
+        if current <= self.vec_len {
+            let _remaining_vec_to_be_dropped = unsafe { self.split_off_right(current) };
         }
     }
 }
@@ -74,7 +71,7 @@ impl<T: Send + Sync> ConIterOfVec<T> {
         let mut left_vec: Vec<T> = ManuallyDrop::take(man_vec);
         let right_vec = left_vec.split_off(left_len);
         *man_vec = ManuallyDrop::new(left_vec);
-        return right_vec;
+        right_vec
     }
 }
 
