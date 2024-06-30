@@ -350,6 +350,7 @@ pub use iter::cloned::{Cloned, IntoCloned};
 pub use iter::con_iter::ConcurrentIter;
 pub use iter::constructors::con_iterable::ConcurrentIterable;
 pub use iter::constructors::into_con_iter::{IntoConcurrentIter, IterIntoConcurrentIter};
+pub use iter::copied::{Copied, IntoCopied};
 pub use iter::implementors::{
     array::ConIterOfArray, iter::ConIterOfIter, range::ConIterOfRange, slice::ConIterOfSlice,
     vec::ConIterOfVec,

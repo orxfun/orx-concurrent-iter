@@ -3,42 +3,43 @@ use test_case::test_matrix;
 
 #[test]
 fn con_iter() {
+    fn test<I: ConcurrentIter<Item = char>>(con_iter: I) {
+        assert_eq!(con_iter.next(), Some('a'));
+        assert_eq!(con_iter.next(), Some('b'));
+        assert_eq!(con_iter.next(), Some('c'));
+        assert_eq!(con_iter.next(), None);
+    }
+
     let values = ['a', 'b', 'c'];
-
-    let con_iter = values.iter().into_con_iter().cloned();
-    assert_eq!(con_iter.next(), Some('a'));
-    assert_eq!(con_iter.next(), Some('b'));
-    assert_eq!(con_iter.next(), Some('c'));
-    assert_eq!(con_iter.next(), None);
-
-    let con_iter = values.iter().into_con_iter().cloned();
-    assert_eq!(con_iter.next(), Some('a'));
-    assert_eq!(con_iter.next(), Some('b'));
-    assert_eq!(con_iter.next(), Some('c'));
-    assert_eq!(con_iter.next(), None);
+    test(values.iter().into_con_iter().cloned());
+    test(values.iter().into_con_iter().copied());
 }
 
 #[test]
 fn len() {
+    fn test<I: ConcurrentIter<Item = char>>(iter: I) {
+        assert_eq!(iter.try_get_len(), Some(4));
+
+        _ = iter.next();
+        assert_eq!(iter.try_get_len(), Some(3));
+
+        _ = iter.next_chunk(2);
+        assert_eq!(iter.try_get_len(), Some(1));
+
+        _ = iter.next();
+        assert_eq!(iter.try_get_len(), Some(0));
+
+        _ = iter.next();
+        assert_eq!(iter.try_get_len(), Some(0));
+
+        _ = iter.next();
+        assert_eq!(iter.try_get_len(), Some(0));
+    }
+
     let values = vec!['a', 'b', 'c', 'd'];
 
-    let iter = values.iter().into_con_iter().cloned();
-    assert_eq!(iter.try_get_len(), Some(4));
-
-    _ = iter.next();
-    assert_eq!(iter.try_get_len(), Some(3));
-
-    _ = iter.next_chunk(2);
-    assert_eq!(iter.try_get_len(), Some(1));
-
-    _ = iter.next();
-    assert_eq!(iter.try_get_len(), Some(0));
-
-    _ = iter.next();
-    assert_eq!(iter.try_get_len(), Some(0));
-
-    _ = iter.next();
-    assert_eq!(iter.try_get_len(), Some(0));
+    test(values.iter().into_con_iter().cloned());
+    test(values.iter().into_con_iter().copied());
 }
 
 #[test]
