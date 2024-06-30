@@ -5,6 +5,7 @@ mod buffered;
 pub(crate) mod cloned;
 pub(crate) mod con_iter;
 pub(crate) mod constructors;
+pub(crate) mod copied;
 mod default_fns;
 pub(crate) mod implementors;
 pub(crate) mod wrappers;
