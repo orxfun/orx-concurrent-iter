@@ -321,7 +321,11 @@
 //! | `[T; N]` | `&T` | `T` |
 //! | `Iter: Iterator<Item = T>` | - | `T` |
 //!
-//! Finally, concurrent iterators having an element type which is a reference to a cloneable type, have the `cloned()` method, allowing to iterate over cloned values.
+//! Finally, concurrent iterators having an element type which is a reference to a `Clone` or `Copy` type, have the `cloned()` or `copied()` methods, allowing to iterate over cloned values.
+//!
+//! ## Contributing
+//!
+//! Contributions are welcome! If you notice an error, have a question or think something could be improved, please open an [issue](https://github.com/orxfun/orx-concurrent-iter/issues/new) or create a PR.
 //!
 //! ## License
 //!
