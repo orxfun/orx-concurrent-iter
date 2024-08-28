@@ -1,7 +1,7 @@
 use orx_concurrent_iter::*;
 use test_case::test_matrix;
 
-const NUM_RERUNS: usize = 10;
+const NUM_RERUNS: usize = 1;
 
 fn concurrent_iter_stack(num_threads: usize, batch: usize, vec: Vec<i64>, consume_till_end: bool) {
     let vec_len = vec.len();

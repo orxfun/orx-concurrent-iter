@@ -2,76 +2,49 @@ use crate::{
     iter::{
         atomic_iter::{AtomicIter, AtomicIterWithInitialLen},
         buffered::{buffered_chunk::BufferedChunk, buffered_iter::BufferedIter, vec::BufferedVec},
+        no_leak_iter::NoLeakIter,
     },
     next::NextChunk,
     AtomicCounter, ConcurrentIter, Next,
 };
 use std::{
-    cell::UnsafeCell,
     cmp::Ordering,
+    fmt::Debug,
     mem::{ManuallyDrop, MaybeUninit},
 };
 
 /// A concurrent iterator over a vector, consuming the vector and yielding its elements.
-#[derive(Debug)]
 pub struct ConIterOfVec<T: Send + Sync> {
-    vec: UnsafeCell<ManuallyDrop<Vec<T>>>,
+    ptr: *mut T,
     vec_len: usize,
+    vec_cap: usize,
     counter: AtomicCounter,
 }
 
 impl<T: Send + Sync> Drop for ConIterOfVec<T> {
     fn drop(&mut self) {
-        let current = self.counter().current();
-        if current <= self.vec_len {
-            let _remaining_vec_to_be_dropped = unsafe { self.split_off_right(current) };
+        // # SAFETY
+        // null ptr indicates that the data is already taken out of this iterator
+        // by a consuming method such as `into_seq_iter`
+        if !self.ptr.is_null() {
+            let num_taken = self.counter.current().min(self.vec_len);
+            for i in num_taken..self.vec_len {
+                unsafe { self.ptr.add(i).drop_in_place() };
+            }
+            let _vec_to_drop = unsafe { Vec::from_raw_parts(self.ptr, 0, self.vec_cap) };
         }
     }
 }
 
-impl<T: Send + Sync> ConIterOfVec<T> {
-    /// Consumes and creates a concurrent iterator of the given `vec`.
-    pub fn new(vec: Vec<T>) -> Self {
-        Self {
-            vec_len: vec.len(),
-            vec: ManuallyDrop::new(vec).into(),
-            counter: AtomicCounter::new(),
-        }
-    }
-
-    unsafe fn take_one(&self, item_idx: usize) -> T {
-        let vec = &mut *self.vec.get();
-        let src_ptr = vec.as_mut_ptr().add(item_idx);
-
-        let mut value = MaybeUninit::<T>::uninit();
-        let dst_ptr = value.as_mut_ptr();
-
-        dst_ptr.write(src_ptr.read());
-        value.assume_init()
-    }
-
-    pub(crate) unsafe fn take_slice(
-        &self,
-        begin_idx: usize,
-        len: usize,
-    ) -> impl ExactSizeIterator<Item = T> {
-        let vec = &mut *self.vec.get();
-        let end_idx = (begin_idx + len).min(vec.len());
-        let len = end_idx - begin_idx;
-
-        let ptr = vec.as_mut_ptr().add(begin_idx);
-        let vec = Vec::from_raw_parts(ptr, len, 0);
-        vec.into_iter()
-    }
-
-    unsafe fn split_off_right(&self, left_len: usize) -> Vec<T> {
-        debug_assert!(left_len <= self.vec_len);
-
-        let man_vec = &mut *self.vec.get();
-        let mut left_vec: Vec<T> = ManuallyDrop::take(man_vec);
-        let right_vec = left_vec.split_off(left_len);
-        *man_vec = ManuallyDrop::new(left_vec);
-        right_vec
+impl<T: Send + Sync> Debug for ConIterOfVec<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let taken = &self.counter.current().min(self.vec_len);
+        let remaining = self.vec_len - taken;
+        f.debug_struct("ConIterOfVec")
+            .field("initial_len", &self.vec_len)
+            .field("taken", &taken)
+            .field("remaining", &remaining)
+            .finish()
     }
 }
 
@@ -79,6 +52,40 @@ impl<T: Send + Sync> From<Vec<T>> for ConIterOfVec<T> {
     /// Consumes and creates a concurrent iterator of the given `vec`.
     fn from(vec: Vec<T>) -> Self {
         Self::new(vec)
+    }
+}
+
+impl<T: Send + Sync> ConIterOfVec<T> {
+    /// Consumes and creates a concurrent iterator of the given `vec`.
+    pub fn new(mut vec: Vec<T>) -> Self {
+        let (vec_len, vec_cap) = (vec.len(), vec.capacity());
+        let ptr = vec.as_mut_ptr();
+        let _ = ManuallyDrop::new(vec);
+        Self {
+            ptr,
+            vec_len,
+            vec_cap,
+            counter: AtomicCounter::new(),
+        }
+    }
+
+    unsafe fn take_one(&self, item_idx: usize) -> T {
+        let src_ptr = self.ptr.add(item_idx);
+
+        let mut value = MaybeUninit::<T>::uninit();
+        value.as_mut_ptr().swap(src_ptr);
+
+        value.assume_init()
+    }
+
+    pub(crate) unsafe fn take_slice(
+        &self,
+        begin_idx: usize,
+        len: usize,
+    ) -> impl ExactSizeIterator<Item = T> + '_ {
+        let end_idx = (begin_idx + len).min(self.vec_len);
+        let iter = (begin_idx..end_idx).map(|i| self.take_one(i));
+        NoLeakIter::from(iter)
     }
 }
 
@@ -91,7 +98,7 @@ impl<T: Send + Sync> AtomicIter<T> for ConIterOfVec<T> {
     #[inline(always)]
     fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
         let begin_idx = self.counter().fetch_and_add(number_to_fetch);
-        match begin_idx.cmp(&self.initial_len()) {
+        match begin_idx.cmp(&self.vec_len) {
             Ordering::Less => Some(begin_idx),
             _ => None,
         }
@@ -106,10 +113,8 @@ impl<T: Send + Sync> AtomicIter<T> for ConIterOfVec<T> {
     }
 
     fn fetch_n(&self, n: usize) -> Option<NextChunk<T, impl ExactSizeIterator<Item = T>>> {
-        let begin_idx = self
-            .progress_and_get_begin_idx(n)
-            .unwrap_or(self.initial_len());
-        let end_idx = (begin_idx + n).min(self.initial_len()).max(begin_idx);
+        let begin_idx = self.progress_and_get_begin_idx(n).unwrap_or(self.vec_len);
+        let end_idx = (begin_idx + n).min(self.vec_len).max(begin_idx);
 
         match begin_idx.cmp(&end_idx) {
             Ordering::Equal => None,
@@ -177,10 +182,28 @@ impl<T: Send + Sync> ConcurrentIter for ConIterOfVec<T> {
     ///     assert_eq!(x, (num_used + i).to_string());
     /// }
     /// ```
-    fn into_seq_iter(self) -> Self::SeqIter {
-        let current = self.counter().current();
-        let remaining_vec = unsafe { self.split_off_right(current.min(self.vec_len)) };
-        remaining_vec.into_iter()
+    fn into_seq_iter(mut self) -> Self::SeqIter {
+        let num_taken = self.counter.current().min(self.vec_len);
+        let ptr = self.ptr;
+
+        self.ptr = std::ptr::null_mut(); // to avoid double free on drop
+
+        match num_taken {
+            0 => {
+                let vec = unsafe { Vec::from_raw_parts(ptr, self.vec_len, self.vec_cap) };
+                vec.into_iter()
+            }
+            _ => {
+                let right_len = self.vec_len - num_taken;
+                for i in 0..right_len {
+                    let dst = unsafe { ptr.add(i) };
+                    let src = unsafe { ptr.add(i + num_taken) };
+                    unsafe { dst.swap(src) };
+                }
+                let vec = unsafe { Vec::from_raw_parts(ptr, right_len, self.vec_cap) };
+                vec.into_iter()
+            }
+        }
     }
 
     #[inline(always)]
