@@ -1,6 +1,6 @@
 [package]
 name = "orx-concurrent-iter"
-version = "1.22.1"
+version = "1.23.0"
 edition = "2021"
 authors = ["orxfun <orx.ugur.arikan@gmail.com>"]
 description = "A thread-safe, ergonomic and lightweight concurrent iterator trait and efficient implementations."
@@ -10,11 +10,11 @@ keywords = ["concurrency", "iterator", "iteration", "atomic", "parallelism"]
 categories = ["data-structures", "concurrency", "rust-patterns"]
 
 [dependencies]
-orx-pinned-vec = "2.12"
 
 [dev-dependencies]
-orx-concurrent-bag = "1.15"
-orx-fixed-vec = "2.12"
-orx-pinned-concurrent-col = "1.5"
-orx-split-vec = "2.14"
+orx-pinned-vec = "3.7"
+orx-fixed-vec = "3.7"
+orx-split-vec = "3.7"
+orx-pinned-concurrent-col = "2.6"
+orx-concurrent-bag = "2.6"
 test-case = "3.3.1"
