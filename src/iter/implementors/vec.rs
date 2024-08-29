@@ -9,7 +9,6 @@ use crate::{
 };
 use std::{
     cmp::Ordering,
-    fmt::Debug,
     mem::{ManuallyDrop, MaybeUninit},
 };
 
@@ -36,15 +35,9 @@ impl<T: Send + Sync> Drop for ConIterOfVec<T> {
     }
 }
 
-impl<T: Send + Sync> Debug for ConIterOfVec<T> {
+impl<T: Send + Sync> std::fmt::Debug for ConIterOfVec<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let taken = &self.counter.current().min(self.vec_len);
-        let remaining = self.vec_len - taken;
-        f.debug_struct("ConIterOfVec")
-            .field("initial_len", &self.vec_len)
-            .field("taken", &taken)
-            .field("remaining", &remaining)
-            .finish()
+        super::helpers::fmt_iter(f, "ConIterOfVec", self.vec_len, &self.counter)
     }
 }
 
