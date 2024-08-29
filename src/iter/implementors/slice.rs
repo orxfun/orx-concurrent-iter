@@ -91,7 +91,7 @@ impl<'a, T: Send + Sync> AtomicIter<&'a T> for ConIterOfSlice<'a, T> {
     }
 
     fn early_exit(&self) {
-        self.counter().store(self.slice.len())
+        let _ = self.counter.get_current_max_value(self.slice.len());
     }
 }
 

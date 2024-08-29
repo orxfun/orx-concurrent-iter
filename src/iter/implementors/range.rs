@@ -134,7 +134,7 @@ where
     }
 
     fn early_exit(&self) {
-        self.counter().store(self.range.end.into())
+        let _ = self.counter.get_current_max_value(self.range.end.into());
     }
 }
 

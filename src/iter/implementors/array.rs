@@ -125,7 +125,7 @@ impl<const N: usize, T: Send + Sync> AtomicIter<T> for ConIterOfArray<N, T> {
     }
 
     fn early_exit(&self) {
-        self.counter().store(N)
+        let _ = self.counter.get_current_max_value(N);
     }
 }
 
