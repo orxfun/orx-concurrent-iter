@@ -10,6 +10,7 @@ use crate::{
 use std::{
     cmp::Ordering,
     mem::{ManuallyDrop, MaybeUninit},
+    ops::Range,
 };
 
 /// A concurrent iterator over a vector, consuming the vector and yielding its elements.
@@ -26,10 +27,7 @@ impl<T: Send + Sync> Drop for ConIterOfVec<T> {
         // null ptr indicates that the data is already taken out of this iterator
         // by a consuming method such as `into_seq_iter`
         if !self.ptr.is_null() {
-            let num_taken = self.counter.current().min(self.vec_len);
-            for i in num_taken..self.vec_len {
-                unsafe { self.ptr.add(i).drop_in_place() };
-            }
+            unsafe { self.drop_elements_in_place(self.num_taken()..self.vec_len) };
             let _vec_to_drop = unsafe { Vec::from_raw_parts(self.ptr, 0, self.vec_cap) };
         }
     }
@@ -69,6 +67,16 @@ impl<T: Send + Sync> ConIterOfVec<T> {
         value.as_mut_ptr().swap(src_ptr);
 
         value.assume_init()
+    }
+
+    unsafe fn drop_elements_in_place(&self, range: Range<usize>) {
+        for i in range {
+            self.ptr.add(i).drop_in_place();
+        }
+    }
+
+    fn num_taken(&self) -> usize {
+        self.counter.current().min(self.vec_len)
     }
 
     pub(crate) unsafe fn take_slice(
@@ -119,7 +127,10 @@ impl<T: Send + Sync> AtomicIter<T> for ConIterOfVec<T> {
     }
 
     fn early_exit(&self) {
-        self.counter().store(self.vec_len)
+        let num_taken_before = self.counter.get_current_max_value(self.vec_len);
+        if num_taken_before < self.vec_len {
+            unsafe { self.drop_elements_in_place(num_taken_before..self.vec_len) };
+        }
     }
 }
 

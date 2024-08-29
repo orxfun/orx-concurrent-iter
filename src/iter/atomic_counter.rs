@@ -35,6 +35,14 @@ impl AtomicCounter {
     pub fn store(&self, new_value: usize) {
         self.current.store(new_value, Ordering::SeqCst)
     }
+
+    /// Updates the current value to the max of the current and provided `max_value`,
+    /// and returns the previous value.
+    ///
+    /// This method is most useful for early exits and concurrently consuming the iterator.
+    pub fn get_current_max_value(&self, max_value: usize) -> usize {
+        self.current.fetch_max(max_value, Ordering::Acquire)
+    }
 }
 
 impl Default for AtomicCounter {

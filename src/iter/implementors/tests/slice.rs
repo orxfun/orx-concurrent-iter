@@ -1,24 +1,61 @@
 use crate::{ConIterOfSlice, ConcurrentIter, ConcurrentIterable};
 use test_case::test_matrix;
 
+const VEC_LEN: usize = 42;
+const VEC_CAP: usize = 64;
+
+#[derive(Clone, Copy, Debug)]
+enum ConsumeRemaining {
+    Leave,
+    Next,
+    SkipToEnd,
+}
+
+#[derive(Clone, Copy, Debug)]
+enum Take {
+    None,
+    Some,
+    All,
+}
+impl Take {
+    fn take(self, vec_len: usize) -> usize {
+        match self {
+            Self::None => 0,
+            Self::Some => vec_len / 3,
+            Self::All => vec_len,
+        }
+    }
+}
+
 fn vec(len: usize, cap: usize) -> Vec<String> {
     let mut vec = Vec::with_capacity(cap);
     vec.extend((0..len).map(|i| i.to_string()));
     vec
 }
 
-#[test]
-fn drop_without_next() {
-    let source = vec(42, 64);
-    let _con_iter: ConIterOfSlice<String> = source.con_iter();
+#[test_matrix(
+    [Take::None, Take::Some, Take::All]
+)]
+fn drop_without_next(take: Take) {
+    let source = vec(VEC_LEN, VEC_CAP);
+    let len = source.len();
+    let num_take = take.take(len);
+
+    let con_iter: ConIterOfSlice<String> = source.con_iter();
+    for i in 0..num_take {
+        let next = con_iter.next();
+        assert_eq!(next, Some(&i.to_string()));
+    }
 }
 
-#[test_matrix([true, false])]
-fn drop_after_next(consume_remaining: bool) {
-    let num_take = 11;
-
-    let source = vec(42, 64);
+#[test_matrix(
+    [Take::None, Take::Some, Take::All],
+    [ConsumeRemaining::Leave, ConsumeRemaining::Next, ConsumeRemaining::SkipToEnd]
+)]
+fn drop_after_next(take: Take, remaining: ConsumeRemaining) {
+    let source = vec(VEC_LEN, VEC_CAP);
     let len = source.len();
+    let num_take = take.take(len);
 
     let con_iter: ConIterOfSlice<String> = source.con_iter();
     for i in 0..num_take {
@@ -26,38 +63,26 @@ fn drop_after_next(consume_remaining: bool) {
         assert_eq!(next, Some(&i.to_string()));
     }
 
-    if consume_remaining {
-        for i in num_take..len {
-            let next = con_iter.next();
-            assert_eq!(next, Some(&i.to_string()));
+    match remaining {
+        ConsumeRemaining::Leave => {}
+        ConsumeRemaining::Next => {
+            for i in num_take..len {
+                let next = con_iter.next();
+                assert_eq!(next, Some(&i.to_string()));
+            }
         }
+        ConsumeRemaining::SkipToEnd => con_iter.skip_to_end(),
     }
 }
 
-#[test_matrix([true, false])]
-fn drop_after_into_seq(consume_remaining: bool) {
-    let source = vec(42, 64);
+#[test_matrix(
+    [Take::None, Take::Some, Take::All],
+    [ConsumeRemaining::Leave, ConsumeRemaining::Next, ConsumeRemaining::SkipToEnd]
+)]
+fn drop_after_into_seq(take: Take, remaining: ConsumeRemaining) {
+    let source = vec(VEC_LEN, VEC_CAP);
     let len = source.len();
-
-    let source: Vec<_> = (0..len).map(|x| x.to_string()).collect();
-    let con_iter: ConIterOfSlice<String> = source.con_iter();
-    let mut seq_iter = con_iter.into_seq_iter();
-
-    if consume_remaining {
-        for i in 0..len {
-            let next = seq_iter.next();
-            assert_eq!(next, Some(&i.to_string()));
-        }
-        assert_eq!(seq_iter.next(), None);
-    }
-}
-
-#[test_matrix([true, false])]
-fn drop_after_next_then_into_seq(consume_remaining: bool) {
-    let num_take = 11;
-
-    let source = vec(42, 64);
-    let len = source.len();
+    let num_take = take.take(len);
 
     let con_iter: ConIterOfSlice<String> = source.con_iter();
     for i in 0..num_take {
@@ -67,24 +92,62 @@ fn drop_after_next_then_into_seq(consume_remaining: bool) {
 
     let mut seq_iter = con_iter.into_seq_iter();
 
-    if consume_remaining {
-        for i in num_take..len {
-            let next = seq_iter.next();
-            assert_eq!(next, Some(&i.to_string()));
+    match remaining {
+        ConsumeRemaining::Leave => {}
+        ConsumeRemaining::Next => {
+            for i in num_take..len {
+                let next = seq_iter.next();
+                assert_eq!(next, Some(&i.to_string()));
+            }
+            assert_eq!(seq_iter.next(), None);
         }
-        assert_eq!(seq_iter.next(), None);
+        ConsumeRemaining::SkipToEnd => {
+            let _ = seq_iter.skip(len).count();
+        }
+    }
+}
+
+#[test_matrix(
+    [Take::None, Take::Some, Take::All],
+    [ConsumeRemaining::Leave, ConsumeRemaining::Next, ConsumeRemaining::SkipToEnd]
+)]
+fn drop_after_next_then_into_seq(take: Take, remaining: ConsumeRemaining) {
+    let source = vec(VEC_LEN, VEC_CAP);
+    let len = source.len();
+    let num_take = take.take(len);
+
+    let con_iter: ConIterOfSlice<String> = source.con_iter();
+    for i in 0..num_take {
+        let next = con_iter.next();
+        assert_eq!(next, Some(&i.to_string()));
+    }
+
+    let mut seq_iter = con_iter.into_seq_iter();
+
+    match remaining {
+        ConsumeRemaining::Leave => {}
+        ConsumeRemaining::Next => {
+            for i in num_take..len {
+                let next = seq_iter.next();
+                assert_eq!(next, Some(&i.to_string()));
+            }
+            assert_eq!(seq_iter.next(), None);
+        }
+        ConsumeRemaining::SkipToEnd => {
+            let _ = seq_iter.skip(len).count();
+        }
     }
 }
 
 #[test_matrix(
     [true, false],
-    [true, false]
+    [Take::None, Take::Some, Take::All],
+    [ConsumeRemaining::Leave, ConsumeRemaining::Next, ConsumeRemaining::SkipToEnd]
 )]
-fn drop_after_next_chunk(consume_chunk: bool, consume_remaining: bool) {
-    let num_take = 11;
-
-    let source = vec(42, 64);
+fn drop_after_next_chunk(consume_chunk: bool, take: Take, remaining: ConsumeRemaining) {
+    let source = vec(VEC_LEN, VEC_CAP);
     let len = source.len();
+    let num_take = take.take(len);
 
     let con_iter: ConIterOfSlice<String> = source.con_iter();
 
@@ -97,25 +160,32 @@ fn drop_after_next_chunk(consume_chunk: bool, consume_remaining: bool) {
         }
     }
 
-    if consume_remaining {
-        for i in num_take..len {
-            let next = con_iter.next();
-            assert_eq!(next, Some(&i.to_string()));
+    match remaining {
+        ConsumeRemaining::Leave => {}
+        ConsumeRemaining::Next => {
+            for i in num_take..len {
+                let next = con_iter.next();
+                assert_eq!(next, Some(&i.to_string()));
+            }
+            assert_eq!(con_iter.next(), None);
         }
-
-        assert_eq!(con_iter.next(), None);
+        ConsumeRemaining::SkipToEnd => con_iter.skip_to_end(),
     }
 }
 
 #[test_matrix(
     [true, false],
-    [true, false]
+    [Take::None, Take::Some, Take::All],
+    [ConsumeRemaining::Leave, ConsumeRemaining::Next, ConsumeRemaining::SkipToEnd]
 )]
-fn drop_after_next_chunk_then_into_seq(consume_chunk: bool, consume_remaining: bool) {
-    let num_take = 11;
-
-    let source = vec(42, 64);
+fn drop_after_next_chunk_then_into_seq(
+    consume_chunk: bool,
+    take: Take,
+    remaining: ConsumeRemaining,
+) {
+    let source = vec(VEC_LEN, VEC_CAP);
     let len = source.len();
+    let num_take = take.take(len);
 
     let con_iter: ConIterOfSlice<String> = source.con_iter();
 
@@ -131,12 +201,17 @@ fn drop_after_next_chunk_then_into_seq(consume_chunk: bool, consume_remaining: b
     }
 
     let mut seq_iter = con_iter.into_seq_iter();
-    if consume_remaining {
-        for i in num_take..len {
-            let next = seq_iter.next();
-            assert_eq!(next, Some(&i.to_string()));
+    match remaining {
+        ConsumeRemaining::Leave => {}
+        ConsumeRemaining::Next => {
+            for i in num_take..len {
+                let next = seq_iter.next();
+                assert_eq!(next, Some(&i.to_string()));
+            }
+            assert_eq!(seq_iter.next(), None);
         }
-
-        assert_eq!(seq_iter.next(), None);
+        ConsumeRemaining::SkipToEnd => {
+            let _ = seq_iter.skip(len).count();
+        }
     }
 }
