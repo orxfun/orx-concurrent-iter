@@ -60,7 +60,7 @@ fn early_exit_array() {
         for (i, x) in array.iter_mut().enumerate() {
             *x = i as i32;
         }
-        let iter = array.into_con_iter();
+        let iter = array.con_iter().cloned();
 
         let found = par_find(iter, predicate, num_threads, batch);
         assert_eq!(found, Some((987, 987)));

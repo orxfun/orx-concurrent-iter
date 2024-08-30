@@ -13,7 +13,7 @@ impl<I: Iterator> From<I> for NoLeakIter<I> {
 
 impl<I: Iterator> Drop for NoLeakIter<I> {
     fn drop(&mut self) {
-        while let Some(_) = self.0.next() {}
+        for _ in self.0.by_ref() {}
     }
 }
 

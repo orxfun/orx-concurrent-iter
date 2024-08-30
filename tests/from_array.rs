@@ -13,22 +13,6 @@ fn con_iter() {
 }
 
 #[test]
-fn into_con_iter() {
-    let values = ['a', 'b', 'c'];
-
-    let con_iter = values.into_con_iter();
-    assert_eq!(con_iter.next(), Some('a'));
-    assert_eq!(con_iter.next(), Some('b'));
-    assert_eq!(con_iter.next(), Some('c'));
-    assert_eq!(con_iter.next(), None);
-
-    let con_iter = values.into_iter().take(2).into_con_iter();
-    assert_eq!(con_iter.next(), Some('a'));
-    assert_eq!(con_iter.next(), Some('b'));
-    assert_eq!(con_iter.next(), None);
-}
-
-#[test]
 fn len() {
     let values = ['a', 'b', 'c', 'd'];
 
@@ -54,12 +38,12 @@ fn into_seq_iter_unused() {
     for (i, x) in array.iter_mut().enumerate() {
         *x = i;
     }
-    let con_iter = array.into_con_iter();
+    let con_iter = array.con_iter();
     let seq_iter = con_iter.into_seq_iter();
 
     assert_eq!(seq_iter.len(), 1024);
     for (i, x) in seq_iter.enumerate() {
-        assert_eq!(x, i);
+        assert_eq!(x, &i);
     }
 }
 
@@ -69,7 +53,7 @@ fn into_seq_iter_used_singly() {
     for (i, x) in array.iter_mut().enumerate() {
         *x = i;
     }
-    let con_iter = array.into_con_iter();
+    let con_iter = array.con_iter();
 
     std::thread::scope(|s| {
         s.spawn(|| {
@@ -83,7 +67,7 @@ fn into_seq_iter_used_singly() {
 
     assert_eq!(seq_iter.len(), 1024 - 114);
     for (i, x) in seq_iter.enumerate() {
-        assert_eq!(x, 114 + i);
+        assert_eq!(x, &(114 + i));
     }
 }
 
@@ -93,7 +77,7 @@ fn into_seq_iter_used_in_batches() {
     for (i, x) in array.iter_mut().enumerate() {
         *x = i;
     }
-    let con_iter = array.into_con_iter();
+    let con_iter = array.con_iter().cloned();
 
     std::thread::scope(|s| {
         s.spawn(|| {
@@ -121,7 +105,7 @@ fn into_seq_iter_doc() {
     for (i, x) in array.iter_mut().enumerate() {
         *x = i;
     }
-    let con_iter = array.into_con_iter();
+    let con_iter = array.con_iter().cloned();
 
     std::thread::scope(|s| {
         s.spawn(|| {
@@ -151,7 +135,7 @@ fn into_seq_iter_not_used() {
     for (i, x) in values.iter_mut().enumerate() {
         *x = i;
     }
-    let iter = values.clone().into_con_iter().into_seq_iter();
+    let iter = values.con_iter().cloned().into_seq_iter();
     let result: Vec<_> = iter.collect();
 
     assert_eq!(result, values);
@@ -164,7 +148,7 @@ fn into_seq_iter_used(take: usize) {
         *x = i;
     }
 
-    let iter = values.clone().into_con_iter();
+    let iter = values.con_iter().cloned();
     for _ in 0..take {
         _ = iter.next();
     }
@@ -185,7 +169,7 @@ fn buffered(chunk_size: usize) {
     for (i, x) in values.iter_mut().enumerate() {
         *x = 100 + i;
     }
-    let iter = values.into_con_iter();
+    let iter = values.con_iter().cloned();
     let mut buffered = iter.buffered_iter(chunk_size);
 
     let mut current = 100;

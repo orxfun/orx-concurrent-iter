@@ -278,7 +278,7 @@ fn con_iter_array(num_threads: usize, batch: usize) {
     }
     let sum: usize = source.iter().sum();
 
-    let collected: Vec<usize> = concurrent_iter(num_threads, batch, source.into_con_iter());
+    let collected: Vec<usize> = concurrent_iter(num_threads, batch, source.con_iter().cloned());
     assert_eq!(source.as_slice(), collected.into_iter().collect::<Vec<_>>());
 
     concurrent_sum(num_threads, batch, source.into_con_iter(), sum);
