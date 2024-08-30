@@ -35,35 +35,37 @@ where
         iter: &Self::ConIter,
         begin_idx: usize,
     ) -> Option<impl ExactSizeIterator<Item = T>> {
-        let core_iter = unsafe { iter.mut_iter() };
+        iter.mut_handle().and_then(|_h| {
+            let core_iter = unsafe { &mut *iter.iter.get() };
 
-        let mut i = 0;
-        loop {
-            match core_iter.next() {
-                Some(x) => self.values[i] = Some(x),
-                None => break,
+            let mut i = 0;
+            loop {
+                match core_iter.next() {
+                    Some(x) => self.values[i] = Some(x),
+                    None => break,
+                }
+
+                i += 1;
+                if i == self.chunk_size() {
+                    break;
+                }
             }
 
-            i += 1;
-            if i == self.chunk_size() {
-                break;
-            }
-        }
+            let older_count = iter.progress_yielded_counter(self.chunk_size());
+            assert_eq!(older_count, begin_idx);
 
-        let older_count = iter.progress_yielded_counter(self.chunk_size());
-        assert_eq!(older_count, begin_idx);
-
-        match i {
-            0 => None,
-            _ => {
-                let iter = BufferedIter {
-                    values: &mut self.values,
-                    initial_len: i,
-                    current_idx: 0,
-                };
-                Some(iter)
+            match i {
+                0 => None,
+                _ => {
+                    let iter = BufferedIter {
+                        values: &mut self.values,
+                        initial_len: i,
+                        current_idx: 0,
+                    };
+                    Some(iter)
+                }
             }
-        }
+        })
     }
 }
 

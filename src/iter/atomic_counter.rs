@@ -15,25 +15,25 @@ impl AtomicCounter {
     /// Fetches and returns the current value of the counter, and adds `len` to it.
     #[inline(always)]
     pub fn fetch_and_add(&self, len: usize) -> usize {
-        self.current.fetch_add(len, Ordering::AcqRel)
+        self.current.fetch_add(len, Ordering::Acquire)
     }
 
     /// Fetches and returns the current value of the counter, and adds `1` to it.
     #[inline(always)]
     pub fn fetch_and_increment(&self) -> usize {
-        self.current.fetch_add(1, Ordering::AcqRel)
+        self.current.fetch_add(1, Ordering::Acquire)
     }
 
     /// Fetches and returns the current value of the counter.
     #[inline(always)]
     pub fn current(&self) -> usize {
-        self.current.load(Ordering::Relaxed)
+        self.current.load(Ordering::Acquire)
     }
 
     /// Updates the value of the current value of the counter as the given `new_value`.
     #[inline(always)]
     pub fn store(&self, new_value: usize) {
-        self.current.store(new_value, Ordering::SeqCst)
+        self.current.store(new_value, Ordering::Release)
     }
 
     /// Updates the current value to the max of the current and provided `max_value`,

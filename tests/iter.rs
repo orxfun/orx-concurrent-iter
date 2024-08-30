@@ -1,5 +1,4 @@
 mod atomic;
-
 use atomic::{atomic_fetch_n, atomic_fetch_one, ATOMIC_FETCH_N, ATOMIC_TEST_LEN};
 use orx_concurrent_iter::*;
 

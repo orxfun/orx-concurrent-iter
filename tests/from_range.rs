@@ -1,6 +1,5 @@
-use std::cmp::Ordering;
-
 use orx_concurrent_iter::*;
+use std::cmp::Ordering;
 use test_case::test_matrix;
 
 #[test]

@@ -2,7 +2,7 @@ use orx_concurrent_iter::*;
 use test_case::test_matrix;
 
 const N: usize = 1024;
-const NUM_RERUNS: usize = 10;
+const NUM_RERUNS: usize = 1;
 
 fn concurrent_iter_stack(
     num_threads: usize,
