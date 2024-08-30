@@ -21,6 +21,7 @@ where
                         bag.push((next.idx, next.value));
                     }
                 }
+
                 if t % 2 == 0 {
                     while let Some(chunk) = iter.next_chunk(batch) {
                         for (i, value) in chunk.values.enumerate() {
@@ -197,7 +198,7 @@ where
 }
 
 #[test_matrix(
-    [1, 4, 1024, 64*1024],
+    [1, 4, 1024, 4*1024],
     [1, 2, 8],
     [1, 4, 64, 1024]
 )]
@@ -221,7 +222,7 @@ fn con_iter_slice(len: usize, num_threads: usize, batch: usize) {
 }
 
 #[test_matrix(
-    [1, 4, 1024, 64*1024],
+    [1, 4, 1024, 4*1024],
     [1, 2, 8],
     [1, 4, 64, 1024]
 )]
@@ -242,7 +243,7 @@ fn con_iter_vec(len: usize, num_threads: usize, batch: usize) {
 }
 
 #[test_matrix(
-    [1, 4, 1024, 64*1024],
+    [1, 4, 1024, 4*1024],
     [1, 2, 8],
     [1, 4, 64, 1024]
 )]

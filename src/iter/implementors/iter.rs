@@ -1,3 +1,4 @@
+use super::{iter_mut_handle::IterMutHandle, iter_mut_states::*};
 use crate::{
     iter::{
         atomic_counter::AtomicCounter,
@@ -10,7 +11,7 @@ use crate::{
 use std::{
     cell::UnsafeCell,
     cmp::Ordering,
-    sync::atomic::{self, AtomicBool},
+    sync::atomic::{self, AtomicU8},
 };
 
 /// A regular `Iter: Iterator` ascended to the concurrent programs with use of atomics.
@@ -23,11 +24,11 @@ pub struct ConIterOfIter<T: Send + Sync, Iter>
 where
     Iter: Iterator<Item = T>,
 {
-    iter: UnsafeCell<Iter>,
+    pub(crate) iter: UnsafeCell<Iter>,
     initial_len: Option<usize>,
     reserved_counter: AtomicCounter,
     yielded_counter: AtomicCounter,
-    completed: AtomicBool,
+    state: AtomicU8,
 }
 
 impl<T: Send + Sync, Iter> ConIterOfIter<T, Iter>
@@ -47,19 +48,17 @@ where
             initial_len,
             reserved_counter: AtomicCounter::new(),
             yielded_counter: AtomicCounter::new(),
-            completed: false.into(),
+            state: AVAILABLE.into(),
         }
-    }
-
-    #[inline(always)]
-    #[allow(clippy::mut_from_ref)]
-    pub(crate) unsafe fn mut_iter(&self) -> &mut Iter {
-        unsafe { &mut *self.iter.get() }
     }
 
     #[inline(always)]
     pub(crate) fn progress_yielded_counter(&self, num_yielded: usize) -> usize {
         self.yielded_counter.fetch_and_add(num_yielded)
+    }
+
+    pub(crate) fn mut_handle(&self) -> Option<IterMutHandle> {
+        IterMutHandle::spin_get(&self.state)
     }
 }
 
@@ -92,20 +91,25 @@ where
 
     #[inline(always)]
     fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
-        let begin_idx = self.counter().fetch_and_add(number_to_fetch);
+        match number_to_fetch {
+            0 => None,
+            _ => {
+                let begin_idx = self.counter().fetch_and_add(number_to_fetch);
 
-        loop {
-            let yielded_count = self.yielded_counter.current();
-            match begin_idx.cmp(&yielded_count) {
-                // begin_idx==yielded_count => it is our job to provide the items
-                Ordering::Equal => return Some(begin_idx),
+                loop {
+                    let yielded_count = self.yielded_counter.current();
+                    match begin_idx.cmp(&yielded_count) {
+                        // begin_idx==yielded_count => it is our job to provide the items
+                        Ordering::Equal => return Some(begin_idx),
 
-                Ordering::Less => return None,
+                        Ordering::Less => return None,
 
-                // begin_idx > yielded_count => we need the other items to be yielded
-                Ordering::Greater => {
-                    if self.completed.load(atomic::Ordering::Relaxed) {
-                        return None;
+                        // begin_idx > yielded_count => we need the other items to be yielded
+                        Ordering::Greater => {
+                            if self.state.load(atomic::Ordering::Relaxed) == COMPLETED {
+                                return None;
+                            }
+                        }
                     }
                 }
             }
@@ -119,12 +123,16 @@ where
                 // item_idx==yielded_count => it is our job to provide the item
                 Ordering::Equal => {
                     // SAFETY: no other thread has the valid condition to iterate, they are waiting
-                    let next = unsafe { self.mut_iter() }.next();
+                    let next = {
+                        self.mut_handle()
+                            .and_then(|_h| unsafe { &mut *self.iter.get() }.next())
+                    };
+
                     match next.is_some() {
                         true => {
                             _ = self.yielded_counter.fetch_and_increment();
                         }
-                        false => self.completed.store(true, atomic::Ordering::SeqCst),
+                        false => self.state.store(COMPLETED, atomic::Ordering::Release),
                     };
                     return next;
                 }
@@ -133,7 +141,7 @@ where
 
                 // item_idx > yielded_count => we need the other items to be yielded
                 Ordering::Greater => {
-                    if self.completed.load(atomic::Ordering::Relaxed) {
+                    if self.state.load(atomic::Ordering::Relaxed) == COMPLETED {
                         return None;
                     }
                 }
@@ -144,17 +152,22 @@ where
     fn fetch_n(&self, n: usize) -> Option<NextChunk<T, impl ExactSizeIterator<Item = T>>> {
         self.progress_and_get_begin_idx(n).and_then(|begin_idx| {
             // SAFETY: no other thread has the valid condition to iterate, they are waiting
-            let iter = unsafe { self.mut_iter() };
-            let end_idx = begin_idx + n;
-            let buffer = (begin_idx..end_idx)
-                .map(|_| iter.next())
-                .take_while(|x| x.is_some())
-                .map(|x| x.expect("is_some is checked"))
-                .collect::<Vec<_>>();
+            let buffer = self
+                .mut_handle()
+                .map(|_h| {
+                    let iter = unsafe { &mut *self.iter.get() };
+                    let end_idx = begin_idx + n;
+                    (begin_idx..end_idx)
+                        .map(|_| iter.next())
+                        .take_while(|x| x.is_some())
+                        .map(|x| x.expect("is_some is checked"))
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or(vec![]);
 
             match buffer.len() {
                 0 => {
-                    self.completed.store(true, atomic::Ordering::SeqCst);
+                    self.state.store(COMPLETED, atomic::Ordering::SeqCst);
                     let older_count = self.progress_yielded_counter(n);
                     assert_eq!(older_count, begin_idx);
                     None
@@ -171,7 +184,7 @@ where
 
     fn early_exit(&self) {
         self.counter().store(usize::MAX);
-        self.completed.store(true, atomic::Ordering::SeqCst);
+        self.state.store(COMPLETED, atomic::Ordering::SeqCst);
     }
 }
 
@@ -247,7 +260,7 @@ where
 
     #[inline(always)]
     fn try_get_len(&self) -> Option<usize> {
-        match self.completed.load(atomic::Ordering::SeqCst) {
+        match self.state.load(atomic::Ordering::SeqCst) == COMPLETED {
             true => Some(0),
             false => self.initial_len.map(|initial_len| {
                 let current = <Self as AtomicIter<_>>::counter(self).current();

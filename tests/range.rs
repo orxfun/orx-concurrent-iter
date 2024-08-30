@@ -1,5 +1,4 @@
 mod atomic;
-
 use atomic::{
     atomic_fetch_n, atomic_fetch_one, atomic_initial_len, test_ids_and_values, test_values,
     ATOMIC_FETCH_N, ATOMIC_TEST_LEN,
