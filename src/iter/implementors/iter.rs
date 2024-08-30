@@ -19,7 +19,6 @@ use std::{
 /// it might be considered as the most general `ConcurrentIter` implementation.
 ///
 /// In performance critical scenarios and whenever possible, it might be preferable to use a more specific implementation such as [`crate::ConIterOfSlice`].
-#[derive(Debug)]
 pub struct ConIterOfIter<T: Send + Sync, Iter>
 where
     Iter: Iterator<Item = T>,
@@ -61,6 +60,15 @@ where
     #[inline(always)]
     pub(crate) fn progress_yielded_counter(&self, num_yielded: usize) -> usize {
         self.yielded_counter.fetch_and_add(num_yielded)
+    }
+}
+
+impl<T: Send + Sync, Iter> std::fmt::Debug for ConIterOfIter<T, Iter>
+where
+    Iter: Iterator<Item = T>,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        super::helpers::fmt_iter(f, "ConIterOfIter", self.initial_len, &self.yielded_counter)
     }
 }
 

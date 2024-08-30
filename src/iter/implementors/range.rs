@@ -14,7 +14,7 @@ use std::{
 };
 
 /// A concurrent iterator over a slice yielding references to the elements.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ConIterOfRange<Idx>
 where
     Idx: Send
@@ -55,6 +55,24 @@ where
 
     pub(crate) fn range(&self) -> &Range<Idx> {
         &self.range
+    }
+}
+
+impl<Idx> std::fmt::Debug for ConIterOfRange<Idx>
+where
+    Idx: Send
+        + Sync
+        + Clone
+        + Copy
+        + From<usize>
+        + Into<usize>
+        + Add<Idx, Output = Idx>
+        + Sub<Idx, Output = Idx>
+        + Ord,
+    Range<Idx>: Iterator<Item = Idx>,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        super::helpers::fmt_iter(f, "ConIterOfRange", Some(self.initial_len()), &self.counter)
     }
 }
 

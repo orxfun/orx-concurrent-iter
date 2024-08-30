@@ -42,14 +42,30 @@ fn debug() {
 
     assert_eq!(
         format!("{:?}", con_iter),
-        "ConIterOfRange { range: 3..10, counter: AtomicCounter { current: 0 } }"
+        "ConIterOfRange { initial_len: 7, taken: 0, remaining: 7 }"
     );
 
     assert_eq!(con_iter.next(), Some(3));
 
     assert_eq!(
         format!("{:?}", con_iter),
-        "ConIterOfRange { range: 3..10, counter: AtomicCounter { current: 1 } }"
+        "ConIterOfRange { initial_len: 7, taken: 1, remaining: 6 }"
+    );
+
+    for _ in 0..6 {
+        _ = con_iter.next();
+    }
+
+    assert_eq!(
+        format!("{:?}", con_iter),
+        "ConIterOfRange { initial_len: 7, taken: 7, remaining: 0 }"
+    );
+
+    _ = con_iter.next();
+
+    assert_eq!(
+        format!("{:?}", con_iter),
+        "ConIterOfRange { initial_len: 7, taken: 7, remaining: 0 }"
     );
 }
 
