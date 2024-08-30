@@ -163,7 +163,7 @@ where
                         .map(|x| x.expect("is_some is checked"))
                         .collect::<Vec<_>>()
                 })
-                .unwrap_or(vec![]);
+                .unwrap_or_default();
 
             match buffer.len() {
                 0 => {
