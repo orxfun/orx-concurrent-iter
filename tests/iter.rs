@@ -37,38 +37,38 @@ fn debug() {
     let con_iter: ConIterOfIter<_, _> = values.iter().into();
 
     assert_eq!(
-            format!("{:?}", con_iter),
-            "ConIterOfIter { iter: UnsafeCell { .. }, initial_len: Some(3), reserved_counter: AtomicCounter { current: 0 }, yielded_counter: AtomicCounter { current: 0 }, completed: false }"
-        );
+        format!("{:?}", con_iter),
+        "ConIterOfIter { initial_len: 3, taken: 0, remaining: 3 }"
+    );
 
     assert_eq!(con_iter.next(), Some(&'a'));
 
     assert_eq!(
-            format!("{:?}", con_iter),
-            "ConIterOfIter { iter: UnsafeCell { .. }, initial_len: Some(3), reserved_counter: AtomicCounter { current: 1 }, yielded_counter: AtomicCounter { current: 1 }, completed: false }"
-        );
+        format!("{:?}", con_iter),
+        "ConIterOfIter { initial_len: 3, taken: 1, remaining: 2 }"
+    );
 
     assert_eq!(con_iter.next(), Some(&'b'));
     assert_eq!(con_iter.next(), Some(&'c'));
 
     assert_eq!(
-            format!("{:?}", con_iter),
-            "ConIterOfIter { iter: UnsafeCell { .. }, initial_len: Some(3), reserved_counter: AtomicCounter { current: 3 }, yielded_counter: AtomicCounter { current: 3 }, completed: false }"
-        );
+        format!("{:?}", con_iter),
+        "ConIterOfIter { initial_len: 3, taken: 3, remaining: 0 }"
+    );
 
     assert_eq!(con_iter.next(), None);
 
     assert_eq!(
-            format!("{:?}", con_iter),
-            "ConIterOfIter { iter: UnsafeCell { .. }, initial_len: Some(3), reserved_counter: AtomicCounter { current: 4 }, yielded_counter: AtomicCounter { current: 3 }, completed: true }"
-        );
+        format!("{:?}", con_iter),
+        "ConIterOfIter { initial_len: 3, taken: 3, remaining: 0 }"
+    );
 
     assert_eq!(con_iter.next(), None);
 
     assert_eq!(
-            format!("{:?}", con_iter),
-            "ConIterOfIter { iter: UnsafeCell { .. }, initial_len: Some(3), reserved_counter: AtomicCounter { current: 5 }, yielded_counter: AtomicCounter { current: 3 }, completed: true }"
-        );
+        format!("{:?}", con_iter),
+        "ConIterOfIter { initial_len: 3, taken: 3, remaining: 0 }"
+    );
 }
 
 #[test]

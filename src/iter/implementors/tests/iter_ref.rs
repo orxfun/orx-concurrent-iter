@@ -36,7 +36,7 @@ fn vec(len: usize, cap: usize) -> Vec<String> {
 #[test_matrix(
     [Take::None, Take::Some, Take::All]
 )]
-fn abc_drop_without_next(take: Take) {
+fn drop_without_next(take: Take) {
     let source = vec(VEC_LEN, VEC_CAP);
     let len = source.len();
     let num_take = take.take(len);
@@ -52,7 +52,7 @@ fn abc_drop_without_next(take: Take) {
     [Take::None, Take::Some, Take::All],
     [ConsumeRemaining::Leave, ConsumeRemaining::Next, ConsumeRemaining::SkipToEnd]
 )]
-fn abc_drop_after_next(take: Take, remaining: ConsumeRemaining) {
+fn drop_after_next(take: Take, remaining: ConsumeRemaining) {
     let source = vec(VEC_LEN, VEC_CAP);
     let len = source.len();
     let num_take = take.take(len);
@@ -79,7 +79,7 @@ fn abc_drop_after_next(take: Take, remaining: ConsumeRemaining) {
     [Take::None, Take::Some, Take::All],
     [ConsumeRemaining::Leave, ConsumeRemaining::Next, ConsumeRemaining::SkipToEnd]
 )]
-fn abc_drop_after_into_seq(take: Take, remaining: ConsumeRemaining) {
+fn drop_after_into_seq(take: Take, remaining: ConsumeRemaining) {
     let source = vec(VEC_LEN, VEC_CAP);
     let len = source.len();
     let num_take = take.take(len);
@@ -111,7 +111,7 @@ fn abc_drop_after_into_seq(take: Take, remaining: ConsumeRemaining) {
     [Take::None, Take::Some, Take::All],
     [ConsumeRemaining::Leave, ConsumeRemaining::Next, ConsumeRemaining::SkipToEnd]
 )]
-fn abc_drop_after_next_then_into_seq(take: Take, remaining: ConsumeRemaining) {
+fn drop_after_next_then_into_seq(take: Take, remaining: ConsumeRemaining) {
     let source = vec(VEC_LEN, VEC_CAP);
     let len = source.len();
     let num_take = take.take(len);
@@ -144,7 +144,7 @@ fn abc_drop_after_next_then_into_seq(take: Take, remaining: ConsumeRemaining) {
     [Take::None, Take::Some, Take::All],
     [ConsumeRemaining::Leave, ConsumeRemaining::Next, ConsumeRemaining::SkipToEnd]
 )]
-fn abc_drop_after_next_chunk(consume_chunk: bool, take: Take, remaining: ConsumeRemaining) {
+fn drop_after_next_chunk(consume_chunk: bool, take: Take, remaining: ConsumeRemaining) {
     let source = vec(VEC_LEN, VEC_CAP);
     let len = source.len();
     let num_take = take.take(len);
@@ -178,7 +178,7 @@ fn abc_drop_after_next_chunk(consume_chunk: bool, take: Take, remaining: Consume
     [Take::None, Take::Some, Take::All],
     [ConsumeRemaining::Leave, ConsumeRemaining::Next, ConsumeRemaining::SkipToEnd]
 )]
-fn abc_drop_after_next_chunk_then_into_seq(
+fn drop_after_next_chunk_then_into_seq(
     consume_chunk: bool,
     take: Take,
     remaining: ConsumeRemaining,

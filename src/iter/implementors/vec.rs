@@ -35,7 +35,7 @@ impl<T: Send + Sync> Drop for ConIterOfVec<T> {
 
 impl<T: Send + Sync> std::fmt::Debug for ConIterOfVec<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        super::helpers::fmt_iter(f, "ConIterOfVec", self.vec_len, &self.counter)
+        super::helpers::fmt_iter(f, "ConIterOfVec", Some(self.initial_len()), &self.counter)
     }
 }
 

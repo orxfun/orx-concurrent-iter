@@ -19,7 +19,7 @@ pub struct ConIterOfSlice<'a, T: Send + Sync> {
 
 impl<'a, T: Send + Sync> std::fmt::Debug for ConIterOfSlice<'a, T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        super::helpers::fmt_iter(f, "ConIterOfSlice", self.slice.len(), &self.counter)
+        super::helpers::fmt_iter(f, "ConIterOfSlice", Some(self.initial_len()), &self.counter)
     }
 }
 
