@@ -1,7 +1,4 @@
-use crate::{
-    iter::{constructors::into_con_iter::IntoConcurrentIter, implementors::array::ConIterOfArray},
-    ConIterOfSlice, ConcurrentIterable,
-};
+use crate::{ConIterOfSlice, ConcurrentIterable};
 
 impl<const N: usize, T: Send + Sync> ConcurrentIterable for [T; N] {
     type Item<'i> = &'i T where Self: 'i;
@@ -10,15 +7,5 @@ impl<const N: usize, T: Send + Sync> ConcurrentIterable for [T; N] {
 
     fn con_iter(&self) -> Self::ConIter<'_> {
         Self::ConIter::new(self.as_slice())
-    }
-}
-
-impl<const N: usize, T: Send + Sync> IntoConcurrentIter for [T; N] {
-    type Item = T;
-
-    type ConIter = ConIterOfArray<N, T>;
-
-    fn into_con_iter(self) -> Self::ConIter {
-        Self::ConIter::new(self)
     }
 }

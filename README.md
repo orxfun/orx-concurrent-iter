@@ -62,7 +62,6 @@ run::<&i32>(slice.con_iter());
 run::<i32>(slice.con_iter().cloned());
 
 // consuming iteration over values
-run::<String>(names.into_con_iter());
 run::<i32>(values.into_con_iter());
 
 // any Iterator into ConcurrentIter

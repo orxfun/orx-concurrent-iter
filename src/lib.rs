@@ -62,7 +62,6 @@
 //! run::<i32>(slice.con_iter().cloned());
 //!
 //! // consuming iteration over values
-//! run::<String>(names.into_con_iter());
 //! run::<i32>(values.into_con_iter());
 //!
 //! // any Iterator into ConcurrentIter
@@ -356,8 +355,7 @@ pub use iter::constructors::con_iterable::ConcurrentIterable;
 pub use iter::constructors::into_con_iter::{IntoConcurrentIter, IterIntoConcurrentIter};
 pub use iter::copied::{Copied, IntoCopied};
 pub use iter::implementors::{
-    array::ConIterOfArray, iter::ConIterOfIter, range::ConIterOfRange, slice::ConIterOfSlice,
-    vec::ConIterOfVec,
+    iter::ConIterOfIter, range::ConIterOfRange, slice::ConIterOfSlice, vec::ConIterOfVec,
 };
 pub use iter::wrappers::{ids_and_values::ConIterIdsAndValues, values::ConIterValues};
 pub use next::{Next, NextChunk};
