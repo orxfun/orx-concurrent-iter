@@ -1,5 +1,5 @@
 use super::buffered_chunk::BufferedChunk;
-use crate::ConIterOfIter;
+use crate::iter::implementors::iter::ConIterOfIter;
 use std::marker::PhantomData;
 
 #[derive(Debug)]
@@ -26,6 +26,7 @@ where
         }
     }
 
+    #[inline(always)]
     fn chunk_size(&self) -> usize {
         self.values.len()
     }
@@ -35,37 +36,34 @@ where
         iter: &Self::ConIter,
         begin_idx: usize,
     ) -> Option<impl ExactSizeIterator<Item = T>> {
-        iter.mut_handle().and_then(|_h| {
-            let core_iter = unsafe { &mut *iter.iter.get() };
+        // SAFETY: no other thread has the valid condition to iterate, they are waiting
 
-            let mut i = 0;
-            loop {
-                match core_iter.next() {
-                    Some(x) => self.values[i] = Some(x),
-                    None => break,
-                }
+        let core_iter = unsafe { &mut *iter.iter.get() };
 
-                i += 1;
-                if i == self.chunk_size() {
-                    break;
+        let mut count = 0;
+        for pos in self.values.iter_mut() {
+            match core_iter.next() {
+                Some(x) => {
+                    *pos = Some(x);
+                    count += 1;
                 }
+                None => break,
             }
+        }
 
-            let older_count = iter.progress_yielded_counter(self.chunk_size());
-            assert_eq!(older_count, begin_idx);
+        match count == self.chunk_size() {
+            true => iter.release_handle(begin_idx + self.chunk_size()),
+            false => iter.release_handle_complete(),
+        }
 
-            match i {
-                0 => None,
-                _ => {
-                    let iter = BufferedIter {
-                        values: &mut self.values,
-                        initial_len: i,
-                        current_idx: 0,
-                    };
-                    Some(iter)
-                }
-            }
-        })
+        match count {
+            0 => None,
+            _ => Some(BufferedIter {
+                values: &mut self.values,
+                initial_len: count,
+                current_idx: 0,
+            }),
+        }
     }
 }
 

@@ -6,7 +6,8 @@
 A thread-safe, ergonomic and lightweight concurrent iterator trait and efficient implementations.
 
 * **ergonomic**: An iterator implementing `ConcurrentIter` can safely be shared among threads. It may be iterated over concurrently by multiple threads with `for` or `while let`. It further provides higher level methods such as `for_each` and `fold` which allow for safe, simple and efficient parallelism.
-* **efficient** and **lightweight**: All concurrent iterator implementations provided in this crate extend atomic iterators which are lock-free and depend only on atomic primitives.
+* **any Iterator => ConcurrentIter**: Commonly used collections such as `Vec` have optimized implementations; however, any iterator can be converted into a concurrent iterator.
+* **efficient** and **lightweight**: All concurrent iterator implementations provided in this crate extend lock-free atomic iterators. Further they allow to iterate in chunks which enable significant performance improvements.
 
 ## Examples
 
