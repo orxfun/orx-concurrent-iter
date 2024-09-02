@@ -145,6 +145,8 @@ where
                             return Some((next.idx, next.value));
                         }
                     }
+                    _ = iter.next_id_and_value();
+                    _ = iter.next_id_and_value();
                 } else {
                     while let Some(chunk) = iter.next_chunk(batch) {
                         for (i, x) in chunk.values.enumerate() {
@@ -154,6 +156,8 @@ where
                             }
                         }
                     }
+                    _ = iter.next_chunk(batch);
+                    _ = iter.next_chunk(batch);
                 }
                 None
             }));

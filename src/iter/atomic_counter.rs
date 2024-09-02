@@ -15,7 +15,7 @@ impl AtomicCounter {
     /// Fetches and returns the current value of the counter, and adds `len` to it.
     #[inline(always)]
     pub fn fetch_and_add(&self, len: usize) -> usize {
-        self.current.fetch_add(len, Ordering::Acquire)
+        self.current.fetch_add(len, Ordering::Relaxed)
     }
 
     /// Fetches and returns the current value of the counter, and adds `1` to it.
