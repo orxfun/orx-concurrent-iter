@@ -1,7 +1,6 @@
 use crate::{
     iter::{
         atomic_counter::AtomicCounter,
-        atomic_iter::AtomicIter,
         buffered::{buffered_chunk::BufferedChunk, buffered_iter::BufferedIter, iter::BufferIter},
     },
     next::NextChunk,
@@ -50,6 +49,44 @@ where
             yielded_counter: 0.into(),
         }
     }
+
+    pub(crate) fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
+        match number_to_fetch {
+            0 => None,
+            _ => {
+                let begin_idx = self.reserved_counter.fetch_and_add(number_to_fetch);
+
+                loop {
+                    match self.try_get_handle(begin_idx) {
+                        Ok(_) => return Some(begin_idx),
+                        Err(COMPLETED) => return None,
+                        _ => {}
+                    }
+                }
+            }
+        }
+    }
+
+    fn get(&self, item_idx: usize) -> Option<T> {
+        loop {
+            match self.try_get_handle(item_idx) {
+                Ok(_) => {
+                    let next = unsafe { &mut *self.iter.get() }.next();
+
+                    match next.is_some() {
+                        true => self.release_handle(item_idx + 1),
+                        false => self.release_handle_complete(),
+                    }
+
+                    return next;
+                }
+                Err(COMPLETED) => return None,
+                _ => {}
+            }
+        }
+    }
+
+    // handles
 
     fn try_get_handle(&self, begin_idx: usize) -> Result<usize, usize> {
         self.yielded_counter.compare_exchange(
@@ -100,86 +137,6 @@ where
 {
     fn from(iter: Iter) -> Self {
         Self::new(iter)
-    }
-}
-
-impl<T: Send + Sync, Iter> AtomicIter<T> for ConIterOfIter<T, Iter>
-where
-    Iter: Iterator<Item = T>,
-{
-    #[inline(always)]
-    fn counter(&self) -> &AtomicCounter {
-        &self.reserved_counter
-    }
-
-    #[inline(always)]
-    fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
-        match number_to_fetch {
-            0 => None,
-            _ => {
-                let begin_idx = self.counter().fetch_and_add(number_to_fetch);
-
-                loop {
-                    match self.try_get_handle(begin_idx) {
-                        Ok(_) => return Some(begin_idx),
-                        Err(COMPLETED) => return None,
-                        _ => {}
-                    }
-                }
-            }
-        }
-    }
-
-    fn get(&self, item_idx: usize) -> Option<T> {
-        loop {
-            match self.try_get_handle(item_idx) {
-                Ok(_) => {
-                    let next = unsafe { &mut *self.iter.get() }.next();
-
-                    match next.is_some() {
-                        true => self.release_handle(item_idx + 1),
-                        false => self.release_handle_complete(),
-                    }
-
-                    return next;
-                }
-                Err(COMPLETED) => return None,
-                _ => {}
-            }
-        }
-    }
-
-    fn fetch_n(&self, n: usize) -> Option<NextChunk<T, impl ExactSizeIterator<Item = T>>> {
-        match n {
-            0 => None,
-            _ => match self.progress_and_get_begin_idx(n) {
-                None => None,
-                Some(begin_idx) => {
-                    let iter = unsafe { &mut *self.iter.get() };
-
-                    let end_idx = begin_idx + n;
-
-                    let buffer: Vec<_> = (begin_idx..end_idx)
-                        .map(|_| iter.next())
-                        .take_while(|x| x.is_some())
-                        .map(|x| x.expect("must be some"))
-                        .collect();
-
-                    match buffer.len() == n {
-                        true => self.release_handle(end_idx),
-                        false => self.release_handle_complete(),
-                    }
-
-                    let values = buffer.into_iter();
-                    Some(NextChunk { begin_idx, values })
-                }
-            },
-        }
-    }
-
-    fn early_exit(&self) {
-        // self.reserved_counter.store(COMPLETED);
-        self.yielded_counter.store(COMPLETED, Ordering::SeqCst);
     }
 }
 
@@ -237,7 +194,8 @@ where
 
     #[inline(always)]
     fn next_id_and_value(&self) -> Option<Next<Self::Item>> {
-        self.fetch_one()
+        let idx = self.reserved_counter.fetch_and_increment();
+        self.get(idx).map(|value| Next { idx, value })
     }
 
     #[inline(always)]
@@ -245,7 +203,31 @@ where
         &self,
         chunk_size: usize,
     ) -> Option<NextChunk<Self::Item, impl ExactSizeIterator<Item = Self::Item>>> {
-        self.fetch_n(chunk_size)
+        match chunk_size {
+            0 => None,
+            _ => match self.progress_and_get_begin_idx(chunk_size) {
+                None => None,
+                Some(begin_idx) => {
+                    let iter = unsafe { &mut *self.iter.get() };
+
+                    let end_idx = begin_idx + chunk_size;
+
+                    let buffer: Vec<_> = (begin_idx..end_idx)
+                        .map(|_| iter.next())
+                        .take_while(|x| x.is_some())
+                        .map(|x| x.expect("must be some"))
+                        .collect();
+
+                    match buffer.len() == chunk_size {
+                        true => self.release_handle(end_idx),
+                        false => self.release_handle_complete(),
+                    }
+
+                    let values = buffer.into_iter();
+                    Some(NextChunk { begin_idx, values })
+                }
+            },
+        }
     }
 
     fn buffered_iter(&self, chunk_size: usize) -> BufferedIter<Self::Item, Self::BufferedIter> {
@@ -258,7 +240,7 @@ where
         match self.yielded_counter.load(Ordering::SeqCst) == COMPLETED {
             true => Some(0),
             false => self.initial_len.map(|initial_len| {
-                let current = <Self as AtomicIter<_>>::counter(self).current();
+                let current = self.reserved_counter.current();
                 initial_len.saturating_sub(current)
             }),
         }
@@ -266,6 +248,6 @@ where
 
     #[inline(always)]
     fn skip_to_end(&self) {
-        self.early_exit()
+        self.yielded_counter.store(COMPLETED, Ordering::SeqCst);
     }
 }

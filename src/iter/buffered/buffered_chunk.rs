@@ -1,7 +1,7 @@
-use crate::iter::atomic_iter::AtomicIter;
+use crate::{ConcurrentIter, ConcurrentIterX, NextChunk};
 
 pub trait BufferedChunk<T: Send + Sync> {
-    type ConIter: AtomicIter<T>;
+    type ConIter: ConcurrentIter<Item = T>;
 
     fn new(chunk_size: usize) -> Self;
 
@@ -10,12 +10,11 @@ pub trait BufferedChunk<T: Send + Sync> {
     fn pull(
         &mut self,
         iter: &Self::ConIter,
-        begin_idx: usize,
-    ) -> Option<impl ExactSizeIterator<Item = T>>;
+    ) -> Option<NextChunk<T, impl ExactSizeIterator<Item = T>>>;
 }
 
 pub trait BufferedChunkX<T: Send + Sync> {
-    type ConIter: AtomicIter<T>;
+    type ConIter: ConcurrentIterX<Item = T>;
 
     fn new(chunk_size: usize) -> Self;
 

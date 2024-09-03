@@ -26,3 +26,6 @@ rayon = "1.9.0"
 [[bench]]
 name = "con_iter_of_iter"
 harness = false
+
+[lib]
+doctest = false

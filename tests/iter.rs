@@ -1,5 +1,3 @@
-mod atomic;
-use atomic::{atomic_fetch_n, atomic_fetch_one, ATOMIC_FETCH_N, ATOMIC_TEST_LEN};
 use orx_concurrent_iter::*;
 
 #[test]
@@ -68,13 +66,4 @@ fn debug() {
         format!("{:?}", con_iter),
         "ConIterOfIter { initial_len: 3, taken: 3, remaining: 0 }"
     );
-}
-
-#[test]
-fn atomic() {
-    let values: Vec<_> = (0..ATOMIC_TEST_LEN).collect();
-    atomic_fetch_one(ConIterOfIter::new(values.iter()));
-    for n in ATOMIC_FETCH_N {
-        atomic_fetch_n(ConIterOfIter::new(values.iter()), n);
-    }
 }

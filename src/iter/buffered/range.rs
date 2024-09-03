@@ -1,9 +1,6 @@
 use super::buffered_chunk::BufferedChunk;
-use crate::ConIterOfRange;
-use std::{
-    cmp::Ordering,
-    ops::{Add, Range, Sub},
-};
+use crate::{ConIterOfRange, NextChunk};
+use std::ops::{Add, Range, Sub};
 
 pub struct BufferedRange {
     chunk_size: usize,
@@ -35,17 +32,14 @@ where
     fn pull(
         &mut self,
         iter: &Self::ConIter,
-        begin_idx: usize,
-    ) -> Option<impl ExactSizeIterator<Item = Idx>> {
-        let range = iter.range();
-        let begin_value = begin_idx + range.start.into();
-        match begin_value.cmp(&range.end.into()) {
-            Ordering::Less => {
+    ) -> Option<NextChunk<Idx, impl ExactSizeIterator<Item = Idx>>> {
+        iter.progress_and_get_begin_idx(self.chunk_size)
+            .map(|begin_idx| {
+                let range = iter.range();
+                let begin_value = begin_idx + range.start.into();
                 let end_value = (begin_value + self.chunk_size).min(range.end.into());
                 let values = (begin_value..end_value).map(Idx::from);
-                Some(values)
-            }
-            _ => None,
-        }
+                NextChunk { begin_idx, values }
+            })
     }
 }

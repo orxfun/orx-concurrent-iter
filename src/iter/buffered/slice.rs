@@ -1,6 +1,6 @@
 use super::buffered_chunk::BufferedChunk;
-use crate::ConIterOfSlice;
-use std::{cmp::Ordering, marker::PhantomData};
+use crate::{ConIterOfSlice, NextChunk};
+use std::marker::PhantomData;
 
 pub struct BufferedSlice<T> {
     chunk_size: usize,
@@ -27,18 +27,15 @@ where
     fn pull(
         &mut self,
         iter: &Self::ConIter,
-        begin_idx: usize,
-    ) -> Option<impl ExactSizeIterator<Item = &'a T>> {
-        let slice = iter.as_slice();
-        match begin_idx.cmp(&slice.len()) {
-            Ordering::Less => {
+    ) -> Option<NextChunk<&'a T, impl ExactSizeIterator<Item = &'a T>>> {
+        iter.progress_and_get_begin_idx(self.chunk_size)
+            .map(|begin_idx| {
+                let slice = iter.as_slice();
                 let end_idx = (begin_idx + self.chunk_size)
                     .min(slice.len())
                     .max(begin_idx);
                 let values = slice[begin_idx..end_idx].iter();
-                Some(values)
-            }
-            _ => None,
-        }
+                NextChunk { begin_idx, values }
+            })
     }
 }

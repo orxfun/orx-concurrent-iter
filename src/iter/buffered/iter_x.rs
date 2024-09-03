@@ -32,34 +32,37 @@ where
     }
 
     fn pull(&mut self, iter: &Self::ConIter) -> Option<impl ExactSizeIterator<Item = T>> {
-        // SAFETY: no other thread has the valid condition to iterate, they are waiting
+        iter.progress_and_get_begin_idx(self.chunk_size())
+            .and_then(|_begin_idx| {
+                // SAFETY: no other thread has the valid condition to iterate, they are waiting
 
-        let core_iter = unsafe { &mut *iter.iter.get() };
+                let core_iter = unsafe { &mut *iter.iter.get() };
 
-        let mut count = 0;
-        for pos in self.values.iter_mut() {
-            match core_iter.next() {
-                Some(x) => {
-                    *pos = Some(x);
-                    count += 1;
+                let mut count = 0;
+                for pos in self.values.iter_mut() {
+                    match core_iter.next() {
+                        Some(x) => {
+                            *pos = Some(x);
+                            count += 1;
+                        }
+                        None => break,
+                    }
                 }
-                None => break,
-            }
-        }
 
-        match count == self.chunk_size() {
-            true => iter.release_handle(),
-            false => iter.release_handle_complete(),
-        }
+                match count == self.chunk_size() {
+                    true => iter.release_handle(),
+                    false => iter.release_handle_complete(),
+                }
 
-        match count {
-            0 => None,
-            _ => Some(BufferedIter {
-                values: &mut self.values,
-                initial_len: count,
-                current_idx: 0,
-            }),
-        }
+                match count {
+                    0 => None,
+                    _ => Some(BufferedIter {
+                        values: &mut self.values,
+                        initial_len: count,
+                        current_idx: 0,
+                    }),
+                }
+            })
     }
 }
 

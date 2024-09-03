@@ -1,5 +1,5 @@
 use super::buffered_chunk::BufferedChunk;
-use crate::ConIterOfVec;
+use crate::{ConIterOfVec, NextChunk};
 use std::marker::PhantomData;
 
 pub struct BufferedVec<T> {
@@ -27,8 +27,11 @@ where
     fn pull(
         &mut self,
         iter: &Self::ConIter,
-        begin_idx: usize,
-    ) -> Option<impl ExactSizeIterator<Item = T>> {
-        Some(unsafe { iter.take_slice(begin_idx, self.chunk_size) })
+    ) -> Option<NextChunk<T, impl ExactSizeIterator<Item = T>>> {
+        iter.progress_and_get_begin_idx(self.chunk_size)
+            .map(|begin_idx| {
+                let values = unsafe { iter.take_slice(begin_idx, self.chunk_size) };
+                NextChunk { begin_idx, values }
+            })
     }
 }

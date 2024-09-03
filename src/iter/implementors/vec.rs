@@ -1,6 +1,5 @@
 use crate::{
     iter::{
-        atomic_iter::{AtomicIter, AtomicIterWithInitialLen},
         buffered::{buffered_chunk::BufferedChunk, buffered_iter::BufferedIter, vec::BufferedVec},
         no_leak_iter::NoLeakIter,
     },
@@ -35,7 +34,7 @@ impl<T: Send + Sync> Drop for ConIterOfVec<T> {
 
 impl<T: Send + Sync> std::fmt::Debug for ConIterOfVec<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        super::helpers::fmt_iter(f, "ConIterOfVec", Some(self.initial_len()), &self.counter)
+        super::helpers::fmt_iter(f, "ConIterOfVec", Some(self.vec_len), &self.counter)
     }
 }
 
@@ -57,6 +56,22 @@ impl<T: Send + Sync> ConIterOfVec<T> {
             vec_len,
             vec_cap,
             counter: AtomicCounter::new(),
+        }
+    }
+
+    pub(crate) fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
+        let begin_idx = self.counter.fetch_and_add(number_to_fetch);
+        match begin_idx.cmp(&self.vec_len) {
+            Ordering::Less => Some(begin_idx),
+            _ => None,
+        }
+    }
+
+    fn get(&self, item_idx: usize) -> Option<T> {
+        match item_idx.cmp(&self.vec_len) {
+            // SAFETY: only one thread can access the `item_idx`-th position and `item_idx` is in bounds
+            Ordering::Less => Some(unsafe { self.take_one(item_idx) }),
+            _ => None,
         }
     }
 
@@ -87,57 +102,6 @@ impl<T: Send + Sync> ConIterOfVec<T> {
         let end_idx = (begin_idx + len).min(self.vec_len);
         let iter = (begin_idx..end_idx).map(|i| self.take_one(i));
         NoLeakIter::from(iter)
-    }
-}
-
-impl<T: Send + Sync> AtomicIter<T> for ConIterOfVec<T> {
-    #[inline(always)]
-    fn counter(&self) -> &AtomicCounter {
-        &self.counter
-    }
-
-    #[inline(always)]
-    fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
-        let begin_idx = self.counter().fetch_and_add(number_to_fetch);
-        match begin_idx.cmp(&self.vec_len) {
-            Ordering::Less => Some(begin_idx),
-            _ => None,
-        }
-    }
-
-    fn get(&self, item_idx: usize) -> Option<T> {
-        match item_idx.cmp(&self.vec_len) {
-            // SAFETY: only one thread can access the `item_idx`-th position and `item_idx` is in bounds
-            Ordering::Less => Some(unsafe { self.take_one(item_idx) }),
-            _ => None,
-        }
-    }
-
-    fn fetch_n(&self, n: usize) -> Option<NextChunk<T, impl ExactSizeIterator<Item = T>>> {
-        let begin_idx = self.progress_and_get_begin_idx(n).unwrap_or(self.vec_len);
-        let end_idx = (begin_idx + n).min(self.vec_len).max(begin_idx);
-
-        match begin_idx.cmp(&end_idx) {
-            Ordering::Equal => None,
-            _ => {
-                let values = unsafe { self.take_slice(begin_idx, n) };
-                Some(NextChunk { begin_idx, values })
-            }
-        }
-    }
-
-    fn early_exit(&self) {
-        let num_taken_before = self.counter.get_current_max_value(self.vec_len);
-        if num_taken_before < self.vec_len {
-            unsafe { self.drop_elements_in_place(num_taken_before..self.vec_len) };
-        }
-    }
-}
-
-impl<T: Send + Sync> AtomicIterWithInitialLen<T> for ConIterOfVec<T> {
-    #[inline(always)]
-    fn initial_len(&self) -> usize {
-        self.vec_len
     }
 }
 
@@ -212,7 +176,8 @@ impl<T: Send + Sync> ConcurrentIter for ConIterOfVec<T> {
 
     #[inline(always)]
     fn next_id_and_value(&self) -> Option<Next<Self::Item>> {
-        self.fetch_one()
+        let idx = self.counter.fetch_and_increment();
+        self.get(idx).map(|value| Next { idx, value })
     }
 
     #[inline(always)]
@@ -220,7 +185,18 @@ impl<T: Send + Sync> ConcurrentIter for ConIterOfVec<T> {
         &self,
         chunk_size: usize,
     ) -> Option<NextChunk<Self::Item, impl ExactSizeIterator<Item = Self::Item>>> {
-        self.fetch_n(chunk_size)
+        let begin_idx = self
+            .progress_and_get_begin_idx(chunk_size)
+            .unwrap_or(self.vec_len);
+        let end_idx = (begin_idx + chunk_size).min(self.vec_len).max(begin_idx);
+
+        match begin_idx.cmp(&end_idx) {
+            Ordering::Equal => None,
+            _ => {
+                let values = unsafe { self.take_slice(begin_idx, chunk_size) };
+                Some(NextChunk { begin_idx, values })
+            }
+        }
     }
 
     fn buffered_iter(&self, chunk_size: usize) -> BufferedIter<Self::Item, Self::BufferedIter> {
@@ -230,8 +206,8 @@ impl<T: Send + Sync> ConcurrentIter for ConIterOfVec<T> {
 
     #[inline(always)]
     fn try_get_len(&self) -> Option<usize> {
-        let current = <Self as AtomicIter<_>>::counter(self).current();
-        let initial_len = <Self as AtomicIterWithInitialLen<_>>::initial_len(self);
+        let current = self.counter.current();
+        let initial_len = self.vec_len;
         let len = match current.cmp(&initial_len) {
             std::cmp::Ordering::Less => initial_len - current,
             _ => 0,
@@ -240,6 +216,9 @@ impl<T: Send + Sync> ConcurrentIter for ConIterOfVec<T> {
     }
 
     fn skip_to_end(&self) {
-        self.early_exit()
+        let num_taken_before = self.counter.get_current_max_value(self.vec_len);
+        if num_taken_before < self.vec_len {
+            unsafe { self.drop_elements_in_place(num_taken_before..self.vec_len) };
+        }
     }
 }
