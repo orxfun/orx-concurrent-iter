@@ -351,12 +351,14 @@ mod next;
 pub use has_more::HasMore;
 pub use iter::atomic_counter::AtomicCounter;
 pub use iter::cloned::{Cloned, IntoCloned};
-pub use iter::con_iter::ConcurrentIter;
 pub use iter::constructors::con_iterable::ConcurrentIterable;
 pub use iter::constructors::into_con_iter::{IntoConcurrentIter, IterIntoConcurrentIter};
+pub use iter::constructors::into_con_iter_x::IntoConcurrentIterX;
 pub use iter::copied::{Copied, IntoCopied};
 pub use iter::implementors::{
-    iter::ConIterOfIter, range::ConIterOfRange, slice::ConIterOfSlice, vec::ConIterOfVec,
+    iter::ConIterOfIter, iter_x::ConIterOfIterX, range::ConIterOfRange, slice::ConIterOfSlice,
+    vec::ConIterOfVec,
 };
 pub use iter::wrappers::{ids_and_values::ConIterIdsAndValues, values::ConIterValues};
+pub use iter::{con_iter::ConcurrentIter, con_iter_x::ConcurrentIterX};
 pub use next::{Next, NextChunk};
