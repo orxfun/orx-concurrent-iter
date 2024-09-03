@@ -1,28 +1,19 @@
 use super::{
-    buffered::{buffered_chunk::BufferedChunk, buffered_iter::BufferedIter},
+    buffered::{
+        buffered_chunk::{BufferedChunk, BufferedChunkX},
+        buffered_iter::BufferedIter,
+    },
     default_fns,
-    wrappers::values::ConIterValues,
 };
 use crate::{
-    has_more::HasMore,
     next::{Next, NextChunk},
-    ConIterIdsAndValues,
+    ConIterIdsAndValues, ConcurrentIterX,
 };
 
 /// Trait defining a concurrent iterator with `next` and `next_id_and_chunk` methods which can safely be called my multiple threads concurrently.
-pub trait ConcurrentIter: Send + Sync {
-    /// Type of the items that the iterator yields.
-    type Item: Send + Sync;
-
+pub trait ConcurrentIter: ConcurrentIterX {
     /// Type of the buffered iterator returned by the `chunk_iter` method when elements are fetched in chunks by each thread.
     type BufferedIter: BufferedChunk<Self::Item, ConIter = Self>;
-
-    /// Inner type which is the source of the data to be iterated, which in addition is a regular sequential `Iterator`.
-    type SeqIter: Iterator<Item = Self::Item>;
-
-    /// Converts the concurrent iterator back to the original wrapped type which is the source of the elements to be iterated.
-    /// Already progressed elements are skipped.
-    fn into_seq_iter(self) -> Self::SeqIter;
 
     /// Advances the iterator and returns the next value together with its enumeration index.
     ///
@@ -125,160 +116,6 @@ pub trait ConcurrentIter: Send + Sync {
         chunk_size: usize,
     ) -> Option<NextChunk<Self::Item, impl ExactSizeIterator<Item = Self::Item>>>;
 
-    /// Creates an iterator which pulls elements from this iterator as chunks of the given `chunk_size`.
-    ///
-    /// Returned iterator is a regular `Iterator`, except that it is linked to the concurrent iterator and pulls its elements concurrently from the parent iterator.
-    /// The `next` call of the buffered iterator returns `None` if the concurrent iterator is consumed.
-    /// Otherwise, it returns a [`NextChunk`] which is composed of two values:
-    /// * `begin_idx`: the index in the original source data, or concurrent iterator, of the first element of the pulled chunk,
-    /// * `values`: an `ExactSizeIterator` containing at least 1 and at most `chunk_size` consecutive elements pulled from the original source data.
-    ///
-    /// Iteration in chunks is allocation free whenever possible; for instance, when the source data is a vector, a slice or an array, etc. with known size.
-    /// On the other hand, when the source data is an arbitrary `Iterator`, iteration in chunks requires a buffer to write the chunk of pulled elements.
-    ///
-    /// This method is memory efficient in these situations.
-    /// It allocates a buffer of `chunk_size` only once when created, only if the source data requires it.
-    /// This buffer is used over and over until the concurrent iterator is consumed.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `chunk_size` is zero; chunk size is required to be strictly positive.
-    ///
-    /// # Example
-    ///
-    /// Example below illustrates a parallel sum operation.
-    /// Entire iteration requires an allocation (4 threads) * (16 chunk size) = 64 elements.
-    ///
-    /// ```rust
-    /// use orx_concurrent_iter::*;
-    ///
-    /// let (num_threads, chunk_size) = (4, 64);
-    /// let iter = (0..16384).map(|x| x * 2).into_con_iter();
-    ///
-    /// let sum = std::thread::scope(|s| {
-    ///     (0..num_threads)
-    ///         .map(|_| {
-    ///             s.spawn(|| {
-    ///                 let mut sum = 0;
-    ///                 let mut buffered = iter.buffered_iter(chunk_size);
-    ///                 while let Some(chunk) = buffered.next() {
-    ///                     sum += chunk.values.sum::<usize>();
-    ///                 }
-    ///                 sum
-    ///             })
-    ///         })
-    ///         .map(|x| x.join().expect("-"))
-    ///         .sum::<usize>()
-    /// });
-    ///
-    /// let expected = 16384 * 16383;
-    /// assert_eq!(sum, expected);
-    /// ```
-    ///
-    /// # `buffered_iter` and `next_chunk`
-    ///
-    /// When iterating over single elements using `next` or `values`, the concurrent iterator just yields the element without requiring any allocation.
-    ///
-    /// When iterating as chunks, concurrent iteration might or might not require an allocation.
-    /// * For instance, no allocation is required if the source data of the iterator is a vector, a slice or an array, etc.
-    /// * On the other hand, an allocation of `chunk_size` is required if the source data is an any `Iterator` without further type information.
-    ///
-    /// Pulling elements as chunks using the `next_chunk` or `buffered_iter` methods differ in the latter case as follows:
-    /// * `next_chunk` will allocate a vector of `next_chunk` elements every time it is called;
-    /// * `buffered_iter` will allocate a vector of `next_chunk` only once on construction, and this buffer will be used over and over until the concurrent iterator is consumed leading to negligible allocation.
-    ///
-    /// Therefore, it is safer to always use `buffered_iter`, unless we need to keep changing the `chunk_size` through iteration, which is a rare scenario.
-    ///
-    /// In a typical use case where we concurrently iterate over the elements of the iterator using `num_threads` threads:
-    /// * we will create `num_threads` buffered iterators; i.e., we will call `buffered_iter` once from each thread,
-    /// * each thread will allocate a vector of `chunk_size` capacity.
-    ///
-    /// In total, the iteration will use an additional memory of `num_threads * chunk_size`.
-    /// Note that the amount of allocation is not a function of the length of the source data.
-    /// Assuming the length will be large in a scenario requiring parallel iteration, the allocation can be considered to be very small.
-    fn buffered_iter(&self, chunk_size: usize) -> BufferedIter<Self::Item, Self::BufferedIter>;
-
-    /// Advances the iterator and returns the next value.
-    ///
-    /// Returns [None] when iteration is finished.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use orx_concurrent_iter::*;
-    /// use orx_concurrent_bag::*;
-    ///
-    /// fn to_str(num: usize) -> String {
-    ///     num.to_string()
-    /// }
-    ///
-    /// let num_threads = 4;
-    /// let strings: Vec<_> = (0..1024).map(to_str).collect();
-    /// let bag = ConcurrentBag::new();
-    ///
-    /// let iter = strings.con_iter();
-    /// std::thread::scope(|s| {
-    ///     for _ in 0..num_threads {
-    ///         s.spawn(|| {
-    ///             while let Some(value) = iter.next() {
-    ///                 bag.push(value.len());
-    ///             }
-    ///         });
-    ///     }
-    /// });
-    ///
-    /// let outputs: Vec<_> = bag.into_inner().into();
-    /// assert_eq!(outputs.len(), strings.len());
-    /// ```
-    #[inline(always)]
-    fn next(&self) -> Option<Self::Item> {
-        self.next_id_and_value().map(|x| x.value)
-    }
-
-    /// Returns an `Iterator` over the values of elements of the concurrent iterator.
-    ///
-    /// Note that `values` method can be called concurrently from multiple threads to create multiple local-to-thread regular `Iterator`s.
-    /// However, each of these iterators will be connected in the sense that:
-    /// * all iterators will be aware of the progress by the other iterators;
-    /// * each element will be yielded exactly once.
-    ///
-    /// The iterator's `next` method does nothing but call the `next`; this iterator is only to allow for using `for` loops directly.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use orx_concurrent_iter::*;
-    /// use orx_concurrent_bag::*;
-    ///
-    /// fn to_str(num: usize) -> String {
-    ///     num.to_string()
-    /// }
-    ///
-    /// let num_threads = 4;
-    /// let strings: Vec<_> = (0..1024).map(to_str).collect();
-    /// let bag = ConcurrentBag::new();
-    ///
-    /// let iter = strings.con_iter();
-    /// std::thread::scope(|s| {
-    ///     for _ in 0..num_threads {
-    ///         s.spawn(|| {
-    ///             for value in iter.values() {
-    ///                 bag.push(value.len());
-    ///             }
-    ///         });
-    ///     }
-    /// });
-    ///
-    /// let outputs: Vec<_> = bag.into_inner().into();
-    /// assert_eq!(outputs.len(), strings.len());
-    /// ```
-    fn values(&self) -> ConIterValues<Self>
-    where
-        Self: Sized,
-    {
-        self.into()
-    }
-
     /// Returns an `Iterator` over the ids and values of elements of the concurrent iterator.
     ///
     /// Note that `values` method can be called concurrently from multiple threads to create multiple local-to-thread regular `Iterator`s.
@@ -327,62 +164,6 @@ pub trait ConcurrentIter: Send + Sync {
     {
         self.into()
     }
-
-    /// Skips all remaining elements of the iterator and assumes that the end of the iterator is reached.
-    ///
-    /// This method establishes a very primitive, convenient and critical communication among threads for search scenarios with an early exit condition.
-    /// Assume, for instance, that we are trying to `find` an element satisfying a predicate using multiple threads.
-    /// Whenever a threads finds a match, it can call this method and return the found value.
-    /// Then, when the other threads try to pull next element from the iterator, they will observe that the iterator has ended.
-    /// Therefore, they will as well return early as desired.
-    ///
-    /// # Examples
-    ///
-    /// As discussed above, a straightforward use case is the `find` iterator method. You may find a very simple & convenient example implementation below.
-    /// Likewise, it might be used to stop an infinite parallel search; for instance, when trying to find a feasible solution to an optimization problem using a randomized search.
-    ///
-    /// ```rust
-    /// use orx_concurrent_iter::*;
-    ///
-    /// fn par_find<I, P>(iter: I, predicate: P, n_threads: usize) -> Option<(usize, I::Item)>
-    /// where
-    ///     I: ConcurrentIter,
-    ///     P: Fn(&I::Item) -> bool + Send + Sync,
-    /// {
-    ///     std::thread::scope(|s| {
-    ///         (0..n_threads)
-    ///             .map(|_| {
-    ///                 s.spawn(|| {
-    ///                     for (i, x) in iter.ids_and_values() {
-    ///                         if predicate(&x) {
-    ///                             iter.skip_to_end();
-    ///                             return Some((i, x));
-    ///                         }
-    ///                     }
-    ///                     None
-    ///                 })
-    ///             })
-    ///             .collect::<Vec<_>>()
-    ///             .into_iter()
-    ///             .flat_map(|x| x.join().expect("failed to join thread"))
-    ///             .min_by_key(|x| x.0)
-    ///     })
-    /// }
-    ///
-    /// let mut names: Vec<_> = (0..8785).map(|x| x.to_string()).collect();
-    /// names[42] = "foo".to_string();
-    ///
-    /// let result = par_find(names.con_iter(), |x| x.starts_with('x'), 4);
-    /// assert_eq!(result, None);
-    ///
-    /// let result = par_find(names.con_iter(), |x| x.starts_with('f'), 4);
-    /// assert_eq!(result, Some((42, &"foo".to_string())));
-    /// ```
-    ///
-    /// Notice that in the example above, only one among 8785 elements satisfies the predicate.
-    /// If the thread that finds "foo" did not call `skip_to_end`, the other threads would traverse through all elements and check the condition.
-    /// On the other hand, once `skip_to_end` is called, none of the threads can find any more elements to pull, and hence, immediately exit in their next `next` call.
-    fn skip_to_end(&self);
 
     /// Applies the function `fun` to each element of the iterator concurrently.
     ///
@@ -481,155 +262,78 @@ pub trait ConcurrentIter: Send + Sync {
         default_fns::for_each::for_each_with_ids(self, chunk_size, fun)
     }
 
-    /// Folds the elements of the iterator pulled concurrently using `fold` function.
+    /// Creates an iterator which pulls elements from this iterator as chunks of the given `chunk_size`.
     ///
-    /// Note that this method might be called on the same iterator at the same time from different threads.
-    /// Each thread will start its concurrent fold operation with the `neutral` value.
-    /// This value is then transformed into the result by applying the `fold` on it together with the pulled elements.
+    /// Returned iterator is a regular `Iterator`, except that it is linked to the concurrent iterator and pulls its elements concurrently from the parent iterator.
+    /// The `next` call of the buffered iterator returns `None` if the concurrent iterator is consumed.
+    /// Otherwise, it returns a [`NextChunk`] which is composed of two values:
+    /// * `begin_idx`: the index in the original source data, or concurrent iterator, of the first element of the pulled chunk,
+    /// * `values`: an `ExactSizeIterator` containing at least 1 and at most `chunk_size` consecutive elements pulled from the original source data.
     ///
-    /// Therefore, each thread will end up at a different partial result.
-    /// Further, each thread's partial result might be different in every execution.
+    /// Iteration in chunks is allocation free whenever possible; for instance, when the source data is a vector, a slice or an array, etc. with known size.
+    /// On the other hand, when the source data is an arbitrary `Iterator`, iteration in chunks requires a buffer to write the chunk of pulled elements.
     ///
-    /// However, once `fold` is applied starting again from `neutral` using the thread results, we compute the deterministic result.
-    /// This establishes a very ergonomic parallel fold implementation.
-    ///
-    /// # Chunk Size
-    ///
-    /// When `chunk_size` is set to 1, threads will pull elements from the iterator one by one.
-    /// This might be the preferred setting when we are working with general `ConcurrentIter`s rather than `ExactSizeConcurrentIter`s,
-    /// or whenever the work to be done to `fold` the results is large enough to make the time spent for updating atomic counters insignificant.
-    ///
-    /// On the other hand, whenever we are working with an `ExactSizeConcurrentIter` and the iterator has many elements,
-    /// it is possible to avoid the cost of atomic updates almost completely by setting the chunk size to a larger value.
-    /// Rule of thumb in this situation is that the larger the better provided that the chunk size is not too large that would lead some threads to remain idle.
-    /// However, note that this optimization is only significant if the `fold` operation is significantly small, such as the addition example below.
+    /// This method is memory efficient in these situations.
+    /// It allocates a buffer of `chunk_size` only once when created, only if the source data requires it.
+    /// This buffer is used over and over until the concurrent iterator is consumed.
     ///
     /// # Panics
     ///
     /// Panics if `chunk_size` is zero; chunk size is required to be strictly positive.
     ///
-    /// # Examples
+    /// # Example
     ///
-    /// Notice that the initial value is called `neutral` as in **monoids**, rather than init or initial.
-    /// This is to highlight that each thread will start its separate execution from this value.
-    ///
-    /// Integer addition and number zero are good examples for `neutral` and `fold`, respectively.
-    /// Assume our iterator will yield 4 values: [3, 4, 1, 9].
-    /// We want to sum these values using two threads.
-    /// We can achieve parallelism very conveniently using `fold` as follows.
+    /// Example below illustrates a parallel sum operation.
+    /// Entire iteration requires an allocation (4 threads) * (16 chunk size) = 64 elements.
     ///
     /// ```rust
     /// use orx_concurrent_iter::*;
     ///
-    /// let num_threads = 2;
-    /// let numbers = vec![3, 4, 1, 9];
-    ///
-    /// let iter = numbers.con_iter();
-    /// let neutral = 0; // neutral for i32 & add
+    /// let (num_threads, chunk_size) = (4, 64);
+    /// let iter = (0..16384).map(|x| x * 2).into_con_iter();
     ///
     /// let sum = std::thread::scope(|s| {
     ///     (0..num_threads)
-    ///         .map(|_| s.spawn(|| iter.fold(1, neutral, |x, y| x + y))) // parallel fold
-    ///         .map(|x| x.join().unwrap())
-    ///         .fold(neutral, |x, y| x + y) // sequential fold
+    ///         .map(|_| {
+    ///             s.spawn(|| {
+    ///                 let mut sum = 0;
+    ///                 let mut buffered = iter.buffered_iter(chunk_size);
+    ///                 while let Some(chunk) = buffered.next() {
+    ///                     sum += chunk.values.sum::<usize>();
+    ///                 }
+    ///                 sum
+    ///             })
+    ///         })
+    ///         .map(|x| x.join().expect("-"))
+    ///         .sum::<usize>()
     /// });
     ///
-    /// assert_eq!(sum, 17);
+    /// let expected = 16384 * 16383;
+    /// assert_eq!(sum, expected);
     /// ```
     ///
-    /// Note that this code can execute in one of many possible ways.
-    /// Let's say our two threads are called tA and tB.
-    /// * tA might pull and sum all four of the numbers; hence, returns 17. tB cannot pull any element and just returns the neutral element. Sequential fold will add 17 and 0, and return 17.
-    /// * tA might pull only the third element; hence, returns 0+1 = 1. tB pulls the other 3 elements and returns 0+3+4+9 = 16. Final fold will then return 0+1+16 = 17.
-    /// * and so on, so forth.
+    /// # `buffered_iter` and `next_chunk`
     ///
-    /// `ConcurrentIter` guarantees that each element is visited and computed exactly once.
-    /// Therefore, the parallel computation will always be correct provided that we provide a neutral element such that:
+    /// When iterating over single elements using `next` or `values`, the concurrent iterator just yields the element without requiring any allocation.
     ///
-    /// ```rust ignore
-    /// assert_eq!(fold(neutral, element), element);
-    /// ```
+    /// When iterating as chunks, concurrent iteration might or might not require an allocation.
+    /// * For instance, no allocation is required if the source data of the iterator is a vector, a slice or an array, etc.
+    /// * On the other hand, an allocation of `chunk_size` is required if the source data is an any `Iterator` without further type information.
     ///
-    /// Other trivial examples are:
-    /// * `1` & multiplication
-    /// * `""` for string concat
-    /// * `[]` for list concat
-    /// * `true` & logical, etc.
+    /// Pulling elements as chunks using the `next_chunk` or `buffered_iter` methods differ in the latter case as follows:
+    /// * `next_chunk` will allocate a vector of `next_chunk` elements every time it is called;
+    /// * `buffered_iter` will allocate a vector of `next_chunk` only once on construction, and this buffer will be used over and over until the concurrent iterator is consumed leading to negligible allocation.
     ///
-    /// ***Wrong Example with a Non-Neutral Element***
+    /// Therefore, it is safer to always use `buffered_iter`, unless we need to keep changing the `chunk_size` through iteration, which is a rare scenario.
     ///
-    /// In a sequential fold operation, one can choose to start the summation above with an initial value of 100.
-    /// Then, the resulting value would deterministically be 117.
+    /// In a typical use case where we concurrently iterate over the elements of the iterator using `num_threads` threads:
+    /// * we will create `num_threads` buffered iterators; i.e., we will call `buffered_iter` once from each thread,
+    /// * each thread will allocate a vector of `chunk_size` capacity.
     ///
-    /// However, if we pass 100 as the neutral element to the concurrent fold above, we would receive 217 (additional 100 for each thread).
-    /// Notice that the result depends on the number of threads used in computation.
-    /// This is incorrect.
-    ///
-    /// In either case, it is a good practice to leave 100 out of the fold operation.
-    /// It is preferable to pass 0 as the initial and neutral element, and add 100 to the result of the fold operation.
-    fn fold<B, Fold>(&self, chunk_size: usize, neutral: B, fold: Fold) -> B
-    where
-        Fold: FnMut(B, Self::Item) -> B,
-        Self: Sized,
-    {
-        default_fns::fold::fold(self, chunk_size, fold, neutral)
-    }
-
-    /// Returns Some of the remaining length of the iterator if it is known; returns None otherwise.
-    fn try_get_len(&self) -> Option<usize>;
-
-    /// Returns whether or not the concurrent iterator has more elements to yield.
-    ///
-    /// # Examples
-    ///
-    /// An exact size concurrent iterator will always be certain about this query and will return either `HasMore::No` or `HasMore::Yes(n)` where `n` is the number of remaining elements.
-    ///
-    /// ```rust
-    /// use orx_concurrent_iter::*;
-    ///
-    /// let vec: Vec<_> = (0..512).collect();
-    /// let iter = vec.into_con_iter();
-    ///
-    /// assert_eq!(iter.has_more(), HasMore::Yes(512));
-    ///
-    /// for _ in 0..500 {
-    ///     _ = iter.next();
-    /// }
-    ///
-    /// assert_eq!(iter.has_more(), HasMore::Yes(12));
-    ///
-    /// while let Some(_) = iter.next() {}
-    ///
-    /// assert_eq!(iter.has_more(), HasMore::No);
-    /// ```
-    ///
-    /// An non-exact-size concurrent iterator will return:
-    /// * either `HasMore::Maybe` when there are elements in the data source to check, or work to do, but not guaranteed that they will be yielded,
-    /// * or `HasMore::No` when the iterator has terminated.
-    ///
-    /// ```rust
-    /// use orx_concurrent_iter::*;
-    ///
-    /// let regular_iter = (0..512).map(|x| x + 1).filter(|x| x % 2 == 1);
-    /// let iter = regular_iter.into_con_iter();
-    ///
-    /// assert_eq!(iter.has_more(), HasMore::Maybe);
-    ///
-    /// for _ in 0..250 {
-    ///     _ = iter.next();
-    /// }
-    ///
-    /// assert_eq!(iter.has_more(), HasMore::Maybe);
-    ///
-    /// while let Some(_) = iter.next() {}
-    ///
-    /// assert_eq!(iter.has_more(), HasMore::No);
-    /// ```
-    fn has_more(&self) -> HasMore {
-        match self.try_get_len() {
-            None => HasMore::Maybe,
-            Some(0) => HasMore::No,
-            Some(n) => HasMore::Yes(n),
-        }
+    /// In total, the iteration will use an additional memory of `num_threads * chunk_size`.
+    /// Note that the amount of allocation is not a function of the length of the source data.
+    /// Assuming the length will be large in a scenario requiring parallel iteration, the allocation can be considered to be very small.
+    fn buffered_iter(&self, chunk_size: usize) -> BufferedIter<Self::Item, Self::BufferedIter> {
+        BufferedIter::new(Self::BufferedIter::new(chunk_size), self)
     }
 }

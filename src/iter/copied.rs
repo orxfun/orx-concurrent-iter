@@ -1,8 +1,5 @@
-use super::buffered::{
-    buffered_chunk::BufferedChunk, buffered_iter::BufferedIter,
-    copied_buffered_chunk::CopiedBufferedChunk,
-};
-use crate::{ConcurrentIter, NextChunk};
+use super::buffered::copied_buffered_chunk::CopiedBufferedChunk;
+use crate::{ConcurrentIter, ConcurrentIterX, NextChunk};
 use std::marker::PhantomData;
 
 /// An concurrent iterator, backed with an atomic iterator, that copies the elements of an underlying iterator.
@@ -11,7 +8,6 @@ use std::marker::PhantomData;
 pub struct Copied<'a, T, C>
 where
     T: Send + Sync + Copy,
-    C: ConcurrentIter<Item = &'a T>,
 {
     iter: C,
     phantom: PhantomData<&'a T>,
@@ -20,7 +16,6 @@ where
 impl<'a, T, C> Copied<'a, T, C>
 where
     T: Send + Sync + Copy,
-    C: ConcurrentIter<Item = &'a T>,
 {
     pub(crate) fn new(iter: C) -> Self {
         Self {
@@ -34,18 +29,41 @@ where
     }
 }
 
-unsafe impl<'a, T, C> Sync for Copied<'a, T, C>
-where
-    T: Send + Sync + Copy,
-    C: ConcurrentIter<Item = &'a T>,
-{
-}
+unsafe impl<'a, T, C> Sync for Copied<'a, T, C> where T: Send + Sync + Copy {}
 
-unsafe impl<'a, T, C> Send for Copied<'a, T, C>
+unsafe impl<'a, T, C> Send for Copied<'a, T, C> where T: Send + Sync + Copy {}
+
+impl<'a, T, C> ConcurrentIterX for Copied<'a, T, C>
 where
     T: Send + Sync + Copy,
-    C: ConcurrentIter<Item = &'a T>,
+    C: ConcurrentIterX<Item = &'a T>,
 {
+    type Item = T;
+
+    type SeqIter = std::iter::Copied<C::SeqIter>;
+
+    type BufferedIterX = CopiedBufferedChunk<'a, T, C::BufferedIterX>;
+
+    fn into_seq_iter(self) -> Self::SeqIter {
+        self.iter.into_seq_iter().copied()
+    }
+
+    fn next_chunk_x(&self, chunk_size: usize) -> Option<impl ExactSizeIterator<Item = Self::Item>> {
+        self.iter.next_chunk_x(chunk_size).map(|x| x.copied())
+    }
+
+    fn next(&self) -> Option<Self::Item> {
+        self.iter.next().copied()
+    }
+
+    fn skip_to_end(&self) {
+        self.iter.skip_to_end()
+    }
+
+    #[inline(always)]
+    fn try_get_len(&self) -> Option<usize> {
+        self.iter.try_get_len()
+    }
 }
 
 impl<'a, T, C> ConcurrentIter for Copied<'a, T, C>
@@ -53,15 +71,7 @@ where
     T: Send + Sync + Copy,
     C: ConcurrentIter<Item = &'a T>,
 {
-    type Item = T;
-
     type BufferedIter = CopiedBufferedChunk<'a, T, C::BufferedIter>;
-
-    type SeqIter = std::iter::Copied<C::SeqIter>;
-
-    fn into_seq_iter(self) -> Self::SeqIter {
-        self.iter.into_seq_iter().copied()
-    }
 
     #[inline(always)]
     fn next_id_and_value(&self) -> Option<crate::Next<Self::Item>> {
@@ -74,20 +84,6 @@ where
         chunk_size: usize,
     ) -> Option<NextChunk<Self::Item, impl ExactSizeIterator<Item = Self::Item>>> {
         self.iter.next_chunk(chunk_size).map(|x| x.copied())
-    }
-
-    fn buffered_iter(&self, chunk_size: usize) -> BufferedIter<Self::Item, Self::BufferedIter> {
-        let buffered_iter = Self::BufferedIter::new(chunk_size);
-        BufferedIter::new(buffered_iter, self)
-    }
-
-    fn skip_to_end(&self) {
-        self.iter.skip_to_end()
-    }
-
-    #[inline(always)]
-    fn try_get_len(&self) -> Option<usize> {
-        self.iter.try_get_len()
     }
 }
 

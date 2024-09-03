@@ -42,10 +42,10 @@ fn len() {
     _ = iter.next();
     assert_eq!(iter.try_get_len(), Some(3));
 
-    _ = iter.next_chunk(2);
+    _ = iter.next_chunk_x(2);
     assert_eq!(iter.try_get_len(), Some(1));
 
-    _ = iter.next_chunk(2);
+    _ = iter.next_chunk_x(2);
     assert_eq!(iter.try_get_len(), Some(0));
 
     _ = iter.next();
@@ -95,11 +95,11 @@ fn into_seq_iter_used_in_batches() {
 
     std::thread::scope(|s| {
         s.spawn(|| {
-            if let Some(batch) = con_iter.next_chunk(44) {
+            if let Some(batch) = con_iter.next_chunk_x(44) {
                 for _ in batch {}
             }
 
-            if let Some(batch) = con_iter.next_chunk(33) {
+            if let Some(batch) = con_iter.next_chunk_x(33) {
                 for _ in batch.take(22) {}
             }
         });
@@ -124,8 +124,8 @@ fn into_seq_iter_doc() {
                 _ = con_iter.next();
             }
 
-            let mut buffered = con_iter.buffered_iter(32);
-            let _chunk = buffered.next().unwrap();
+            let mut buffered = con_iter.buffered_iter_x(32);
+            let _chunk = buffered.next_x().unwrap();
         });
     });
 
@@ -178,10 +178,10 @@ fn into_seq_iter_used(len: usize, take: usize) {
 fn buffered(len: usize, chunk_size: usize) {
     let values: Vec<_> = (100..(100 + len)).collect();
     let iter = values.iter().filter(|x| **x > 115).into_con_iter_x();
-    let mut buffered = iter.buffered_iter(chunk_size);
+    let mut buffered = iter.buffered_iter_x(chunk_size);
 
     let mut current = 116;
-    while let Some(chunk) = buffered.next() {
+    while let Some(chunk) = buffered.next_x() {
         for value in chunk {
             assert_eq!(value, &current);
             current += 1;

@@ -66,8 +66,8 @@ where
             }
         }
         _ => {
-            let mut buffered_iter = iter.buffered_iter(chunk_size);
-            while let Some(chunk) = buffered_iter.next() {
+            let mut buffered_iter = iter.buffered_iter_x(chunk_size);
+            while let Some(chunk) = buffered_iter.next_x() {
                 chunk.for_each(&mut f);
             }
         }

@@ -349,7 +349,6 @@ pub mod iter;
 mod next;
 
 pub use has_more::HasMore;
-pub use iter::atomic_counter::AtomicCounter;
 pub use iter::cloned::{Cloned, IntoCloned};
 pub use iter::constructors::con_iterable::ConcurrentIterable;
 pub use iter::constructors::into_con_iter::{IntoConcurrentIter, IterIntoConcurrentIter};

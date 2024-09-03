@@ -31,7 +31,7 @@ where
         self.values.len()
     }
 
-    fn pull(&mut self, iter: &Self::ConIter) -> Option<impl ExactSizeIterator<Item = T>> {
+    fn pull_x(&mut self, iter: &Self::ConIter) -> Option<impl ExactSizeIterator<Item = T>> {
         iter.progress_and_get_begin_idx(self.chunk_size())
             .and_then(|_begin_idx| {
                 // SAFETY: no other thread has the valid condition to iterate, they are waiting

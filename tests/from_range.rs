@@ -120,7 +120,7 @@ fn into_seq_iter_doc() {
                 _ = con_iter.next();
             }
 
-            let mut buffered = con_iter.buffered_iter(32);
+            let mut buffered = con_iter.buffered_iter_x(32);
             let _chunk = buffered.next().unwrap();
         });
     });
@@ -166,7 +166,7 @@ fn into_seq_iter_used(begin: usize, end: usize, take: usize) {
 #[test_matrix([0, 42], [0, 1, 42, 43, 100], [1, 10, 100])]
 fn buffered(begin: usize, end: usize, chunk_size: usize) {
     let iter = (begin..end).con_iter();
-    let mut buffered = iter.buffered_iter(chunk_size);
+    let mut buffered = iter.buffered_iter_x(chunk_size);
 
     let mut current = begin;
     while let Some(chunk) = buffered.next() {

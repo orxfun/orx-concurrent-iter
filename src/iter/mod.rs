@@ -1,4 +1,3 @@
-pub(crate) mod atomic_counter;
 mod buffered;
 pub(crate) mod cloned;
 pub(crate) mod con_iter;

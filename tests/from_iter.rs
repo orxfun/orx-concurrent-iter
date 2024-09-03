@@ -124,7 +124,7 @@ fn into_seq_iter_doc() {
                 _ = con_iter.next();
             }
 
-            let mut buffered = con_iter.buffered_iter(32);
+            let mut buffered = con_iter.buffered_iter_x(32);
             let _chunk = buffered.next().unwrap();
         });
     });
@@ -178,7 +178,7 @@ fn into_seq_iter_used(len: usize, take: usize) {
 fn buffered(len: usize, chunk_size: usize) {
     let values: Vec<_> = (100..(100 + len)).collect();
     let iter = values.iter().filter(|x| **x > 115).into_con_iter();
-    let mut buffered = iter.buffered_iter(chunk_size);
+    let mut buffered = iter.buffered_iter_x(chunk_size);
 
     let mut current = 116;
     while let Some(chunk) = buffered.next() {

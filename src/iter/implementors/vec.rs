@@ -1,15 +1,12 @@
 use crate::{
-    iter::{
-        buffered::{buffered_chunk::BufferedChunk, buffered_iter::BufferedIter, vec::BufferedVec},
-        no_leak_iter::NoLeakIter,
-    },
+    iter::{buffered::vec::BufferedVec, no_leak_iter::NoLeakIter},
     next::NextChunk,
-    AtomicCounter, ConcurrentIter, Next,
+    ConcurrentIter, ConcurrentIterX, Next,
 };
 use std::{
-    cmp::Ordering,
     mem::{ManuallyDrop, MaybeUninit},
     ops::Range,
+    sync::atomic::{AtomicUsize, Ordering},
 };
 
 /// A concurrent iterator over a vector, consuming the vector and yielding its elements.
@@ -17,7 +14,7 @@ pub struct ConIterOfVec<T: Send + Sync> {
     ptr: *mut T,
     vec_len: usize,
     vec_cap: usize,
-    counter: AtomicCounter,
+    counter: AtomicUsize,
 }
 
 impl<T: Send + Sync> Drop for ConIterOfVec<T> {
@@ -55,22 +52,22 @@ impl<T: Send + Sync> ConIterOfVec<T> {
             ptr,
             vec_len,
             vec_cap,
-            counter: AtomicCounter::new(),
+            counter: 0.into(),
         }
     }
 
     pub(crate) fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
-        let begin_idx = self.counter.fetch_and_add(number_to_fetch);
-        match begin_idx.cmp(&self.vec_len) {
-            Ordering::Less => Some(begin_idx),
+        let begin_idx = self.counter.fetch_add(number_to_fetch, Ordering::Relaxed);
+        match begin_idx < self.vec_len {
+            true => Some(begin_idx),
             _ => None,
         }
     }
 
     fn get(&self, item_idx: usize) -> Option<T> {
-        match item_idx.cmp(&self.vec_len) {
+        match item_idx < self.vec_len {
             // SAFETY: only one thread can access the `item_idx`-th position and `item_idx` is in bounds
-            Ordering::Less => Some(unsafe { self.take_one(item_idx) }),
+            true => Some(unsafe { self.take_one(item_idx) }),
             _ => None,
         }
     }
@@ -91,7 +88,7 @@ impl<T: Send + Sync> ConIterOfVec<T> {
     }
 
     fn num_taken(&self) -> usize {
-        self.counter.current().min(self.vec_len)
+        self.counter.load(Ordering::Acquire).min(self.vec_len)
     }
 
     pub(crate) unsafe fn take_slice(
@@ -111,47 +108,15 @@ unsafe impl<T: Send + Sync> Send for ConIterOfVec<T> {}
 
 // AtomicIter -> ConcurrentIter
 
-impl<T: Send + Sync> ConcurrentIter for ConIterOfVec<T> {
+impl<T: Send + Sync> ConcurrentIterX for ConIterOfVec<T> {
     type Item = T;
-
-    type BufferedIter = BufferedVec<T>;
 
     type SeqIter = std::vec::IntoIter<T>;
 
-    /// Converts the concurrent iterator back to the original wrapped type which is the source of the elements to be iterated.
-    /// Already progressed elements are skipped.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use orx_concurrent_iter::*;
-    ///
-    /// let vec: Vec<_> = (0..1024).map(|x| x.to_string()).collect();
-    /// let con_iter = vec.into_con_iter();
-    ///
-    /// std::thread::scope(|s| {
-    ///     s.spawn(|| {
-    ///         for _ in 0..42 {
-    ///             _ = con_iter.next();
-    ///         }
-    ///
-    ///         let mut buffered = con_iter.buffered_iter(32);
-    ///         let _chunk = buffered.next().unwrap();
-    ///     });
-    /// });
-    ///
-    /// let num_used = 42 + 32;
-    ///
-    /// // converts the remaining elements into a sequential iterator
-    /// let seq_iter = con_iter.into_seq_iter();
-    ///
-    /// assert_eq!(seq_iter.len(), 1024 - num_used);
-    /// for (i, x) in seq_iter.enumerate() {
-    ///     assert_eq!(x, (num_used + i).to_string());
-    /// }
-    /// ```
+    type BufferedIterX = BufferedVec<T>;
+
     fn into_seq_iter(mut self) -> Self::SeqIter {
-        let num_taken = self.counter.current().min(self.vec_len);
+        let num_taken = self.counter.load(Ordering::Acquire).min(self.vec_len);
         let ptr = self.ptr;
 
         self.ptr = std::ptr::null_mut(); // to avoid double free on drop
@@ -174,9 +139,47 @@ impl<T: Send + Sync> ConcurrentIter for ConIterOfVec<T> {
         }
     }
 
+    fn next_chunk_x(&self, chunk_size: usize) -> Option<impl ExactSizeIterator<Item = Self::Item>> {
+        let begin_idx = self
+            .progress_and_get_begin_idx(chunk_size)
+            .unwrap_or(self.vec_len);
+        let end_idx = (begin_idx + chunk_size).min(self.vec_len).max(begin_idx);
+
+        match begin_idx < end_idx {
+            true => Some(unsafe { self.take_slice(begin_idx, chunk_size) }),
+            false => None,
+        }
+    }
+
+    fn next(&self) -> Option<Self::Item> {
+        let idx = self.counter.fetch_add(1, Ordering::Acquire);
+        self.get(idx)
+    }
+
+    fn skip_to_end(&self) {
+        let num_taken_before = self.counter.fetch_max(self.vec_len, Ordering::Acquire);
+        if num_taken_before < self.vec_len {
+            unsafe { self.drop_elements_in_place(num_taken_before..self.vec_len) };
+        }
+    }
+
+    fn try_get_len(&self) -> Option<usize> {
+        let current = self.counter.load(Ordering::Acquire);
+        let initial_len = self.vec_len;
+        let len = match current.cmp(&initial_len) {
+            std::cmp::Ordering::Less => initial_len - current,
+            _ => 0,
+        };
+        Some(len)
+    }
+}
+
+impl<T: Send + Sync> ConcurrentIter for ConIterOfVec<T> {
+    type BufferedIter = Self::BufferedIterX;
+
     #[inline(always)]
     fn next_id_and_value(&self) -> Option<Next<Self::Item>> {
-        let idx = self.counter.fetch_and_increment();
+        let idx = self.counter.fetch_add(1, Ordering::Acquire);
         self.get(idx).map(|value| Next { idx, value })
     }
 
@@ -190,35 +193,12 @@ impl<T: Send + Sync> ConcurrentIter for ConIterOfVec<T> {
             .unwrap_or(self.vec_len);
         let end_idx = (begin_idx + chunk_size).min(self.vec_len).max(begin_idx);
 
-        match begin_idx.cmp(&end_idx) {
-            Ordering::Equal => None,
-            _ => {
+        match begin_idx < end_idx {
+            true => {
                 let values = unsafe { self.take_slice(begin_idx, chunk_size) };
                 Some(NextChunk { begin_idx, values })
             }
-        }
-    }
-
-    fn buffered_iter(&self, chunk_size: usize) -> BufferedIter<Self::Item, Self::BufferedIter> {
-        let buffered_iter = Self::BufferedIter::new(chunk_size);
-        BufferedIter::new(buffered_iter, self)
-    }
-
-    #[inline(always)]
-    fn try_get_len(&self) -> Option<usize> {
-        let current = self.counter.current();
-        let initial_len = self.vec_len;
-        let len = match current.cmp(&initial_len) {
-            std::cmp::Ordering::Less => initial_len - current,
-            _ => 0,
-        };
-        Some(len)
-    }
-
-    fn skip_to_end(&self) {
-        let num_taken_before = self.counter.get_current_max_value(self.vec_len);
-        if num_taken_before < self.vec_len {
-            unsafe { self.drop_elements_in_place(num_taken_before..self.vec_len) };
+            false => None,
         }
     }
 }

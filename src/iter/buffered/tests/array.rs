@@ -20,7 +20,7 @@ fn primitive(num_threads: usize, batch: usize) {
         for _ in 0..num_threads {
             handles.push(s.spawn(move || {
                 let mut sum = 0i64;
-                let mut chunks_iter = iter.buffered_iter(batch);
+                let mut chunks_iter = iter.buffered_iter_x(batch);
                 while let Some(next) = chunks_iter.next() {
                     sum += next.values.sum::<i64>();
                 }

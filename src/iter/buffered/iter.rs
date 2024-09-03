@@ -1,4 +1,4 @@
-use super::buffered_chunk::BufferedChunk;
+use super::buffered_chunk::{BufferedChunk, BufferedChunkX};
 use crate::{iter::implementors::iter::ConIterOfIter, NextChunk};
 use std::marker::PhantomData;
 
@@ -12,7 +12,7 @@ where
     phantom: PhantomData<Iter>,
 }
 
-impl<T, Iter> BufferedChunk<T> for BufferIter<T, Iter>
+impl<T, Iter> BufferedChunkX<T> for BufferIter<T, Iter>
 where
     T: Send + Sync,
     Iter: Iterator<Item = T>,
@@ -26,11 +26,50 @@ where
         }
     }
 
-    #[inline(always)]
     fn chunk_size(&self) -> usize {
         self.values.len()
     }
 
+    fn pull_x(&mut self, iter: &Self::ConIter) -> Option<impl ExactSizeIterator<Item = T>> {
+        iter.progress_and_get_begin_idx(self.chunk_size())
+            .and_then(|begin_idx| {
+                // SAFETY: no other thread has the valid condition to iterate, they are waiting
+
+                let core_iter = unsafe { &mut *iter.iter.get() };
+
+                let mut count = 0;
+                for pos in self.values.iter_mut() {
+                    match core_iter.next() {
+                        Some(x) => {
+                            *pos = Some(x);
+                            count += 1;
+                        }
+                        None => break,
+                    }
+                }
+
+                match count == self.chunk_size() {
+                    true => iter.release_handle(begin_idx + self.chunk_size()),
+                    false => iter.release_handle_complete(),
+                }
+
+                match count {
+                    0 => None,
+                    _ => Some(BufferedIter {
+                        values: &mut self.values,
+                        initial_len: count,
+                        current_idx: 0,
+                    }),
+                }
+            })
+    }
+}
+
+impl<T, Iter> BufferedChunk<T> for BufferIter<T, Iter>
+where
+    T: Send + Sync,
+    Iter: Iterator<Item = T>,
+{
     fn pull(
         &mut self,
         iter: &Self::ConIter,

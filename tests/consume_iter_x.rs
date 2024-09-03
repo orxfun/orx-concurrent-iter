@@ -21,7 +21,7 @@ fn concurrent_iter_x<I: Iterator<Item = i64>>(
                         sum += next;
                     }
                 } else {
-                    while let Some(chunk) = iter.next_chunk(batch) {
+                    while let Some(chunk) = iter.next_chunk_x(batch) {
                         sum += chunk.sum::<i64>();
                     }
                 }

@@ -1,4 +1,4 @@
-use crate::{ConIterOfSlice, ConcurrentIter, ConcurrentIterable};
+use crate::{ConIterOfSlice, ConcurrentIter, ConcurrentIterX, ConcurrentIterable};
 use test_case::test_matrix;
 
 const VEC_LEN: usize = 42;

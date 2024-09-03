@@ -151,7 +151,7 @@ fn drop_after_next_chunk(consume_chunk: bool, take: Take, remaining: ConsumeRema
 
     let con_iter: ConIterOfIterX<String, _> = source.into_con_iter_x();
 
-    let chunk = con_iter.next_chunk(num_take);
+    let chunk = con_iter.next_chunk_x(num_take);
     if consume_chunk {
         if let Some(chunk) = chunk {
             for (i, next) in chunk.enumerate() {
@@ -190,7 +190,7 @@ fn drop_after_next_chunk_then_into_seq(
     let con_iter: ConIterOfIterX<String, _> = source.into_con_iter_x();
 
     {
-        let chunk = con_iter.next_chunk(num_take);
+        let chunk = con_iter.next_chunk_x(num_take);
         if consume_chunk {
             if let Some(chunk) = chunk {
                 for (i, next) in chunk.enumerate() {

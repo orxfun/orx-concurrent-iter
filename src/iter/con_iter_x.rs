@@ -1,5 +1,5 @@
 use super::{
-    buffered::{buffered_chunk::BufferedChunkX, buffered_iter::BufferedIterX},
+    buffered::{buffered_chunk::BufferedChunkX, buffered_iter::BufferedIter},
     default_fns,
     wrappers::values_x::ConIterValuesX,
 };
@@ -10,11 +10,11 @@ pub trait ConcurrentIterX: Send + Sync {
     /// Type of the items that the iterator yields.
     type Item: Send + Sync;
 
-    /// Type of the buffered iterator returned by the `chunk_iter` method when elements are fetched in chunks by each thread.
-    type BufferedIter: BufferedChunkX<Self::Item>;
-
     /// Inner type which is the source of the data to be iterated, which in addition is a regular sequential `Iterator`.
     type SeqIter: Iterator<Item = Self::Item>;
+
+    /// Type of the buffered iterator returned by the `chunk_iter` method when elements are fetched in chunks by each thread.
+    type BufferedIterX: BufferedChunkX<Self::Item, ConIter = Self>;
 
     /// Converts the concurrent iterator back to the original wrapped type which is the source of the elements to be iterated.
     /// Already progressed elements are skipped.
@@ -77,7 +77,7 @@ pub trait ConcurrentIterX: Send + Sync {
     ///     assert_eq!(x, y.len());
     /// }
     /// ```
-    fn next_chunk(&self, chunk_size: usize) -> Option<impl ExactSizeIterator<Item = Self::Item>>;
+    fn next_chunk_x(&self, chunk_size: usize) -> Option<impl ExactSizeIterator<Item = Self::Item>>;
 
     /// Advances the iterator and returns the next value.
     ///
@@ -156,79 +156,6 @@ pub trait ConcurrentIterX: Send + Sync {
     {
         self.into()
     }
-
-    /// Creates an iterator which pulls elements from this iterator as chunks of the given `chunk_size`.
-    ///
-    /// Returned iterator is a regular `Iterator`, except that it is linked to the concurrent iterator and pulls its elements concurrently from the parent iterator.
-    /// The `next` call of the buffered iterator returns `None` if the concurrent iterator is consumed.
-    /// Otherwise, it returns a [`NextChunk`] which is composed of two values:
-    /// * `begin_idx`: the index in the original source data, or concurrent iterator, of the first element of the pulled chunk,
-    /// * `values`: an `ExactSizeIterator` containing at least 1 and at most `chunk_size` consecutive elements pulled from the original source data.
-    ///
-    /// Iteration in chunks is allocation free whenever possible; for instance, when the source data is a vector, a slice or an array, etc. with known size.
-    /// On the other hand, when the source data is an arbitrary `Iterator`, iteration in chunks requires a buffer to write the chunk of pulled elements.
-    ///
-    /// This method is memory efficient in these situations.
-    /// It allocates a buffer of `chunk_size` only once when created, only if the source data requires it.
-    /// This buffer is used over and over until the concurrent iterator is consumed.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `chunk_size` is zero; chunk size is required to be strictly positive.
-    ///
-    /// # Example
-    ///
-    /// Example below illustrates a parallel sum operation.
-    /// Entire iteration requires an allocation (4 threads) * (16 chunk size) = 64 elements.
-    ///
-    /// ```rust
-    /// use orx_concurrent_iter::*;
-    ///
-    /// let (num_threads, chunk_size) = (4, 64);
-    /// let iter = (0..16384).map(|x| x * 2).into_con_iter();
-    ///
-    /// let sum = std::thread::scope(|s| {
-    ///     (0..num_threads)
-    ///         .map(|_| {
-    ///             s.spawn(|| {
-    ///                 let mut sum = 0;
-    ///                 let mut buffered = iter.buffered_iter(chunk_size);
-    ///                 while let Some(chunk) = buffered.next() {
-    ///                     sum += chunk.values.sum::<usize>();
-    ///                 }
-    ///                 sum
-    ///             })
-    ///         })
-    ///         .map(|x| x.join().expect("-"))
-    ///         .sum::<usize>()
-    /// });
-    ///
-    /// let expected = 16384 * 16383;
-    /// assert_eq!(sum, expected);
-    /// ```
-    ///
-    /// # `buffered_iter` and `next_chunk`
-    ///
-    /// When iterating over single elements using `next` or `values`, the concurrent iterator just yields the element without requiring any allocation.
-    ///
-    /// When iterating as chunks, concurrent iteration might or might not require an allocation.
-    /// * For instance, no allocation is required if the source data of the iterator is a vector, a slice or an array, etc.
-    /// * On the other hand, an allocation of `chunk_size` is required if the source data is an any `Iterator` without further type information.
-    ///
-    /// Pulling elements as chunks using the `next_chunk` or `buffered_iter` methods differ in the latter case as follows:
-    /// * `next_chunk` will allocate a vector of `next_chunk` elements every time it is called;
-    /// * `buffered_iter` will allocate a vector of `next_chunk` only once on construction, and this buffer will be used over and over until the concurrent iterator is consumed leading to negligible allocation.
-    ///
-    /// Therefore, it is safer to always use `buffered_iter`, unless we need to keep changing the `chunk_size` through iteration, which is a rare scenario.
-    ///
-    /// In a typical use case where we concurrently iterate over the elements of the iterator using `num_threads` threads:
-    /// * we will create `num_threads` buffered iterators; i.e., we will call `buffered_iter` once from each thread,
-    /// * each thread will allocate a vector of `chunk_size` capacity.
-    ///
-    /// In total, the iteration will use an additional memory of `num_threads * chunk_size`.
-    /// Note that the amount of allocation is not a function of the length of the source data.
-    /// Assuming the length will be large in a scenario requiring parallel iteration, the allocation can be considered to be very small.
-    fn buffered_iter(&self, chunk_size: usize) -> BufferedIterX<Self::Item, Self::BufferedIter>;
 
     /// Skips all remaining elements of the iterator and assumes that the end of the iterator is reached.
     ///
@@ -483,5 +410,80 @@ pub trait ConcurrentIterX: Send + Sync {
             Some(0) => HasMore::No,
             Some(n) => HasMore::Yes(n),
         }
+    }
+
+    /// Creates an iterator which pulls elements from this iterator as chunks of the given `chunk_size`.
+    ///
+    /// Returned iterator is a regular `Iterator`, except that it is linked to the concurrent iterator and pulls its elements concurrently from the parent iterator.
+    /// The `next` call of the buffered iterator returns `None` if the concurrent iterator is consumed.
+    /// Otherwise, it returns a [`NextChunk`] which is composed of two values:
+    /// * `begin_idx`: the index in the original source data, or concurrent iterator, of the first element of the pulled chunk,
+    /// * `values`: an `ExactSizeIterator` containing at least 1 and at most `chunk_size` consecutive elements pulled from the original source data.
+    ///
+    /// Iteration in chunks is allocation free whenever possible; for instance, when the source data is a vector, a slice or an array, etc. with known size.
+    /// On the other hand, when the source data is an arbitrary `Iterator`, iteration in chunks requires a buffer to write the chunk of pulled elements.
+    ///
+    /// This method is memory efficient in these situations.
+    /// It allocates a buffer of `chunk_size` only once when created, only if the source data requires it.
+    /// This buffer is used over and over until the concurrent iterator is consumed.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `chunk_size` is zero; chunk size is required to be strictly positive.
+    ///
+    /// # Example
+    ///
+    /// Example below illustrates a parallel sum operation.
+    /// Entire iteration requires an allocation (4 threads) * (16 chunk size) = 64 elements.
+    ///
+    /// ```rust
+    /// use orx_concurrent_iter::*;
+    ///
+    /// let (num_threads, chunk_size) = (4, 64);
+    /// let iter = (0..16384).map(|x| x * 2).into_con_iter();
+    ///
+    /// let sum = std::thread::scope(|s| {
+    ///     (0..num_threads)
+    ///         .map(|_| {
+    ///             s.spawn(|| {
+    ///                 let mut sum = 0;
+    ///                 let mut buffered = iter.buffered_iter(chunk_size);
+    ///                 while let Some(chunk) = buffered.next() {
+    ///                     sum += chunk.values.sum::<usize>();
+    ///                 }
+    ///                 sum
+    ///             })
+    ///         })
+    ///         .map(|x| x.join().expect("-"))
+    ///         .sum::<usize>()
+    /// });
+    ///
+    /// let expected = 16384 * 16383;
+    /// assert_eq!(sum, expected);
+    /// ```
+    ///
+    /// # `buffered_iter` and `next_chunk`
+    ///
+    /// When iterating over single elements using `next` or `values`, the concurrent iterator just yields the element without requiring any allocation.
+    ///
+    /// When iterating as chunks, concurrent iteration might or might not require an allocation.
+    /// * For instance, no allocation is required if the source data of the iterator is a vector, a slice or an array, etc.
+    /// * On the other hand, an allocation of `chunk_size` is required if the source data is an any `Iterator` without further type information.
+    ///
+    /// Pulling elements as chunks using the `next_chunk` or `buffered_iter` methods differ in the latter case as follows:
+    /// * `next_chunk` will allocate a vector of `next_chunk` elements every time it is called;
+    /// * `buffered_iter` will allocate a vector of `next_chunk` only once on construction, and this buffer will be used over and over until the concurrent iterator is consumed leading to negligible allocation.
+    ///
+    /// Therefore, it is safer to always use `buffered_iter`, unless we need to keep changing the `chunk_size` through iteration, which is a rare scenario.
+    ///
+    /// In a typical use case where we concurrently iterate over the elements of the iterator using `num_threads` threads:
+    /// * we will create `num_threads` buffered iterators; i.e., we will call `buffered_iter` once from each thread,
+    /// * each thread will allocate a vector of `chunk_size` capacity.
+    ///
+    /// In total, the iteration will use an additional memory of `num_threads * chunk_size`.
+    /// Note that the amount of allocation is not a function of the length of the source data.
+    /// Assuming the length will be large in a scenario requiring parallel iteration, the allocation can be considered to be very small.
+    fn buffered_iter_x(&self, chunk_size: usize) -> BufferedIter<Self::Item, Self::BufferedIterX> {
+        BufferedIter::new(Self::BufferedIterX::new(chunk_size), self)
     }
 }

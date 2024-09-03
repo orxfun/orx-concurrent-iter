@@ -1,10 +1,5 @@
 use crate::{
-    iter::{
-        atomic_counter::AtomicCounter,
-        buffered::{buffered_chunk::BufferedChunk, buffered_iter::BufferedIter, iter::BufferIter},
-    },
-    next::NextChunk,
-    ConcurrentIter, Next,
+    iter::buffered::iter::BufferIter, next::NextChunk, ConcurrentIter, ConcurrentIterX, Next,
 };
 use std::{
     cell::UnsafeCell,
@@ -26,7 +21,7 @@ where
 {
     pub(crate) iter: UnsafeCell<Iter>,
     initial_len: Option<usize>,
-    reserved_counter: AtomicCounter,
+    counter: AtomicUsize,
     yielded_counter: AtomicUsize,
 }
 
@@ -45,7 +40,7 @@ where
         Self {
             iter: iter.into(),
             initial_len,
-            reserved_counter: AtomicCounter::new(),
+            counter: 0.into(),
             yielded_counter: 0.into(),
         }
     }
@@ -54,8 +49,7 @@ where
         match number_to_fetch {
             0 => None,
             _ => {
-                let begin_idx = self.reserved_counter.fetch_and_add(number_to_fetch);
-
+                let begin_idx = self.counter.fetch_add(number_to_fetch, Ordering::Relaxed);
                 loop {
                     match self.try_get_handle(begin_idx) {
                         Ok(_) => return Some(begin_idx),
@@ -127,7 +121,7 @@ where
     Iter: Iterator<Item = T>,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        super::helpers::fmt_iter(f, "ConIterOfIter", self.initial_len, &self.reserved_counter)
+        super::helpers::fmt_iter(f, "ConIterOfIter", self.initial_len, &self.counter)
     }
 }
 
@@ -146,15 +140,15 @@ unsafe impl<T: Send + Sync, Iter> Send for ConIterOfIter<T, Iter> where Iter: It
 
 // AtomicIter -> ConcurrentIter
 
-impl<T: Send + Sync, Iter> ConcurrentIter for ConIterOfIter<T, Iter>
+impl<T: Send + Sync, Iter> ConcurrentIterX for ConIterOfIter<T, Iter>
 where
     Iter: Iterator<Item = T>,
 {
     type Item = T;
 
-    type BufferedIter = BufferIter<T, Iter>;
-
     type SeqIter = Iter;
+
+    type BufferedIterX = BufferIter<T, Iter>;
 
     /// Converts the concurrent iterator back to the original wrapped type which is the source of the elements to be iterated.
     /// Already progressed elements are skipped.
@@ -192,9 +186,65 @@ where
         self.iter.into_inner()
     }
 
+    fn next_chunk_x(&self, chunk_size: usize) -> Option<impl ExactSizeIterator<Item = Self::Item>> {
+        match chunk_size {
+            0 => None,
+            _ => match self.progress_and_get_begin_idx(chunk_size) {
+                None => None,
+                Some(begin_idx) => {
+                    let iter = unsafe { &mut *self.iter.get() };
+
+                    let end_idx = begin_idx + chunk_size;
+
+                    let buffer: Vec<_> = (begin_idx..end_idx)
+                        .map(|_| iter.next())
+                        .take_while(|x| x.is_some())
+                        .map(|x| x.expect("must be some"))
+                        .collect();
+
+                    match buffer.len() == chunk_size {
+                        true => self.release_handle(end_idx),
+                        false => self.release_handle_complete(),
+                    }
+
+                    let values = buffer.into_iter();
+                    Some(values)
+                }
+            },
+        }
+    }
+
+    fn next(&self) -> Option<Self::Item> {
+        let idx = self.counter.fetch_add(1, Ordering::Acquire);
+        self.get(idx)
+    }
+
+    #[inline(always)]
+    fn try_get_len(&self) -> Option<usize> {
+        match self.yielded_counter.load(Ordering::SeqCst) == COMPLETED {
+            true => Some(0),
+            false => self.initial_len.map(|initial_len| {
+                let current = self.counter.load(Ordering::Acquire);
+                initial_len.saturating_sub(current)
+            }),
+        }
+    }
+
+    #[inline(always)]
+    fn skip_to_end(&self) {
+        self.yielded_counter.store(COMPLETED, Ordering::SeqCst);
+    }
+}
+
+impl<T: Send + Sync, Iter> ConcurrentIter for ConIterOfIter<T, Iter>
+where
+    Iter: Iterator<Item = T>,
+{
+    type BufferedIter = Self::BufferedIterX;
+
     #[inline(always)]
     fn next_id_and_value(&self) -> Option<Next<Self::Item>> {
-        let idx = self.reserved_counter.fetch_and_increment();
+        let idx = self.counter.fetch_add(1, Ordering::Acquire);
         self.get(idx).map(|value| Next { idx, value })
     }
 
@@ -228,26 +278,5 @@ where
                 }
             },
         }
-    }
-
-    fn buffered_iter(&self, chunk_size: usize) -> BufferedIter<Self::Item, Self::BufferedIter> {
-        let buffered_iter = Self::BufferedIter::new(chunk_size);
-        BufferedIter::new(buffered_iter, self)
-    }
-
-    #[inline(always)]
-    fn try_get_len(&self) -> Option<usize> {
-        match self.yielded_counter.load(Ordering::SeqCst) == COMPLETED {
-            true => Some(0),
-            false => self.initial_len.map(|initial_len| {
-                let current = self.reserved_counter.current();
-                initial_len.saturating_sub(current)
-            }),
-        }
-    }
-
-    #[inline(always)]
-    fn skip_to_end(&self) {
-        self.yielded_counter.store(COMPLETED, Ordering::SeqCst);
     }
 }

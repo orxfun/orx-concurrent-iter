@@ -207,7 +207,7 @@ where
                     _ = iter.next();
                     _ = iter.next();
                 } else {
-                    while let Some(chunk) = iter.next_chunk(batch) {
+                    while let Some(chunk) = iter.next_chunk_x(batch) {
                         for x in chunk {
                             if predicate(&x) {
                                 iter.skip_to_end();
@@ -215,8 +215,8 @@ where
                             }
                         }
                     }
-                    _ = iter.next_chunk(batch);
-                    _ = iter.next_chunk(batch);
+                    _ = iter.next_chunk_x(batch);
+                    _ = iter.next_chunk_x(batch);
                 }
                 None
             }));

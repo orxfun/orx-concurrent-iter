@@ -1,4 +1,4 @@
-use super::buffered_chunk::BufferedChunk;
+use super::buffered_chunk::{BufferedChunk, BufferedChunkX};
 use crate::{ConIterOfSlice, NextChunk};
 use std::marker::PhantomData;
 
@@ -7,7 +7,7 @@ pub struct BufferedSlice<T> {
     phantom: PhantomData<T>,
 }
 
-impl<'a, T> BufferedChunk<&'a T> for BufferedSlice<T>
+impl<'a, T> BufferedChunkX<&'a T> for BufferedSlice<T>
 where
     T: Send + Sync,
 {
@@ -24,6 +24,22 @@ where
         self.chunk_size
     }
 
+    fn pull_x(&mut self, iter: &Self::ConIter) -> Option<impl ExactSizeIterator<Item = &'a T>> {
+        iter.progress_and_get_begin_idx(self.chunk_size)
+            .map(|begin_idx| {
+                let slice = iter.as_slice();
+                let end_idx = (begin_idx + self.chunk_size)
+                    .min(slice.len())
+                    .max(begin_idx);
+                slice[begin_idx..end_idx].iter()
+            })
+    }
+}
+
+impl<'a, T> BufferedChunk<&'a T> for BufferedSlice<T>
+where
+    T: Send + Sync,
+{
     fn pull(
         &mut self,
         iter: &Self::ConIter,

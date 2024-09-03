@@ -1,12 +1,14 @@
-use crate::AtomicCounter;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub fn fmt_iter(
     f: &mut std::fmt::Formatter<'_>,
     struct_name: &str,
     initial_len: Option<usize>,
-    counter: &AtomicCounter,
+    counter: &AtomicUsize,
 ) -> std::fmt::Result {
-    let num_taken = counter.current().min(initial_len.unwrap_or(usize::MAX));
+    let num_taken = counter
+        .load(Ordering::Relaxed)
+        .min(initial_len.unwrap_or(usize::MAX));
 
     match initial_len {
         None => f

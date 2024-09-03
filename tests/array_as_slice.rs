@@ -38,7 +38,7 @@ fn concurrent_iter_stack(
                                 }
                             }
                             false => {
-                                let mut buffer = iter.buffered_iter(batch);
+                                let mut buffer = iter.buffered_iter_x(batch);
                                 while let Some(chunk) = buffer.next() {
                                     for value in chunk.values {
                                         sum += value;
@@ -69,7 +69,7 @@ fn concurrent_iter_stack(
                             }
                             false => {
                                 let until = vec_len.saturating_sub(batch);
-                                let mut buffer = iter.buffered_iter(batch);
+                                let mut buffer = iter.buffered_iter_x(batch);
                                 while iter.try_get_len().expect("exists") < until {
                                     if let Some(chunk) = buffer.next() {
                                         for value in chunk.values {
