@@ -1,8 +1,9 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use orx_concurrent_iter::{ConcurrentIter, IterIntoConcurrentIter};
+use orx_concurrent_iter::{
+    ConcurrentIter, ConcurrentIterX, IntoConcurrentIterX, IterIntoConcurrentIter,
+};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
-use rayon::iter::IndexedParallelIterator;
 
 const NUM_NUMBERS: usize = 4;
 const NUM_VECTORS: usize = 4;
@@ -131,6 +132,41 @@ fn con_iter(inputs: &[usize], num_threads: usize, chunk_size: usize) -> Vec<Larg
     })
 }
 
+fn con_iter_x(inputs: &[usize], num_threads: usize, chunk_size: usize) -> Vec<LargeOutput> {
+    let iter = inputs.iter().filter(|x| *x % 3 > 0).map(|x| x + 1);
+    let con_iter = iter.into_con_iter_x();
+
+    std::thread::scope(|s| {
+        let mut handles = vec![];
+        for _ in 0..num_threads {
+            let thread_vec = match chunk_size {
+                1 => s.spawn(|| {
+                    let mut vec = vec![];
+                    while let Some(x) = con_iter.next() {
+                        vec.push(to_large_output(x));
+                    }
+                    vec
+                }),
+                _ => s.spawn(|| {
+                    let mut vec = vec![];
+                    let mut chunk_iter = con_iter.buffered_iter(chunk_size);
+                    while let Some(chunk) = chunk_iter.next() {
+                        vec.extend(chunk.map(to_large_output));
+                    }
+                    vec
+                }),
+            };
+            handles.push(thread_vec);
+        }
+
+        let mut vec = vec![];
+        for x in handles {
+            vec.extend(x.join().expect("failed to join the thread"));
+        }
+        vec
+    })
+}
+
 fn con_iter_of_iter(c: &mut Criterion) {
     let treatments = [4096, 65_536];
     let params = [(8, 1), (8, 64)];
@@ -153,13 +189,21 @@ fn con_iter_of_iter(c: &mut Criterion) {
         });
 
         for (num_threads, chunk_size) in params {
-            let param = format!(
-                "{} (num-threads={}, chunk-size={})",
-                n, num_threads, chunk_size
-            );
-            group.bench_with_input(BenchmarkId::new("con_iter", param), n, |b, _| {
+            let param = || {
+                format!(
+                    "{} (num-threads={}, chunk-size={})",
+                    n, num_threads, chunk_size
+                )
+            };
+
+            group.bench_with_input(BenchmarkId::new("con_iter", param()), n, |b, _| {
                 validate(&expected, con_iter(&input, num_threads, chunk_size));
                 b.iter(|| con_iter(&input, num_threads, chunk_size))
+            });
+
+            group.bench_with_input(BenchmarkId::new("con_iter_x", param()), n, |b, _| {
+                validate(&expected, con_iter_x(&input, num_threads, chunk_size));
+                b.iter(|| con_iter_x(&input, num_threads, chunk_size))
             });
         }
     }
