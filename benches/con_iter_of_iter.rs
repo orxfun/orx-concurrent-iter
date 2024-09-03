@@ -1,7 +1,5 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use orx_concurrent_iter::{
-    ConcurrentIter, ConcurrentIterX, IntoConcurrentIterX, IterIntoConcurrentIter,
-};
+use orx_concurrent_iter::{ConcurrentIterX, IntoConcurrentIterX, IterIntoConcurrentIter};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 

@@ -15,6 +15,14 @@ pub trait ConcurrentIter: ConcurrentIterX {
     /// Type of the buffered iterator returned by the `chunk_iter` method when elements are fetched in chunks by each thread.
     type BufferedIter: BufferedChunk<Self::Item, ConIter = Self>;
 
+    #[inline(always)]
+    fn into_concurrent_iter_x(self) -> impl ConcurrentIterX<Item = Self::Item>
+    where
+        Self: Sized,
+    {
+        self
+    }
+
     /// Advances the iterator and returns the next value together with its enumeration index.
     ///
     /// Returns [None] when iteration is finished.

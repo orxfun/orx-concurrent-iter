@@ -1,5 +1,6 @@
 use crate::{
-    iter::buffered::iter::BufferIter, next::NextChunk, ConcurrentIter, ConcurrentIterX, Next,
+    iter::buffered::iter::BufferIter, next::NextChunk, ConIterOfIterX, ConcurrentIter,
+    ConcurrentIterX, Next,
 };
 use std::{
     cell::UnsafeCell,
@@ -241,6 +242,16 @@ where
     Iter: Iterator<Item = T>,
 {
     type BufferedIter = Self::BufferedIterX;
+
+    #[inline(always)]
+    #[allow(refining_impl_trait)]
+    fn into_concurrent_iter_x(self) -> ConIterOfIterX<T, Iter>
+    where
+        Self: Sized,
+    {
+        let iter = self.iter.into_inner();
+        ConIterOfIterX::new(iter)
+    }
 
     #[inline(always)]
     fn next_id_and_value(&self) -> Option<Next<Self::Item>> {
