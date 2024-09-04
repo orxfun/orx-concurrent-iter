@@ -229,7 +229,7 @@ fn into_iter_x(consume_chunk: bool, take: Take, remaining: ConsumeRemaining) {
     let num_take = take.take(len);
 
     let con_iter: ConIterOfIter<String, _> = source.into_con_iter();
-    let con_iter_x: ConIterOfIterX<String, _> = con_iter.into_concurrent_iter_x();
+    let con_iter_x: ConIterOfIterX<String, _> = con_iter.into_con_iter_x();
 
     {
         let chunk = con_iter_x.next_chunk_x(num_take);

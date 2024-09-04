@@ -6,6 +6,91 @@ use super::{
 use crate::has_more::HasMore;
 
 /// Trait defining a concurrent iterator with `next` and `next_id_and_chunk` methods which can safely be called my multiple threads concurrently.
+///
+/// Note that type or method names with suffix 'x' is an indicator of the dropped promise of keeping order.
+/// * `ConcurrentIterX` allows concurrent iteration; however, it may or may not provide the initial order of
+/// an element in the providing source.
+/// * `ConcurrentIter` extends `ConcurrentIterX` by including the keeping track of order guarantee.
+///
+/// This crate provides ordered `ConcurrentIter` implementations of all iterators.
+/// In other words, `ConcurrentIterX` implementations already preserve the input order and hence
+/// the iterators also implement `ConcurrentIter`.
+/// A different `ConcurrentIterX` implementation is provided only if it makes it possible to have a performance gain.
+/// One example is concurrent iterators created for arbitrary sequential iterators, in which case keeping track of
+/// input order might have an impact.
+///
+/// In such cases, in order to make the choice explicit, these traits are differentiated.
+///
+/// In most of the practical use cases, we require only the `ConcurrentIter`.
+/// The differentiation is utilized by under the hood coordination of crates aiming high performance
+/// such as [orx_parallel](https://crates.io/crates/orx-parallel).
+///
+/// # Examples
+///
+/// **A. When order matters**
+///
+/// Once can create a concurrent iterator from a sequential iterator and use it as it is.
+/// This will guarantee to provide the correct index of the input.
+/// For instance in the following, `(i, value)` pair provided by `ids_and_values`
+/// will guarantee that `2*i == value`.
+///
+/// ```rust
+/// use orx_concurrent_iter::*;
+/// use orx_concurrent_bag::ConcurrentBag;
+///
+/// let num_threads = 8;
+///
+/// let seq_iter = (0..1024).map(|x| x * 2).into_iter();
+/// let con_iter = seq_iter.into_con_iter();
+///
+/// let con_bag = ConcurrentBag::new();
+///
+/// std::thread::scope(|s| {
+///     for _ in 0..num_threads {
+///         s.spawn(|| {
+///             for (i, value) in con_iter.ids_and_values() {
+///                 con_bag.push((i, value / 2));
+///             }
+///         });
+///     }
+/// });
+///
+/// let vec = con_bag.into_inner();
+/// for (i, value) in vec.into_iter() {
+///     assert_eq!(i, value as usize);
+/// }
+/// ```
+///
+/// **B. When order does not matter**
+///
+/// Alternatively, if the order does not matter, we can create an unordered version of the concurrent iterator.
+/// We can directly create one using `into_con_iter_x` on the source type.
+/// Alternatively, we can convert any ordered concurrent iterator any time by calling `into_con_iter_x`.
+/// In the following, we use an unordered version, since we are not interested in the indices of elements
+/// while computing a parallel sum.
+///
+/// ```rust
+/// use orx_concurrent_iter::*;
+///
+/// let num_threads = 8;
+///
+/// let seq_iter = (0..1024).map(|x| x * 2).into_iter();
+/// let con_iter = seq_iter.into_con_iter_x(); // directly into x
+/// // let con_iter = seq_iter.into_con_iter().into_con_iter_x(); // or alternatively
+///
+/// let sum: i32 = std::thread::scope(|s| {
+///     let mut handles: Vec<_> = vec![];
+///     for _ in 0..num_threads {
+///         // as expected, `ids_and_values` method is not available
+///         // but we have `values`
+///         handles.push(s.spawn(|| con_iter.values().sum::<i32>()));
+///     }
+///
+///     handles.into_iter().map(|x| x.join().expect("-")).sum()
+/// });
+///
+/// assert_eq!(sum, (0..1024).sum::<i32>() * 2)
+/// ```
 pub trait ConcurrentIterX: Send + Sync {
     /// Type of the items that the iterator yields.
     type Item: Send + Sync;
@@ -13,7 +98,7 @@ pub trait ConcurrentIterX: Send + Sync {
     /// Inner type which is the source of the data to be iterated, which in addition is a regular sequential `Iterator`.
     type SeqIter: Iterator<Item = Self::Item>;
 
-    /// Type of the buffered iterator returned by the `chunk_iter` method when elements are fetched in chunks by each thread.
+    /// Type of the buffered iterator returned by the `buffered_iter_x` method when elements are fetched in chunks by each thread.
     type BufferedIterX: BufferedChunkX<Self::Item, ConIter = Self>;
 
     /// Converts the concurrent iterator back to the original wrapped type which is the source of the elements to be iterated.
@@ -21,16 +106,20 @@ pub trait ConcurrentIterX: Send + Sync {
     fn into_seq_iter(self) -> Self::SeqIter;
 
     /// Advances the iterator `chunk_size` times and returns an iterator of at most `chunk_size` consecutive next values.
-    /// Further, the beginning enumeration index of the yielded values is returned.
+    ///
+    /// See [`next_chunk`] for a version that additionally provides the input order of the elements in the chunk.
+    ///
+    /// [`next_chunk`]: crate::ConcurrentIter::next_chunk
     ///
     /// This method:
     /// * returns an iterator of `chunk_size` elements if there exist sufficient elements left in the iteration, or
     /// * it might return an iterator of `m < chunk_size` elements if there exists only `m` elements left, or
-    /// * it might return None, it will never return Some of an empty iterator.
+    /// * it might return None
+    /// * => it will never return Some of an empty iterator.
     ///
     /// This call would be equivalent to calling `next_id_and_value` method `chunk_size` times in a single-threaded execution.
     /// However, calling `next` method `chunk_size` times in a concurrent execution does not guarantee to return `chunk_size` consecutive elements.
-    /// On the other hand, `next_chunk` guarantees that it returns consecutive elements, preventing any intermediate calls.
+    /// On the other hand, `next_chunk_x` guarantees that it returns consecutive elements, preventing any intermediate calls.
     ///
     /// More importantly, this is an important performance optimization feature that enables
     /// * reducing the number of atomic updates,
@@ -38,44 +127,38 @@ pub trait ConcurrentIterX: Send + Sync {
     ///
     /// # Examples
     ///
-    /// Note that `next_chunk` method returns a [`NextChunk`].
-    /// Further, [`NextChunk::values`] is a regular `ExactSizeIterator` which might yield at most `chunk_size` elements.
-    /// Note that the iterator will never be empty.
-    /// Whenever the concurrent iterator is used up, `next_chunk` method, similar to `next`, will return `None`.
+    /// Note that `next_chunk_x` method returns a regular `ExactSizeIterator` which might yield at most `chunk_size` elements.
     ///
     /// ```rust
     /// use orx_concurrent_iter::*;
     /// use orx_concurrent_bag::*;
     ///
-    /// fn to_str(num: usize) -> String {
-    ///     num.to_string()
-    /// }
-    ///
     /// let (num_threads, chunk_size) = (4, 32);
-    /// let strings: Vec<_> = (0..1024).map(to_str).collect();
+    /// let strings: Vec<_> = (0..1024).map(|x| x.to_string()).collect();
     /// let bag = ConcurrentBag::new();
     ///
     /// let iter = strings.con_iter();
     /// std::thread::scope(|s| {
     ///     for _ in 0..num_threads {
     ///         s.spawn(|| {
-    ///             while let Some(chunk) = iter.next_chunk(chunk_size) {
-    ///                 for (i, value) in chunk.values.enumerate() {
-    ///                     // idx is the original position in `characters`
-    ///                     let idx = chunk.begin_idx + i;
-    ///                     assert_eq!(value, &to_str(idx));
-    ///                     bag.push((idx, value.len()));
-    ///                 }
+    ///             while let Some(chunk) = iter.next_chunk_x(chunk_size) {
+    ///                 // iterate in chunks; each chunk is an ExactSizeIterator
+    ///                 assert!((0..=chunk_size).contains(&chunk.len()));
+    ///
+    ///                 let mapped = chunk.map(|x| format!("{}!", x));
+    ///                 bag.extend(mapped);
     ///             }
     ///         });
     ///     }
     /// });
     ///
-    /// let mut outputs: Vec<_> = bag.into_inner().into();
-    /// outputs.sort_by_key(|x| x.0); // sort to original order
-    /// for (x, y) in outputs.iter().map(|x| x.1).zip(&strings) {
-    ///     assert_eq!(x, y.len());
-    /// }
+    /// let mut collected = bag.into_inner();
+    /// collected.sort();
+    ///
+    /// let mut expected: Vec<_> = (0..1024).map(|x| format!("{}!", x)).collect();
+    /// expected.sort();
+    ///
+    /// assert_eq!(expected, collected);
     /// ```
     fn next_chunk_x(&self, chunk_size: usize) -> Option<impl ExactSizeIterator<Item = Self::Item>>;
 
@@ -357,6 +440,11 @@ pub trait ConcurrentIterX: Send + Sync {
     /// Returns Some of the remaining length of the iterator if it is known; returns None otherwise.
     fn try_get_len(&self) -> Option<usize>;
 
+    /// Returns Some of the initial length of the iterator when it was constructed if it is known; returns None otherwise.
+    ///
+    /// This method is often required and used for certain optimizations in parallel computing.
+    fn try_get_initial_len(&self) -> Option<usize>;
+
     /// Returns whether or not the concurrent iterator has more elements to yield.
     ///
     /// # Examples
@@ -404,6 +492,7 @@ pub trait ConcurrentIterX: Send + Sync {
     ///
     /// assert_eq!(iter.has_more(), HasMore::No);
     /// ```
+    #[inline(always)]
     fn has_more(&self) -> HasMore {
         match self.try_get_len() {
             None => HasMore::Maybe,
@@ -414,17 +503,20 @@ pub trait ConcurrentIterX: Send + Sync {
 
     /// Creates an iterator which pulls elements from this iterator as chunks of the given `chunk_size`.
     ///
-    /// Returned iterator is a regular `Iterator`, except that it is linked to the concurrent iterator and pulls its elements concurrently from the parent iterator.
-    /// The `next` call of the buffered iterator returns `None` if the concurrent iterator is consumed.
-    /// Otherwise, it returns a [`NextChunk`] which is composed of two values:
-    /// * `begin_idx`: the index in the original source data, or concurrent iterator, of the first element of the pulled chunk,
-    /// * `values`: an `ExactSizeIterator` containing at least 1 and at most `chunk_size` consecutive elements pulled from the original source data.
+    /// See [`buffered_iter`] for a version that additionally provides the input order of the elements in the chunk.
+    ///
+    /// [`buffered_iter`]: crate::ConcurrentIter::buffered_iter
+    ///
+    /// Returned iterator is a regular iterator, except that it is linked to the concurrent iterator and pulls its elements concurrently from the parent iterator.
+    /// The `next_x` call of the buffered iterator returns `None` if the concurrent iterator is consumed.
+    /// Otherwise, it returns a  non-empty `ExactSizeIterator` containing at least 1 and at most `chunk_size` consecutive elements pulled from the original source data.
     ///
     /// Iteration in chunks is allocation free whenever possible; for instance, when the source data is a vector, a slice or an array, etc. with known size.
     /// On the other hand, when the source data is an arbitrary `Iterator`, iteration in chunks requires a buffer to write the chunk of pulled elements.
     ///
     /// This method is memory efficient in these situations.
     /// It allocates a buffer of `chunk_size` only once when created, only if the source data requires it.
+    /// Often, one allocation is required per thread.
     /// This buffer is used over and over until the concurrent iterator is consumed.
     ///
     /// # Panics
@@ -447,9 +539,9 @@ pub trait ConcurrentIterX: Send + Sync {
     ///         .map(|_| {
     ///             s.spawn(|| {
     ///                 let mut sum = 0;
-    ///                 let mut buffered = iter.buffered_iter(chunk_size);
-    ///                 while let Some(chunk) = buffered.next() {
-    ///                     sum += chunk.values.sum::<usize>();
+    ///                 let mut buffered = iter.buffered_iter_x(chunk_size);
+    ///                 while let Some(chunk) = buffered.next_x() {
+    ///                     sum += chunk.sum::<usize>();
     ///                 }
     ///                 sum
     ///             })

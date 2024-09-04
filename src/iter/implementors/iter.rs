@@ -232,6 +232,11 @@ where
     }
 
     #[inline(always)]
+    fn try_get_initial_len(&self) -> Option<usize> {
+        self.initial_len
+    }
+
+    #[inline(always)]
     fn skip_to_end(&self) {
         self.yielded_counter.store(COMPLETED, Ordering::SeqCst);
     }
@@ -245,10 +250,11 @@ where
 
     #[inline(always)]
     #[allow(refining_impl_trait)]
-    fn into_concurrent_iter_x(self) -> ConIterOfIterX<T, Iter>
+    fn into_con_iter_x(self) -> ConIterOfIterX<T, Iter>
     where
         Self: Sized,
     {
+        // self
         let iter = self.iter.into_inner();
         ConIterOfIterX::new(iter)
     }

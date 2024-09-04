@@ -229,4 +229,9 @@ where
             }),
         }
     }
+
+    #[inline(always)]
+    fn try_get_initial_len(&self) -> Option<usize> {
+        self.initial_len
+    }
 }

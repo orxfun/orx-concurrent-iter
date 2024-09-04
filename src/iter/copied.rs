@@ -64,6 +64,11 @@ where
     fn try_get_len(&self) -> Option<usize> {
         self.iter.try_get_len()
     }
+
+    #[inline(always)]
+    fn try_get_initial_len(&self) -> Option<usize> {
+        self.iter.try_get_initial_len()
+    }
 }
 
 impl<'a, T, C> ConcurrentIter for Copied<'a, T, C>

@@ -254,6 +254,11 @@ where
         Some(len)
     }
 
+    #[inline(always)]
+    fn try_get_initial_len(&self) -> Option<usize> {
+        Some(self.initial_len())
+    }
+
     fn skip_to_end(&self) {
         let _ = self
             .counter

@@ -172,6 +172,11 @@ impl<T: Send + Sync> ConcurrentIterX for ConIterOfVec<T> {
         };
         Some(len)
     }
+
+    #[inline(always)]
+    fn try_get_initial_len(&self) -> Option<usize> {
+        Some(self.vec_len)
+    }
 }
 
 impl<T: Send + Sync> ConcurrentIter for ConIterOfVec<T> {

@@ -109,6 +109,11 @@ impl<'a, T: Send + Sync> ConcurrentIterX for ConIterOfSlice<'a, T> {
         Some(len)
     }
 
+    #[inline(always)]
+    fn try_get_initial_len(&self) -> Option<usize> {
+        Some(self.slice.len())
+    }
+
     fn skip_to_end(&self) {
         let _ = self.counter.fetch_max(self.slice.len(), Ordering::Acquire);
     }
