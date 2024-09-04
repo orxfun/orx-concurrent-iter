@@ -1,5 +1,5 @@
-use super::buffered_chunk::BufferedChunk;
-use crate::ConIterOfVec;
+use super::buffered_chunk::{BufferedChunk, BufferedChunkX};
+use crate::{ConIterOfVec, NextChunk};
 use std::marker::PhantomData;
 
 pub struct BufferedVec<T> {
@@ -7,7 +7,7 @@ pub struct BufferedVec<T> {
     phantom: PhantomData<T>,
 }
 
-impl<T> BufferedChunk<T> for BufferedVec<T>
+impl<T> BufferedChunkX<T> for BufferedVec<T>
 where
     T: Send + Sync,
 {
@@ -24,11 +24,24 @@ where
         self.chunk_size
     }
 
+    fn pull_x(&mut self, iter: &Self::ConIter) -> Option<impl ExactSizeIterator<Item = T>> {
+        iter.progress_and_get_begin_idx(self.chunk_size)
+            .map(|begin_idx| unsafe { iter.take_slice(begin_idx, self.chunk_size) })
+    }
+}
+
+impl<T> BufferedChunk<T> for BufferedVec<T>
+where
+    T: Send + Sync,
+{
     fn pull(
         &mut self,
         iter: &Self::ConIter,
-        begin_idx: usize,
-    ) -> Option<impl ExactSizeIterator<Item = T>> {
-        Some(unsafe { iter.take_slice(begin_idx, self.chunk_size) })
+    ) -> Option<NextChunk<T, impl ExactSizeIterator<Item = T>>> {
+        iter.progress_and_get_begin_idx(self.chunk_size)
+            .map(|begin_idx| {
+                let values = unsafe { iter.take_slice(begin_idx, self.chunk_size) };
+                NextChunk { begin_idx, values }
+            })
     }
 }

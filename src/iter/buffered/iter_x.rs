@@ -1,9 +1,9 @@
-use super::buffered_chunk::{BufferedChunk, BufferedChunkX};
-use crate::{iter::implementors::iter::ConIterOfIter, NextChunk};
+use super::buffered_chunk::BufferedChunkX;
+use crate::iter::implementors::iter_x::ConIterOfIterX;
 use std::marker::PhantomData;
 
 #[derive(Debug)]
-pub struct BufferIter<T, Iter>
+pub struct BufferIterX<T, Iter>
 where
     T: Send + Sync,
     Iter: Iterator<Item = T>,
@@ -12,12 +12,12 @@ where
     phantom: PhantomData<Iter>,
 }
 
-impl<T, Iter> BufferedChunkX<T> for BufferIter<T, Iter>
+impl<T, Iter> BufferedChunkX<T> for BufferIterX<T, Iter>
 where
     T: Send + Sync,
     Iter: Iterator<Item = T>,
 {
-    type ConIter = ConIterOfIter<T, Iter>;
+    type ConIter = ConIterOfIterX<T, Iter>;
 
     fn new(chunk_size: usize) -> Self {
         Self {
@@ -26,13 +26,14 @@ where
         }
     }
 
+    #[inline(always)]
     fn chunk_size(&self) -> usize {
         self.values.len()
     }
 
     fn pull_x(&mut self, iter: &Self::ConIter) -> Option<impl ExactSizeIterator<Item = T>> {
         iter.progress_and_get_begin_idx(self.chunk_size())
-            .and_then(|begin_idx| {
+            .and_then(|_begin_idx| {
                 // SAFETY: no other thread has the valid condition to iterate, they are waiting
 
                 let core_iter = unsafe { &mut *iter.iter.get() };
@@ -49,7 +50,7 @@ where
                 }
 
                 match count == self.chunk_size() {
-                    true => iter.release_handle(begin_idx + self.chunk_size()),
+                    true => iter.release_handle(),
                     false => iter.release_handle_complete(),
                 }
 
@@ -60,52 +61,6 @@ where
                         initial_len: count,
                         current_idx: 0,
                     }),
-                }
-            })
-    }
-}
-
-impl<T, Iter> BufferedChunk<T> for BufferIter<T, Iter>
-where
-    T: Send + Sync,
-    Iter: Iterator<Item = T>,
-{
-    fn pull(
-        &mut self,
-        iter: &Self::ConIter,
-    ) -> Option<NextChunk<T, impl ExactSizeIterator<Item = T>>> {
-        iter.progress_and_get_begin_idx(self.chunk_size())
-            .and_then(|begin_idx| {
-                // SAFETY: no other thread has the valid condition to iterate, they are waiting
-
-                let core_iter = unsafe { &mut *iter.iter.get() };
-
-                let mut count = 0;
-                for pos in self.values.iter_mut() {
-                    match core_iter.next() {
-                        Some(x) => {
-                            *pos = Some(x);
-                            count += 1;
-                        }
-                        None => break,
-                    }
-                }
-
-                match count == self.chunk_size() {
-                    true => iter.release_handle(begin_idx + self.chunk_size()),
-                    false => iter.release_handle_complete(),
-                }
-
-                match count {
-                    0 => None,
-                    _ => {
-                        let values = BufferedIter {
-                            values: &mut self.values,
-                            initial_len: count,
-                            current_idx: 0,
-                        };
-                        Some(NextChunk { begin_idx, values })
-                    }
                 }
             })
     }

@@ -32,7 +32,7 @@ fn concurrent_iter_stack(num_threads: usize, batch: usize, vec: Vec<i64>, consum
                                 }
                             }
                             false => {
-                                let mut buffer = iter.buffered_iter(batch);
+                                let mut buffer = iter.buffered_iter_x(batch);
                                 while let Some(chunk) = buffer.next() {
                                     for value in chunk.values {
                                         sum += value;
@@ -63,7 +63,7 @@ fn concurrent_iter_stack(num_threads: usize, batch: usize, vec: Vec<i64>, consum
                             }
                             false => {
                                 let until = vec_len.saturating_sub(batch);
-                                let mut buffer = iter.buffered_iter(batch);
+                                let mut buffer = iter.buffered_iter_x(batch);
                                 while iter.try_get_len().expect("exists") < until {
                                     if let Some(chunk) = buffer.next() {
                                         for value in chunk.values {
@@ -131,7 +131,7 @@ fn concurrent_iter_heap(
                                 }
                             }
                             false => {
-                                let mut buffer = iter.buffered_iter(batch);
+                                let mut buffer = iter.buffered_iter_x(batch);
                                 while let Some(chunk) = buffer.next() {
                                     for value in chunk.values {
                                         str = value;
@@ -162,7 +162,7 @@ fn concurrent_iter_heap(
                             }
                             false => {
                                 let until = vec_len.saturating_sub(batch);
-                                let mut buffer = iter.buffered_iter(batch);
+                                let mut buffer = iter.buffered_iter_x(batch);
                                 while iter.try_get_len().expect("exists") < until {
                                     if let Some(chunk) = buffer.next() {
                                         for value in chunk.values {

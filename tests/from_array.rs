@@ -113,7 +113,7 @@ fn into_seq_iter_doc() {
                 _ = con_iter.next();
             }
 
-            let mut buffered = con_iter.buffered_iter(32);
+            let mut buffered = con_iter.buffered_iter_x(32);
             let _chunk = buffered.next().unwrap();
         });
     });
@@ -170,7 +170,7 @@ fn buffered(chunk_size: usize) {
         *x = 100 + i;
     }
     let iter = values.con_iter().cloned();
-    let mut buffered = iter.buffered_iter(chunk_size);
+    let mut buffered = iter.buffered_iter_x(chunk_size);
 
     let mut current = 100;
     while let Some(chunk) = buffered.next() {

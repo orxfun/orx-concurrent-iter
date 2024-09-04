@@ -1,4 +1,7 @@
-use crate::{ConIterOfSlice, ConcurrentIter, ConcurrentIterX, ConcurrentIterable};
+use crate::{
+    iter::implementors::iter_x::ConIterOfIterX, ConIterOfIter, ConcurrentIter, ConcurrentIterX,
+    IterIntoConcurrentIter,
+};
 use test_case::test_matrix;
 
 const VEC_LEN: usize = 42;
@@ -41,7 +44,7 @@ fn drop_without_next(take: Take) {
     let len = source.len();
     let num_take = take.take(len);
 
-    let con_iter: ConIterOfSlice<String> = source.con_iter();
+    let con_iter = ConIterOfIterX::new(source.iter());
     for i in 0..num_take {
         let next = con_iter.next();
         assert_eq!(next, Some(&i.to_string()));
@@ -57,7 +60,7 @@ fn drop_after_next(take: Take, remaining: ConsumeRemaining) {
     let len = source.len();
     let num_take = take.take(len);
 
-    let con_iter: ConIterOfSlice<String> = source.con_iter();
+    let con_iter: ConIterOfIter<&String, _> = source.iter().into_con_iter();
     for i in 0..num_take {
         let next = con_iter.next();
         assert_eq!(next, Some(&i.to_string()));
@@ -84,7 +87,7 @@ fn drop_after_into_seq(take: Take, remaining: ConsumeRemaining) {
     let len = source.len();
     let num_take = take.take(len);
 
-    let con_iter: ConIterOfSlice<String> = source.con_iter();
+    let con_iter: ConIterOfIter<&String, _> = source.iter().into_con_iter();
     for i in 0..num_take {
         let next = con_iter.next();
         assert_eq!(next, Some(&i.to_string()));
@@ -116,7 +119,7 @@ fn drop_after_next_then_into_seq(take: Take, remaining: ConsumeRemaining) {
     let len = source.len();
     let num_take = take.take(len);
 
-    let con_iter: ConIterOfSlice<String> = source.con_iter();
+    let con_iter: ConIterOfIter<&String, _> = source.iter().into_con_iter();
     for i in 0..num_take {
         let next = con_iter.next();
         assert_eq!(next, Some(&i.to_string()));
@@ -149,7 +152,7 @@ fn drop_after_next_chunk(consume_chunk: bool, take: Take, remaining: ConsumeRema
     let len = source.len();
     let num_take = take.take(len);
 
-    let con_iter: ConIterOfSlice<String> = source.con_iter();
+    let con_iter: ConIterOfIter<&String, _> = source.iter().into_con_iter();
 
     let chunk = con_iter.next_chunk(num_take);
     if consume_chunk {
@@ -187,7 +190,7 @@ fn drop_after_next_chunk_then_into_seq(
     let len = source.len();
     let num_take = take.take(len);
 
-    let con_iter: ConIterOfSlice<String> = source.con_iter();
+    let con_iter: ConIterOfIter<&String, _> = source.iter().into_con_iter();
 
     {
         let chunk = con_iter.next_chunk(num_take);

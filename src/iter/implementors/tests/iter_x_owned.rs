@@ -1,4 +1,4 @@
-use crate::{ConIterOfSlice, ConcurrentIter, ConcurrentIterX, ConcurrentIterable};
+use crate::{ConIterOfIterX, ConcurrentIterX, IntoConcurrentIterX};
 use test_case::test_matrix;
 
 const VEC_LEN: usize = 42;
@@ -37,14 +37,14 @@ fn vec(len: usize, cap: usize) -> Vec<String> {
     [Take::None, Take::Some, Take::All]
 )]
 fn drop_without_next(take: Take) {
-    let source = vec(VEC_LEN, VEC_CAP);
+    let source = vec(VEC_LEN, VEC_CAP).into_iter();
     let len = source.len();
     let num_take = take.take(len);
 
-    let con_iter: ConIterOfSlice<String> = source.con_iter();
+    let con_iter: ConIterOfIterX<String, _> = source.into_con_iter_x();
     for i in 0..num_take {
         let next = con_iter.next();
-        assert_eq!(next, Some(&i.to_string()));
+        assert_eq!(next, Some(i.to_string()));
     }
 }
 
@@ -53,14 +53,14 @@ fn drop_without_next(take: Take) {
     [ConsumeRemaining::Leave, ConsumeRemaining::Next, ConsumeRemaining::SkipToEnd]
 )]
 fn drop_after_next(take: Take, remaining: ConsumeRemaining) {
-    let source = vec(VEC_LEN, VEC_CAP);
+    let source = vec(VEC_LEN, VEC_CAP).into_iter();
     let len = source.len();
     let num_take = take.take(len);
 
-    let con_iter: ConIterOfSlice<String> = source.con_iter();
+    let con_iter: ConIterOfIterX<String, _> = source.into_con_iter_x();
     for i in 0..num_take {
         let next = con_iter.next();
-        assert_eq!(next, Some(&i.to_string()));
+        assert_eq!(next, Some(i.to_string()));
     }
 
     match remaining {
@@ -68,7 +68,7 @@ fn drop_after_next(take: Take, remaining: ConsumeRemaining) {
         ConsumeRemaining::Next => {
             for i in num_take..len {
                 let next = con_iter.next();
-                assert_eq!(next, Some(&i.to_string()));
+                assert_eq!(next, Some(i.to_string()));
             }
         }
         ConsumeRemaining::SkipToEnd => con_iter.skip_to_end(),
@@ -80,14 +80,14 @@ fn drop_after_next(take: Take, remaining: ConsumeRemaining) {
     [ConsumeRemaining::Leave, ConsumeRemaining::Next, ConsumeRemaining::SkipToEnd]
 )]
 fn drop_after_into_seq(take: Take, remaining: ConsumeRemaining) {
-    let source = vec(VEC_LEN, VEC_CAP);
+    let source = vec(VEC_LEN, VEC_CAP).into_iter();
     let len = source.len();
     let num_take = take.take(len);
 
-    let con_iter: ConIterOfSlice<String> = source.con_iter();
+    let con_iter: ConIterOfIterX<String, _> = source.into_con_iter_x();
     for i in 0..num_take {
         let next = con_iter.next();
-        assert_eq!(next, Some(&i.to_string()));
+        assert_eq!(next, Some(i.to_string()));
     }
 
     let mut seq_iter = con_iter.into_seq_iter();
@@ -97,7 +97,7 @@ fn drop_after_into_seq(take: Take, remaining: ConsumeRemaining) {
         ConsumeRemaining::Next => {
             for i in num_take..len {
                 let next = seq_iter.next();
-                assert_eq!(next, Some(&i.to_string()));
+                assert_eq!(next, Some(i.to_string()));
             }
             assert_eq!(seq_iter.next(), None);
         }
@@ -112,14 +112,14 @@ fn drop_after_into_seq(take: Take, remaining: ConsumeRemaining) {
     [ConsumeRemaining::Leave, ConsumeRemaining::Next, ConsumeRemaining::SkipToEnd]
 )]
 fn drop_after_next_then_into_seq(take: Take, remaining: ConsumeRemaining) {
-    let source = vec(VEC_LEN, VEC_CAP);
+    let source = vec(VEC_LEN, VEC_CAP).into_iter();
     let len = source.len();
     let num_take = take.take(len);
 
-    let con_iter: ConIterOfSlice<String> = source.con_iter();
+    let con_iter: ConIterOfIterX<String, _> = source.into_con_iter_x();
     for i in 0..num_take {
         let next = con_iter.next();
-        assert_eq!(next, Some(&i.to_string()));
+        assert_eq!(next, Some(i.to_string()));
     }
 
     let mut seq_iter = con_iter.into_seq_iter();
@@ -129,7 +129,7 @@ fn drop_after_next_then_into_seq(take: Take, remaining: ConsumeRemaining) {
         ConsumeRemaining::Next => {
             for i in num_take..len {
                 let next = seq_iter.next();
-                assert_eq!(next, Some(&i.to_string()));
+                assert_eq!(next, Some(i.to_string()));
             }
             assert_eq!(seq_iter.next(), None);
         }
@@ -145,17 +145,17 @@ fn drop_after_next_then_into_seq(take: Take, remaining: ConsumeRemaining) {
     [ConsumeRemaining::Leave, ConsumeRemaining::Next, ConsumeRemaining::SkipToEnd]
 )]
 fn drop_after_next_chunk(consume_chunk: bool, take: Take, remaining: ConsumeRemaining) {
-    let source = vec(VEC_LEN, VEC_CAP);
+    let source = vec(VEC_LEN, VEC_CAP).into_iter();
     let len = source.len();
     let num_take = take.take(len);
 
-    let con_iter: ConIterOfSlice<String> = source.con_iter();
+    let con_iter: ConIterOfIterX<String, _> = source.into_con_iter_x();
 
-    let chunk = con_iter.next_chunk(num_take);
+    let chunk = con_iter.next_chunk_x(num_take);
     if consume_chunk {
         if let Some(chunk) = chunk {
-            for (i, next) in chunk.values.enumerate() {
-                assert_eq!(next, &i.to_string());
+            for (i, next) in chunk.enumerate() {
+                assert_eq!(next, i.to_string());
             }
         }
     }
@@ -165,7 +165,7 @@ fn drop_after_next_chunk(consume_chunk: bool, take: Take, remaining: ConsumeRema
         ConsumeRemaining::Next => {
             for i in num_take..len {
                 let next = con_iter.next();
-                assert_eq!(next, Some(&i.to_string()));
+                assert_eq!(next, Some(i.to_string()));
             }
             assert_eq!(con_iter.next(), None);
         }
@@ -183,18 +183,18 @@ fn drop_after_next_chunk_then_into_seq(
     take: Take,
     remaining: ConsumeRemaining,
 ) {
-    let source = vec(VEC_LEN, VEC_CAP);
+    let source = vec(VEC_LEN, VEC_CAP).into_iter();
     let len = source.len();
     let num_take = take.take(len);
 
-    let con_iter: ConIterOfSlice<String> = source.con_iter();
+    let con_iter: ConIterOfIterX<String, _> = source.into_con_iter_x();
 
     {
-        let chunk = con_iter.next_chunk(num_take);
+        let chunk = con_iter.next_chunk_x(num_take);
         if consume_chunk {
             if let Some(chunk) = chunk {
-                for (i, next) in chunk.values.enumerate() {
-                    assert_eq!(next, &i.to_string());
+                for (i, next) in chunk.enumerate() {
+                    assert_eq!(next, i.to_string());
                 }
             }
         }
@@ -206,7 +206,7 @@ fn drop_after_next_chunk_then_into_seq(
         ConsumeRemaining::Next => {
             for i in num_take..len {
                 let next = seq_iter.next();
-                assert_eq!(next, Some(&i.to_string()));
+                assert_eq!(next, Some(i.to_string()));
             }
             assert_eq!(seq_iter.next(), None);
         }

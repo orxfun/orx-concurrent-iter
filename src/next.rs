@@ -9,6 +9,26 @@ pub struct Next<T> {
     pub value: T,
 }
 
+impl<'a, T: Clone> Next<&'a T> {
+    /// Converts the next into one where the `value` is cloned.
+    pub fn cloned(self) -> Next<T> {
+        Next {
+            idx: self.idx,
+            value: self.value.clone(),
+        }
+    }
+}
+
+impl<'a, T: Copy> Next<&'a T> {
+    /// Converts the next into one where the `value` is copied.
+    pub fn copied(self) -> Next<T> {
+        Next {
+            idx: self.idx,
+            value: *self.value,
+        }
+    }
+}
+
 /// A trait representing return types of a `next_chunk` call on a concurrent iterator.
 pub struct NextChunk<T, Iter>
 where
@@ -19,4 +39,30 @@ where
 
     /// Elements in the obtained chunk.
     pub values: Iter,
+}
+
+impl<'a, T: Clone, Iter> NextChunk<&'a T, Iter>
+where
+    Iter: ExactSizeIterator<Item = &'a T>,
+{
+    /// Converts the next into one where the `values` are cloned.
+    pub fn cloned(self) -> NextChunk<T, std::iter::Cloned<Iter>> {
+        NextChunk {
+            begin_idx: self.begin_idx,
+            values: self.values.cloned(),
+        }
+    }
+}
+
+impl<'a, T: Copy, Iter> NextChunk<&'a T, Iter>
+where
+    Iter: ExactSizeIterator<Item = &'a T>,
+{
+    /// Converts the next into one where the `values` are copied.
+    pub fn copied(self) -> NextChunk<T, std::iter::Copied<Iter>> {
+        NextChunk {
+            begin_idx: self.begin_idx,
+            values: self.values.copied(),
+        }
+    }
 }
