@@ -2,6 +2,7 @@ use crate::{
     iter::implementors::iter_x::ConIterOfIterX, ConIterOfIter, ConcurrentIter, ConcurrentIterX,
     IterIntoConcurrentIter,
 };
+use alloc::{string::String, vec::Vec};
 use test_case::test_matrix;
 
 const VEC_LEN: usize = 42;

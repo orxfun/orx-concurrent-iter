@@ -1,11 +1,11 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 pub fn fmt_iter(
-    f: &mut std::fmt::Formatter<'_>,
+    f: &mut core::fmt::Formatter<'_>,
     struct_name: &str,
     initial_len: Option<usize>,
     counter: &AtomicUsize,
-) -> std::fmt::Result {
+) -> core::fmt::Result {
     let num_taken = counter
         .load(Ordering::Relaxed)
         .min(initial_len.unwrap_or(usize::MAX));

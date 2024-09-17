@@ -1,6 +1,6 @@
 use super::buffered_chunk::{BufferedChunk, BufferedChunkX};
 use crate::{ConIterOfRange, NextChunk};
-use std::ops::{Add, Range, Sub};
+use core::ops::{Add, Range, Sub};
 
 pub struct BufferedRange {
     chunk_size: usize,

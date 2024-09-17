@@ -2,7 +2,7 @@ use crate::{
     iter::{constructors::into_con_iter::IntoConcurrentIter, implementors::range::ConIterOfRange},
     ConcurrentIterable,
 };
-use std::ops::{Add, Range, Sub};
+use core::ops::{Add, Range, Sub};
 
 impl<Idx> ConcurrentIterable for Range<Idx>
 where

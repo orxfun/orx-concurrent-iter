@@ -46,7 +46,7 @@ where
     Iter: ExactSizeIterator<Item = &'a T>,
 {
     /// Converts the next into one where the `values` are cloned.
-    pub fn cloned(self) -> NextChunk<T, std::iter::Cloned<Iter>> {
+    pub fn cloned(self) -> NextChunk<T, core::iter::Cloned<Iter>> {
         NextChunk {
             begin_idx: self.begin_idx,
             values: self.values.cloned(),
@@ -59,7 +59,7 @@ where
     Iter: ExactSizeIterator<Item = &'a T>,
 {
     /// Converts the next into one where the `values` are copied.
-    pub fn copied(self) -> NextChunk<T, std::iter::Copied<Iter>> {
+    pub fn copied(self) -> NextChunk<T, core::iter::Copied<Iter>> {
         NextChunk {
             begin_idx: self.begin_idx,
             values: self.values.copied(),

@@ -1,6 +1,6 @@
 use super::buffered_chunk::{BufferedChunk, BufferedChunkX};
 use crate::NextChunk;
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 pub struct BufferedIter<'a, T, B>
 where

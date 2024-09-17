@@ -1,6 +1,6 @@
 use super::buffered_chunk::{BufferedChunk, BufferedChunkX};
 use crate::{iter::copied::Copied, NextChunk};
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 pub struct CopiedBufferedChunk<'a, T, C>
 where

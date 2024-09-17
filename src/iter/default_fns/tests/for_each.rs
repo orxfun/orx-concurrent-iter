@@ -1,5 +1,6 @@
 use crate::iter::default_fns;
 use crate::*;
+use alloc::vec::Vec;
 use test_case::test_matrix;
 
 #[test_matrix(

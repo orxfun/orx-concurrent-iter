@@ -1,6 +1,7 @@
 use super::buffered_chunk::{BufferedChunk, BufferedChunkX};
 use crate::{iter::implementors::iter::ConIterOfIter, NextChunk};
-use std::marker::PhantomData;
+use alloc::vec::Vec;
+use core::marker::PhantomData;
 
 #[derive(Debug)]
 pub struct BufferIter<T, Iter>
