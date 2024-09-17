@@ -19,7 +19,7 @@ pub trait ConcurrentIter: ConcurrentIterX {
     ///
     /// Note that type or method names with suffix 'x' is an indicator of the dropped promise of keeping order.
     /// * `ConcurrentIterX` allows concurrent iteration; however, it may or may not provide the initial order of
-    /// an element in the providing source.
+    ///   an element in the providing source.
     /// * `ConcurrentIter` extends `ConcurrentIterX` by including the keeping track of order guarantee.
     ///
     /// This crate provides ordered `ConcurrentIter` implementations of all iterators.

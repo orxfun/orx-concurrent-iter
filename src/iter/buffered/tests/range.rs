@@ -14,7 +14,7 @@ fn primitive(len: usize, num_threads: usize, batch: usize) {
     let iter = &con_iter;
 
     let sum: i64 = std::thread::scope(|s| {
-        let mut handles = vec![];
+        let mut handles = alloc::vec![];
         for _ in 0..num_threads {
             handles.push(s.spawn(move || {
                 let mut sum = 0i64;

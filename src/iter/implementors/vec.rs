@@ -3,7 +3,8 @@ use crate::{
     next::NextChunk,
     ConcurrentIter, ConcurrentIterX, Next,
 };
-use std::{
+use alloc::vec::Vec;
+use core::{
     mem::{ManuallyDrop, MaybeUninit},
     ops::Range,
     sync::atomic::{AtomicUsize, Ordering},
@@ -29,8 +30,8 @@ impl<T: Send + Sync> Drop for ConIterOfVec<T> {
     }
 }
 
-impl<T: Send + Sync> std::fmt::Debug for ConIterOfVec<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<T: Send + Sync> core::fmt::Debug for ConIterOfVec<T> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         super::helpers::fmt_iter(f, "ConIterOfVec", Some(self.vec_len), &self.counter)
     }
 }
@@ -111,7 +112,7 @@ unsafe impl<T: Send + Sync> Send for ConIterOfVec<T> {}
 impl<T: Send + Sync> ConcurrentIterX for ConIterOfVec<T> {
     type Item = T;
 
-    type SeqIter = std::vec::IntoIter<T>;
+    type SeqIter = alloc::vec::IntoIter<T>;
 
     type BufferedIterX = BufferedVec<T>;
 
@@ -119,7 +120,7 @@ impl<T: Send + Sync> ConcurrentIterX for ConIterOfVec<T> {
         let num_taken = self.counter.load(Ordering::Acquire).min(self.vec_len);
         let ptr = self.ptr;
 
-        self.ptr = std::ptr::null_mut(); // to avoid double free on drop
+        self.ptr = core::ptr::null_mut(); // to avoid double free on drop
 
         match num_taken {
             0 => {
@@ -167,7 +168,7 @@ impl<T: Send + Sync> ConcurrentIterX for ConIterOfVec<T> {
         let current = self.counter.load(Ordering::Acquire);
         let initial_len = self.vec_len;
         let len = match current.cmp(&initial_len) {
-            std::cmp::Ordering::Less => initial_len - current,
+            core::cmp::Ordering::Less => initial_len - current,
             _ => 0,
         };
         Some(len)

@@ -1,6 +1,7 @@
 use crate::{
     iter::implementors::vec::ConIterOfVec, ConIterOfSlice, ConcurrentIterable, IntoConcurrentIter,
 };
+use alloc::vec::Vec;
 
 impl<T: Send + Sync> ConcurrentIterable for Vec<T> {
     type Item<'i> = &'i T where Self: 'i;

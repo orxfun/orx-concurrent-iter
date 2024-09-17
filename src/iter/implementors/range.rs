@@ -1,7 +1,7 @@
 use crate::{
     iter::buffered::range::BufferedRange, next::NextChunk, ConcurrentIter, ConcurrentIterX, Next,
 };
-use std::{
+use core::{
     ops::{Add, Range, Sub},
     sync::atomic::{AtomicUsize, Ordering},
 };
@@ -94,7 +94,7 @@ where
     }
 }
 
-impl<Idx> std::fmt::Debug for ConIterOfRange<Idx>
+impl<Idx> core::fmt::Debug for ConIterOfRange<Idx>
 where
     Idx: Send
         + Sync
@@ -107,7 +107,7 @@ where
         + Ord,
     Range<Idx>: Iterator<Item = Idx>,
 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         super::helpers::fmt_iter(f, "ConIterOfRange", Some(self.initial_len()), &self.counter)
     }
 }
@@ -248,7 +248,7 @@ where
         let current = self.counter.load(Ordering::Acquire);
         let initial_len = self.initial_len();
         let len = match current.cmp(&initial_len) {
-            std::cmp::Ordering::Less => initial_len - current,
+            core::cmp::Ordering::Less => initial_len - current,
             _ => 0,
         };
         Some(len)

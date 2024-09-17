@@ -1,6 +1,6 @@
 use super::buffered::cloned_buffered_chunk::ClonedBufferedChunk;
 use crate::{ConcurrentIter, ConcurrentIterX, NextChunk};
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 /// An concurrent iterator, backed with an atomic iterator, that clones the elements of an underlying iterator.
 ///
@@ -40,7 +40,7 @@ where
 {
     type Item = T;
 
-    type SeqIter = std::iter::Cloned<C::SeqIter>;
+    type SeqIter = core::iter::Cloned<C::SeqIter>;
 
     type BufferedIterX = ClonedBufferedChunk<'a, T, C::BufferedIterX>;
 

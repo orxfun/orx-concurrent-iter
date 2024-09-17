@@ -1,8 +1,8 @@
 use crate::ConcurrentIter;
 
-/// A regular `Iterator` crated from the [`ConcurrentIter::values`] method.
+/// A regular `Iterator` crated from the `values` method.
 ///
-/// Its `next` method does nothing but call [`ConcurrentIter::next`] method.
+/// Its `next` method does nothing but call `next` method.
 /// This iterator is a wrapper to allow using the concurrent iterator in a `for` loop directly.
 pub struct ConIterValues<'a, C>
 where

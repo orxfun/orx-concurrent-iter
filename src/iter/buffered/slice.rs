@@ -1,6 +1,6 @@
 use super::buffered_chunk::{BufferedChunk, BufferedChunkX};
 use crate::{ConIterOfSlice, NextChunk};
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 pub struct BufferedSlice<T> {
     chunk_size: usize,

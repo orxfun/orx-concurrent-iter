@@ -1,6 +1,6 @@
 use super::buffered_chunk::{BufferedChunk, BufferedChunkX};
 use crate::{ConIterOfVec, NextChunk};
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 pub struct BufferedVec<T> {
     chunk_size: usize,

@@ -1,7 +1,7 @@
 use crate::{
     iter::buffered::slice::BufferedSlice, next::NextChunk, ConcurrentIter, ConcurrentIterX, Next,
 };
-use std::sync::atomic::{AtomicUsize, Ordering};
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 /// A concurrent iterator over a slice yielding references to the elements.
 pub struct ConIterOfSlice<'a, T: Send + Sync> {
@@ -9,8 +9,8 @@ pub struct ConIterOfSlice<'a, T: Send + Sync> {
     counter: AtomicUsize,
 }
 
-impl<'a, T: Send + Sync> std::fmt::Debug for ConIterOfSlice<'a, T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<'a, T: Send + Sync> core::fmt::Debug for ConIterOfSlice<'a, T> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         super::helpers::fmt_iter(f, "ConIterOfSlice", Some(self.slice.len()), &self.counter)
     }
 }
@@ -70,7 +70,7 @@ unsafe impl<'a, T: Send + Sync> Send for ConIterOfSlice<'a, T> {}
 impl<'a, T: Send + Sync> ConcurrentIterX for ConIterOfSlice<'a, T> {
     type Item = &'a T;
 
-    type SeqIter = std::iter::Skip<std::slice::Iter<'a, T>>;
+    type SeqIter = core::iter::Skip<core::slice::Iter<'a, T>>;
 
     type BufferedIterX = BufferedSlice<T>;
 
@@ -103,7 +103,7 @@ impl<'a, T: Send + Sync> ConcurrentIterX for ConIterOfSlice<'a, T> {
         let current = self.counter.load(Ordering::Acquire);
         let initial_len = self.slice.len();
         let len = match current.cmp(&initial_len) {
-            std::cmp::Ordering::Less => initial_len - current,
+            core::cmp::Ordering::Less => initial_len - current,
             _ => 0,
         };
         Some(len)

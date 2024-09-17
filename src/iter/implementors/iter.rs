@@ -2,7 +2,8 @@ use crate::{
     iter::buffered::iter::BufferIter, next::NextChunk, ConIterOfIterX, ConcurrentIter,
     ConcurrentIterX, Next,
 };
-use std::{
+use alloc::vec::Vec;
+use core::{
     cell::UnsafeCell,
     sync::atomic::{AtomicUsize, Ordering},
 };
@@ -117,11 +118,11 @@ where
     }
 }
 
-impl<T: Send + Sync, Iter> std::fmt::Debug for ConIterOfIter<T, Iter>
+impl<T: Send + Sync, Iter> core::fmt::Debug for ConIterOfIter<T, Iter>
 where
     Iter: Iterator<Item = T>,
 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         super::helpers::fmt_iter(f, "ConIterOfIter", self.initial_len, &self.counter)
     }
 }
@@ -187,6 +188,7 @@ where
         self.iter.into_inner()
     }
 
+    #[allow(clippy::unwrap_in_result)]
     fn next_chunk_x(&self, chunk_size: usize) -> Option<impl ExactSizeIterator<Item = Self::Item>> {
         match chunk_size {
             0 => None,
@@ -266,6 +268,7 @@ where
     }
 
     #[inline(always)]
+    #[allow(clippy::unwrap_in_result)]
     fn next_chunk(
         &self,
         chunk_size: usize,
