@@ -2,11 +2,15 @@ use crate::{
     iter::constructors::con_iterable::ConcurrentIterable, ConIterOfSlice, IntoConcurrentIter,
 };
 
-impl<'a, T: Send + Sync> ConcurrentIterable for &'a [T] {
-    type Item<'i> = &'i T where
-    Self: 'i;
+impl<T: Send + Sync> ConcurrentIterable for &[T] {
+    type Item<'i>
+        = &'i T
+    where
+        Self: 'i;
 
-    type ConIter<'i> = ConIterOfSlice<'i, T> where
+    type ConIter<'i>
+        = ConIterOfSlice<'i, T>
+    where
         Self: 'i;
 
     fn con_iter(&self) -> Self::ConIter<'_> {

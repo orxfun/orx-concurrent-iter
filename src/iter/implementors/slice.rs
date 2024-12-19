@@ -9,7 +9,7 @@ pub struct ConIterOfSlice<'a, T: Send + Sync> {
     counter: AtomicUsize,
 }
 
-impl<'a, T: Send + Sync> core::fmt::Debug for ConIterOfSlice<'a, T> {
+impl<T: Send + Sync> core::fmt::Debug for ConIterOfSlice<'_, T> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         super::helpers::fmt_iter(f, "ConIterOfSlice", Some(self.slice.len()), &self.counter)
     }
@@ -51,7 +51,7 @@ impl<'a, T: Send + Sync> From<&'a [T]> for ConIterOfSlice<'a, T> {
     }
 }
 
-impl<'a, T: Send + Sync> Clone for ConIterOfSlice<'a, T> {
+impl<T: Send + Sync> Clone for ConIterOfSlice<'_, T> {
     fn clone(&self) -> Self {
         let counter = self.counter.load(Ordering::SeqCst).into();
         Self {
@@ -61,9 +61,9 @@ impl<'a, T: Send + Sync> Clone for ConIterOfSlice<'a, T> {
     }
 }
 
-unsafe impl<'a, T: Send + Sync> Sync for ConIterOfSlice<'a, T> {}
+unsafe impl<T: Send + Sync> Sync for ConIterOfSlice<'_, T> {}
 
-unsafe impl<'a, T: Send + Sync> Send for ConIterOfSlice<'a, T> {}
+unsafe impl<T: Send + Sync> Send for ConIterOfSlice<'_, T> {}
 
 // AtomicIter -> ConcurrentIter
 

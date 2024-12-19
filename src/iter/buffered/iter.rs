@@ -119,7 +119,7 @@ pub struct BufferedIter<'a, T> {
     current_idx: usize,
 }
 
-impl<'a, T> Iterator for BufferedIter<'a, T> {
+impl<T> Iterator for BufferedIter<'_, T> {
     type Item = T;
 
     #[inline]
@@ -138,7 +138,7 @@ impl<'a, T> Iterator for BufferedIter<'a, T> {
     }
 }
 
-impl<'a, T> ExactSizeIterator for BufferedIter<'a, T> {
+impl<T> ExactSizeIterator for BufferedIter<'_, T> {
     #[inline]
     fn len(&self) -> usize {
         self.initial_len - self.current_idx
