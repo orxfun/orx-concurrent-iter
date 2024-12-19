@@ -36,7 +36,7 @@ where
     }
 }
 
-impl<'a, T, B> BufferedIter<'a, T, B>
+impl<T, B> BufferedIter<'_, T, B>
 where
     T: Send + Sync,
     B: BufferedChunk<T>,

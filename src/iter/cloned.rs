@@ -13,7 +13,7 @@ where
     phantom: PhantomData<&'a T>,
 }
 
-impl<'a, T, C> Cloned<'a, T, C>
+impl<T, C> Cloned<'_, T, C>
 where
     T: Send + Sync + Clone,
 {
@@ -29,9 +29,9 @@ where
     }
 }
 
-unsafe impl<'a, T, C> Sync for Cloned<'a, T, C> where T: Send + Sync + Clone {}
+unsafe impl<T, C> Sync for Cloned<'_, T, C> where T: Send + Sync + Clone {}
 
-unsafe impl<'a, T, C> Send for Cloned<'a, T, C> where T: Send + Sync + Clone {}
+unsafe impl<T, C> Send for Cloned<'_, T, C> where T: Send + Sync + Clone {}
 
 impl<'a, T, C> ConcurrentIterX for Cloned<'a, T, C>
 where

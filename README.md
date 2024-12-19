@@ -3,17 +3,13 @@
 [![orx-concurrent-iter crate](https://img.shields.io/crates/v/orx-concurrent-iter.svg)](https://crates.io/crates/orx-concurrent-iter)
 [![orx-concurrent-iter documentation](https://docs.rs/orx-concurrent-iter/badge.svg)](https://docs.rs/orx-concurrent-iter)
 
-A thread-safe, ergonomic and lightweight concurrent iterator trait and efficient implementations.
-
-* **ergonomic**: An iterator implementing `ConcurrentIter` can safely be shared among threads. It may be iterated over concurrently by multiple threads with `for` or `while let`. It further provides higher level methods such as `for_each` and `fold` which allow for safe, simple and efficient parallelism.
-* **any Iterator => ConcurrentIter**: Commonly used collections such as `Vec` have optimized implementations; however, any iterator can be converted into a concurrent iterator.
-* **efficient** and **lightweight**: All concurrent iterator implementations provided in this crate extend lock-free atomic iterators. Further they allow to iterate in chunks which enable significant performance improvements.
+A thread-safe and ergonomic concurrent iterator trait and efficient lock-free implementations.
 
 ## Examples
 
 ### Basic Usage
 
-A `ConcurrentIter` can be safely shared among threads and iterated over concurrently. As expected, it will yield each element only once and in order. The yielded elements will be shared among the threads which concurrently iterates based on first come first serve. In other words, threads concurrently pull remaining elements from the iterator.
+A [`ConcurrentIter`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ConcurrentIter.html) can be safely shared among threads and iterated over concurrently. As expected, it will yield each element only once and in order. The yielded elements will be shared among the threads which concurrently iterates based on first come first serve. In other words, threads concurrently pull remaining elements from the iterator.
 
 ```rust
 use orx_concurrent_iter::*;
@@ -83,54 +79,60 @@ let iter_val = values
 run::<usize>(iter_val.into_con_iter());
 ```
 
-### Ways to Loop
+### Ways to Iterate
 
-`ConcurrentIter`s implement the `next` method, which is the concurrent counterpart of `Iterator::next`. Therefore, the iterator can be used almost the same as a regular `Iterator` safely across multiple threads. Slight difference of different ways to iterate over a `ConcurrentIter` are demonstrated and explained in the following example.
+A **ConcurrentIter** implements the [`next`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ConcurrentIterX.html#tymethod.next) method, which is the concurrent counterpart of **next** method of the regular Iterators.
+
+Therefore, the usage of a concurrent iterator is almost equivalent to that of a regular **Iterator**. Slight differences are explained in the following example.
 
 ```rust
 use orx_concurrent_iter::*;
-use std::fmt::Debug;
 
 fn process_one_by_one<T, I, F>(process: &F, num_threads: usize, iter: &I)
 where
-    T: Send + Sync + Debug,
+    T: Send + Sync,
     F: Fn(T) + Send + Sync,
     I: ConcurrentIter<Item = T>,
 {
     std::thread::scope(|s| {
-        for _ in 0..num_threads {
-            s.spawn(|| {
-                // pull values 1 by 1
-                for value in iter.values() {
-                    process(value);
-                }
-
-                while let Some(value) = iter.next() {
-                    process(value);
-                }
-
-                // pull values and corresponding index 1 by 1
-                for (idx, value) in iter.ids_and_values() {
-                    dbg!(idx);
-                    process(value);
-                }
-
-                while let Some(x) = iter.next_id_and_value() {
-                    dbg!(x.idx);
-                    process(x.value);
+        for i in 0..num_threads {
+            s.spawn(move || {
+                match i % 4 {
+                    0 => {
+                        // pull values 1 by 1 (for)
+                        for value in iter.values() {
+                            process(value);
+                        }
+                    }
+                    1 => {
+                        // pull values 1 by 1 (while let)
+                        while let Some(value) = iter.next() {
+                            process(value);
+                        }
+                    }
+                    2 => {
+                        // pull values and corresponding index 1 by 1 (for)
+                        for (idx, value) in iter.ids_and_values() {
+                            println!("idx = {}", idx);
+                            process(value);
+                        }
+                    }
+                    _ => {
+                        // pull values and corresponding index 1 by 1 (while let)
+                        while let Some(x) = iter.next_id_and_value() {
+                            println!("idx = {}", x.idx);
+                            process(x.value);
+                        }
+                    }
                 }
             });
         }
     });
 }
 
-fn process_in_chunks<T, I, F>(
-    process: &F,
-    num_threads: usize,
-    iter: &I,
-    chunk_size: usize,
-) where
-    T: Send + Sync + Debug,
+fn process_in_chunks<T, I, F>(process: &F, num_threads: usize, iter: &I, chunk_size: usize)
+where
+    T: Send + Sync,
     F: Fn(T) + Send + Sync,
     I: ConcurrentIter<Item = T>,
 {
@@ -138,14 +140,13 @@ fn process_in_chunks<T, I, F>(
         for _ in 0..num_threads {
             s.spawn(|| {
                 // pull values in chunks of `chunk_size`
-                let mut chunk_iter = iter.buffered_iter(16);
+                let mut chunk_iter = iter.buffered_iter(chunk_size);
                 while let Some(chunk) = chunk_iter.next() {
                     assert!(chunk.values.len() <= chunk_size);
 
                     for (i, value) in chunk.values.enumerate() {
                         let idx = chunk.begin_idx + i;
-
-                        dbg!(idx);
+                        println!("idx = {}", idx);
                         process(value);
                     }
                 }
@@ -155,22 +156,24 @@ fn process_in_chunks<T, I, F>(
 }
 
 let process = |x| {
-    dbg!(x);
+    println!("value = {}", x);
 };
 
-process_one_by_one(&process, 8, &(0..1024).con_iter());
-process_in_chunks(&process, 8, &(0..1024).con_iter(), 64);
+let vec: Vec<_> = (0..1024).collect();
+process_one_by_one(&process, 8, &vec.con_iter().copied());
+
+process_in_chunks(&process, 8, &vec.into_con_iter(), 64);
 ```
 
-* `for` and `while let` loops of `process_one_by_one` demonstrate the most basic usage where threads will pull the next element of the iterator whenever they complete processing the prior element.
-* Note that each thread will pull different elements at different positions of the iterator depending on how fast they finish the execution of the task inside the loop. Therefore, an `enumerate` call inside the thread, or counting the pulled elements by that particular thread, does **not** provide the index of the element in the original data source. `ConcurrentIter` additionally provides the original index with `ids_and_values` or `next_id_and_value` methods.
-* Whenever the work to be done inside the loop is too small (like just the `dbg` call in the above example), taking elements 1-by-1 might be suboptimal. In such cases, a better idea is to pull elements in chunks. In `process_in_chunks`, we create a buffered chunk iterator which pulls `chunk_size` (or less, if not enough left) **consecutive** elements at each `next` call. Note that `chunk` returned by `chunk_iter.next()` is an `ExactSizeIterator` with a known `len`.
-* While iterating in chunks, we can still access the original `idx` of the elements. `chunk.begin_idx` represents the original index of the first element of the returned `chunk.values` iterator. Note that `chunk.values` is always non-empty; i.e., always has at least one element, otherwise, `next` returns `None`. Further, the chunk iterator contains consecutive elements. Hence, we can get the original indices of all elements by combining `chunk.begin_idx` with the local indices of the current `chunk` obtained by the `chunk.values.enumerate`; i.e., `let idx = chunk.begin_idx + i`.
+* **for** and **while let** loops of `process_one_by_one` demonstrate the most basic usage where threads will pull the next element of the iterator whenever they complete processing the prior element.
+* Note that each thread will pull different elements at different positions of the iterator depending on how fast they finish the execution of the task inside the loop. Therefore, an `enumerate` call inside the thread, or counting the pulled elements by that particular thread, does **not** provide the index of the element in the original data source. **ConcurrentIter** additionally provides the original index with [`ids_and_values`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ConcurrentIter.html#method.ids_and_values) or [`next_id_and_value`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ConcurrentIter.html#tymethod.next_id_and_value) methods.
+* When working with large collections while the work to be done inside the loop is too small, pulling elements 1-by-1 might be suboptimal. In such cases, a better idea is to pull elements in chunks. In `process_in_chunks`, we create a buffered chunk iterator with [`buffered_iter`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ConcurrentIter.html#method.buffered_iter) method. This iterator pulls **chunk_size consecutive** elements (or less if not enough left) at each **next** call. Note that **chunk** returned by the **next** method is an **ExactSizeIterator** with a known length.
+* While iterating in chunks, we can still access the original index of the elements. **chunk.begin_idx** represents the original index of the first element of the returned **chunk.values** iterator. Note that **chunk.values** is always non-empty with at least one element; otherwise, **next** returns None. Further, recall that the chunk iterator contains consecutive elements. Hence, we can get the original indices of all elements by combining **chunk.begin_idx** with the local indices of the current **chunk.values** iterator, as demonstrated with `let idx = chunk.begin_idx + i`.
 
 
 ### Parallel Fold
 
-Considering the elements of the iteration as inputs of a process, `ConcurrentIter` conveniently allows distribution of tasks to multiple threads. See below a parallel fold implementation using the concurrent iterator.
+Considering the elements of the iteration as inputs of a process, **ConcurrentIter** conveniently allows distribution of tasks to multiple threads. See below a parallel fold implementation using the concurrent iterator.
 
 ```rust
 use orx_concurrent_iter::*;
@@ -210,7 +213,7 @@ Notes on the implementation:
 
 ### Parallel Map
 
-Parallel map can also be implemented by merging returned transformed collections, such as vectors. Especially for larger data types, a more efficient approach could be to pair `ConcurrentIter` with a concurrent collection such as [`orx_concurrent_bag::ConcurrentBag`](https://crates.io/crates/orx-concurrent-bag) which allows to efficiently collect results concurrently without copies.
+Parallel map can also be implemented by merging returned transformed collections, such as vectors. Especially for larger data types, a more efficient approach could be to pair **ConcurrentIter** with a concurrent collection such as [`ConcurrentBag`](https://crates.io/crates/orx-concurrent-bag) which allows to efficiently collect results concurrently without copies.
 
 ```rust
 use orx_concurrent_iter::*;
@@ -242,11 +245,11 @@ for num_threads in [1, 2, 4, 8] {
 }
 ```
 
-Note that due to parallelization, `outputs` is not guaranteed to be in the same order as `inputs`. In order to preserve the order of the input in the output, iteration with indices can be used to sort the result accordingly. Alternative to post-sorting, `ConcurrentBag` can be replaced with [`orx_concurrent_bag::ConcurrentOrderedBag`](https://crates.io/crates/orx-concurrent-ordered-bag) to already collect in order.
+Note that due to parallelization, **outputs** is not guaranteed to be in the same order as **inputs**. In order to preserve the order of the input in the output, iteration with indices can be used to sort the result accordingly. Alternative to post-sorting, **ConcurrentBag** can be replaced with [`ConcurrentOrderedBag`](https://crates.io/crates/orx-concurrent-ordered-bag) to already collect in order.
 
 ### Parallel Find, A Little Communication Among Threads
 
-As illustrated above, efficient parallel implementations of different methods are conveniently possible with `ConcurrentIter`. There is only one bit of information implicitly shared among threads by the concurrent iterator: the elements left. In scenarios where we do not need to iterate over all elements, we can use this information to share a message among threads. We might call such cases as **early-return** scenarios. A common example is the `find` method, where we are looking for a matching element and we want to terminate the search as soon as we find one.
+As illustrated above, efficient parallel implementations of different methods are conveniently possible with **ConcurrentIter. There is only one bit of information implicitly shared among threads by the concurrent iterator: the elements left. In scenarios where we do not need to iterate over all elements, we can use this information to share a message among threads. We might call such cases as **early-return** scenarios. A common example is the `find` method, where we are looking for a matching element and we want to terminate the search as soon as we find one.
 
 You may see a parallel implementation of the find method below.
 
@@ -296,20 +299,29 @@ Notice that the parallel find implementation is in two folds:
 * (parallel search) Inside each thread, we loop through the elements of the concurrent iterator and return the first value satisfying the `predicate` together with its index.
 * (sequential wrap up) Since this is a parallel execution, we might end up receiving multiple matches from multiple threads. In the second part, we investigate the thread results and return the one with the minimum position index (`min_by_key(|x| x.0)`) since that is the element which appears first in the original iterator.
 
-So far, this is straightforward and similar to the parallel fold implementation. The difference; however, is the additional `iter.skip_to_end()` call. This call will immediately consume all remaining elements of the iterator. Therefore, whenever, another thread tries to advance the iterator in the `for (i, x) in iter.ids_and_values()`, it will not receive any further elements. Hence, they will as well return as soon as they complete processing their last pulled element. This establishes a very trivial communication among threads, which is critical in achieving efficiency in early return scenarios, as the find method. To demonstrate, assume the case we didn't use `iter.skip_to_end()` in the above implementation.
-* In the second example, the iterator has 8785 elements where there exists only one element satisfying the predicate, "foo" at position 42.
-* One of the 4 threads used, say `A`, will find this element and return immediately.
-* The other 3 threads will never see this element, since it is pulled by `A`. They will iterate over all remaining elements and will eventually return `None`.
-* The final result will be correct. However, this implementation will evaluate all elements of the iterator regardless of where the first matching element is. Although parallelized, this would be a very inefficient implementation.
+So far, this is straightforward and similar to the parallel fold implementation.
 
+The difference; however, is the additional [`iter.skip_to_end()`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ConcurrentIterX.html#tymethod.skip_to_end) call. This call will immediately consume all remaining elements of the iterator.
+
+After the **skip_to_end** call, any thread trying to advance the iterator will observe that the iterator is terminated. Hence, they will as well return as soon as they complete processing their last pulled element.
+
+This establishes a very trivial communication among threads, which is critical in achieving efficiency in early return scenarios, as the find method. To demonstrate, assume the case we did **not** make the **iter.skip_to_end()** call in the above implementation.
+* In the second example, the iterator has 8785 elements where there exists only one element satisfying the predicate, "foo" at position 42.
+* One of the 4 threads used, say thread **A**, will find this element and return immediately.
+* The other 3 threads will never see this element, since it is pulled by **A**. They will iterate over all remaining elements and will eventually return None.
+* The final result will be correct. However, this implementation will evaluate all elements of the iterator regardless of where the first matching element is. This would be a very inefficient parallel implementation.
 
 ## Traits and Implementors
 
-The trait defining types that can be safely be iterated concurrently by multiple threads is `ConcurrentIter`.
+The trait defining types that can be safely be iterated concurrently by multiple threads is [`ConcurrentIterX`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ConcurrentIterX.html#).
 
-Further, there are two traits which define types that can provide a `ConcurrentIter`.
-* A `ConcurrentIterable` type implements the **`con_iter(&self)`** method which returns a concurrent iterator without consuming the type itself.
-* On the other hand, types implementing `IntoConcurrentIter` trait has the **`into_con_iter(self)`** method which consumes and converts the type into a concurrent iterator. Additionally there exists `IterIntoConcurrentIter` trait which is functionally identical to `IntoConcurrentIter` and only implemented by regular iterators, separated only to allow for special implementations for vectors and arrays.
+[`ConcurrentIter`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ConcurrentIter.html#) trait extends **ConcurrentIterX** by adding a guarantee that the elements will be yield in the correct order.
+
+
+Further, there are two traits which define types that can provide concurrent iterators.
+
+* A [`ConcurrentIterable`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ConcurrentIterable.html) type implements the [`con_iter(&self)`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ConcurrentIterable.html#tymethod.con_iter) method which returns a concurrent iterator without consuming the type itself.
+* On the other hand, types implementing [`IntoConcurrentIterX`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.IntoConcurrentIterX.html) and [`IntoConcurrentIter`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.IntoConcurrentIter.html) traits have the consuming [`into_con_iter_x(self)`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.IntoConcurrentIterX.html#tymethod.into_con_iter_x) and [`into_con_iter(self)`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.IntoConcurrentIter.html#tymethod.into_con_iter) methods which convert the type into a concurrent iterator. Finally, there exists [`IterIntoConcurrentIter`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.IterIntoConcurrentIter.html) trait which is functionally identical to **IntoConcurrentIter** and only implemented by regular iterators.
 
 The following table summarizes the implementations of the standard types in this crate.
 
@@ -321,7 +333,7 @@ The following table summarizes the implementations of the standard types in this
 | `[T; N]` | `&T` | `T` |
 | `Iter: Iterator<Item = T>` | - | `T` |
 
-Finally, concurrent iterators having an element type which is a reference to a `Clone` or `Copy` type, have the `cloned()` or `copied()` methods, allowing to iterate over cloned values.
+Finally, concurrent iterators having an element type which is a reference to a **Clone** or **Copy** type, have the [`cloned()`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.IntoCloned.html#method.cloned) or [`copied()`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.IntoCopied.html#method.copied) methods, allowing to iterate over cloned values.
 
 ## Contributing
 

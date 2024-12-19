@@ -9,7 +9,7 @@ pub struct Next<T> {
     pub value: T,
 }
 
-impl<'a, T: Clone> Next<&'a T> {
+impl<T: Clone> Next<&T> {
     /// Converts the next into one where the `value` is cloned.
     pub fn cloned(self) -> Next<T> {
         Next {
@@ -19,7 +19,7 @@ impl<'a, T: Clone> Next<&'a T> {
     }
 }
 
-impl<'a, T: Copy> Next<&'a T> {
+impl<T: Copy> Next<&T> {
     /// Converts the next into one where the `value` is copied.
     pub fn copied(self) -> Next<T> {
         Next {

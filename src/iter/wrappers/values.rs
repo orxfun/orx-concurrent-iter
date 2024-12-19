@@ -17,7 +17,7 @@ impl<'a, C: ConcurrentIter> From<&'a C> for ConIterValues<'a, C> {
     }
 }
 
-impl<'a, C> Iterator for ConIterValues<'a, C>
+impl<C> Iterator for ConIterValues<'_, C>
 where
     C: ConcurrentIter,
 {
