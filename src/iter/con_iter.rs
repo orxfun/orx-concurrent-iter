@@ -276,6 +276,7 @@ pub trait ConcurrentIter: ConcurrentIterX {
     /// ```rust
     /// use orx_concurrent_iter::*;
     /// use orx_concurrent_bag::*;
+    /// use orx_iterable::Collection;
     ///
     /// let (num_threads, chunk_size) = (4, 2);
     /// let characters = vec!['0', '1', '2', '3', '4', '5', '6', '7'];
@@ -323,6 +324,7 @@ pub trait ConcurrentIter: ConcurrentIterX {
     /// ```rust
     /// use orx_concurrent_iter::*;
     /// use orx_concurrent_bag::*;
+    /// use orx_iterable::Collection;
     ///
     /// let (num_threads, chunk_size) = (4, 2);
     /// let characters = vec!['0', '1', '2', '3', '4', '5', '6', '7'];
