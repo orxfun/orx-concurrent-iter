@@ -119,7 +119,7 @@ impl<'a, T: Send + Sync> ConcurrentIterX for ConIterOfSlice<'a, T> {
     }
 }
 
-impl<'a, T: Send + Sync> ConcurrentIter for ConIterOfSlice<'a, T> {
+impl<T: Send + Sync> ConcurrentIter for ConIterOfSlice<'_, T> {
     type BufferedIter = Self::BufferedIterX;
 
     #[inline(always)]
