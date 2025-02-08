@@ -1,10 +1,10 @@
 [package]
 name = "orx-concurrent-iter"
-version = "1.29.1"
+version = "1.30.0"
 edition = "2021"
 authors = ["orxfun <orx.ugur.arikan@gmail.com>"]
 description = "A thread-safe and ergonomic concurrent iterator trait and efficient lock-free implementations."
-license = "MIT"
+license = "MIT OR Apache-2.0"
 repository = "https://github.com/orxfun/orx-concurrent-iter/"
 keywords = ["concurrency", "iterator", "iteration", "atomic", "parallelism"]
 categories = ["data-structures", "concurrency", "rust-patterns", "no-std"]
@@ -14,11 +14,11 @@ categories = ["data-structures", "concurrency", "rust-patterns", "no-std"]
 [dev-dependencies]
 orx-pseudo-default = { version = "1.4", default-features = false }
 orx-iterable = "1.1.1"
-orx-pinned-vec = "3.12"
-orx-fixed-vec = "3.12"
-orx-split-vec = "3.12"
-orx-pinned-concurrent-col = "2.10"
-orx-concurrent-bag = "2.9"
+orx-pinned-vec = "3.14"
+orx-fixed-vec = "3.14"
+orx-split-vec = "3.14"
+orx-pinned-concurrent-col = "2.11"
+orx-concurrent-bag = "2.10"
 test-case = "3.3.1"
 criterion = "0.5.1"
 rand = "0.9"
