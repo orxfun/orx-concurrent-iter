@@ -1,6 +1,7 @@
 # orx-concurrent-iter
 
 [![orx-concurrent-iter crate](https://img.shields.io/crates/v/orx-concurrent-iter.svg)](https://crates.io/crates/orx-concurrent-iter)
+[![orx-concurrent-iter crate](https://img.shields.io/crates/d/orx-concurrent-iter.svg)](https://crates.io/crates/orx-concurrent-iter)
 [![orx-concurrent-iter documentation](https://docs.rs/orx-concurrent-iter/badge.svg)](https://docs.rs/orx-concurrent-iter)
 
 A thread-safe and ergonomic concurrent iterator trait and efficient lock-free implementations.
@@ -341,4 +342,4 @@ Contributions are welcome! If you notice an error, have a question or think some
 
 ## License
 
-This library is licensed under MIT license. See LICENSE for details.
+Dual-licensed under [Apache 2.0](LICENSE-APACHE) or [MIT](LICENSE-MIT).
