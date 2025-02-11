@@ -12,13 +12,13 @@ categories = ["data-structures", "concurrency", "rust-patterns", "no-std"]
 [dependencies]
 
 [dev-dependencies]
-orx-pseudo-default = { version = "1.4", default-features = false }
-orx-iterable = "1.1.1"
-orx-pinned-vec = "3.14"
-orx-fixed-vec = "3.14"
-orx-split-vec = "3.14"
-orx-pinned-concurrent-col = "2.11"
-orx-concurrent-bag = "2.10"
+orx-pseudo-default = { version = "2.0.0", default-features = false }
+orx-iterable = "1.2.0"
+orx-pinned-vec = "3.15"
+orx-fixed-vec = "3.15"
+orx-split-vec = "3.15"
+orx-pinned-concurrent-col = "2.12"
+orx-concurrent-bag = "2.11"
 test-case = "3.3.1"
 criterion = "0.5.1"
 rand = "0.9"
