@@ -18,6 +18,19 @@ where
     phantom: PhantomData<K>,
 }
 
+impl<'a, T, K> Default for ConIterSliceRef<'a, T, K>
+where
+    K: NextKind,
+{
+    fn default() -> Self {
+        Self {
+            slice: &[],
+            counter: 0.into(),
+            phantom: PhantomData,
+        }
+    }
+}
+
 impl<'a, T, K> ConIterSliceRef<'a, T, K>
 where
     K: NextKind,
@@ -57,7 +70,7 @@ where
 
     type SeqIter = Skip<core::slice::Iter<'a, T>>;
 
-    type ChunksIter<'i>
+    type ChunkPuller<'i>
         = ChunksIterSliceRef<'i, 'a, T, K>
     where
         Self: 'i;
@@ -76,7 +89,7 @@ where
             .map(|begin_idx| K::new_next(begin_idx, &self.slice[begin_idx]))
     }
 
-    fn in_chunks(&self, chunk_size: usize) -> Self::ChunksIter<'_> {
-        Self::ChunksIter::new(self, chunk_size)
+    fn in_chunks(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+        Self::ChunkPuller::new(self, chunk_size)
     }
 }

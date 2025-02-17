@@ -14,9 +14,12 @@
 
 extern crate alloc;
 
+mod chunk_puller;
 mod chunks_iter;
 mod concurrent_iter;
 mod concurrent_iterable;
 mod next;
 
 mod implementations;
+
+pub use next::{Enumerated, Regular};

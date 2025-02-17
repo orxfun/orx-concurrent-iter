@@ -1,5 +1,5 @@
 use super::con_iter_slice_ref::ConIterSliceRef;
-use crate::{chunks_iter::ChunksIter, next::NextKind};
+use crate::{chunk_puller::ChunkPuller, next::NextKind};
 
 pub struct ChunksIterSliceRef<'i, 'a, T, K>
 where
@@ -21,7 +21,7 @@ where
     }
 }
 
-impl<'i, 'a, T, K> ChunksIter<K> for ChunksIterSliceRef<'i, 'a, T, K>
+impl<'i, 'a, T, K> ChunkPuller<K> for ChunksIterSliceRef<'i, 'a, T, K>
 where
     K: NextKind,
 {
