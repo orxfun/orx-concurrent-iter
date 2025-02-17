@@ -14,6 +14,7 @@
 
 extern crate alloc;
 
+mod chunks_iter;
 mod concurrent_iter;
 mod concurrent_iterable;
 mod next;
