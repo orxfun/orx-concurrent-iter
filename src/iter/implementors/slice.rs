@@ -93,6 +93,7 @@ impl<'a, T: Send + Sync> ConcurrentIterX for ConIterOfSlice<'a, T> {
         }
     }
 
+    #[inline(always)]
     fn next(&self) -> Option<Self::Item> {
         let idx = self.counter.fetch_add(1, Ordering::Acquire);
         self.get(idx)

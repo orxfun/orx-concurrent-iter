@@ -1,4 +1,4 @@
-mod buffered;
+pub(crate) mod buffered;
 pub(crate) mod cloned;
 pub(crate) mod con_iter;
 pub(crate) mod con_iter_x;

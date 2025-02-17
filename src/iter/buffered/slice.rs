@@ -20,6 +20,7 @@ where
         }
     }
 
+    #[inline(always)]
     fn chunk_size(&self) -> usize {
         self.chunk_size
     }
