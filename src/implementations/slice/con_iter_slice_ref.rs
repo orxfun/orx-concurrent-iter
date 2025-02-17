@@ -1,20 +1,32 @@
 use super::chunks_iter_slice_ref::ChunksIterSliceRef;
-use crate::{concurrent_iter::ConcurrentIter, next::Next};
+use crate::{
+    concurrent_iter::ConcurrentIter,
+    next::{NextKind, Regular},
+};
 use core::{
     iter::Skip,
+    marker::PhantomData,
     sync::atomic::{AtomicUsize, Ordering},
 };
 
-pub struct ConIterSliceRef<'a, T> {
+pub struct ConIterSliceRef<'a, T, K = Regular>
+where
+    K: NextKind,
+{
     slice: &'a [T],
     counter: AtomicUsize,
+    phantom: PhantomData<K>,
 }
 
-impl<'a, T> ConIterSliceRef<'a, T> {
+impl<'a, T, K> ConIterSliceRef<'a, T, K>
+where
+    K: NextKind,
+{
     pub(crate) fn new(slice: &'a [T]) -> Self {
         Self {
             slice,
             counter: 0.into(),
+            phantom: PhantomData,
         }
     }
 
@@ -37,13 +49,16 @@ impl<'a, T> ConIterSliceRef<'a, T> {
     }
 }
 
-impl<'a, T> ConcurrentIter for ConIterSliceRef<'a, T> {
+impl<'a, T, K> ConcurrentIter<K> for ConIterSliceRef<'a, T, K>
+where
+    K: NextKind,
+{
     type Item = &'a T;
 
     type SeqIter = Skip<core::slice::Iter<'a, T>>;
 
     type ChunksIter<'i>
-        = ChunksIterSliceRef<'i, 'a, T>
+        = ChunksIterSliceRef<'i, 'a, T, K>
     where
         Self: 'i;
 
@@ -56,9 +71,9 @@ impl<'a, T> ConcurrentIter for ConIterSliceRef<'a, T> {
         let _ = self.counter.fetch_max(self.slice.len(), Ordering::Acquire);
     }
 
-    fn next<N: Next<Self::Item>>(&self) -> Option<N> {
+    fn next(&self) -> Option<K::Next<Self::Item>> {
         self.progress_and_get_begin_idx(1)
-            .map(|begin_idx| N::new(begin_idx, &self.slice[begin_idx]))
+            .map(|begin_idx| K::new_next(begin_idx, &self.slice[begin_idx]))
     }
 
     fn in_chunks(&self, chunk_size: usize) -> Self::ChunksIter<'_> {

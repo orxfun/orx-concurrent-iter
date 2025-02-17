@@ -1,25 +1,35 @@
 mod sealed {
-    pub trait NextSealed<T> {
-        fn new(begin_idx: usize, value: T) -> Self;
-    }
+    pub trait NextKindSealed {}
+}
 
-    impl<T> NextSealed<T> for T {
-        #[inline(always)]
-        fn new(_: usize, value: T) -> Self {
-            value
-        }
-    }
+pub trait NextKind: sealed::NextKindSealed {
+    type Next<T>;
 
-    impl<T> NextSealed<T> for (usize, T) {
-        #[inline(always)]
-        fn new(begin_idx: usize, value: T) -> Self {
-            (begin_idx, value)
-        }
+    fn new_next<T>(begin_idx: usize, value: T) -> Self::Next<T>;
+}
+
+pub struct Regular;
+
+impl sealed::NextKindSealed for Regular {}
+
+impl NextKind for Regular {
+    type Next<T> = T;
+
+    #[inline(always)]
+    fn new_next<T>(_: usize, value: T) -> Self::Next<T> {
+        value
     }
 }
 
-pub trait Next<T>: sealed::NextSealed<T> {}
+pub struct Enumerated;
 
-impl<T> Next<T> for T {}
+impl sealed::NextKindSealed for Enumerated {}
 
-impl<T> Next<T> for (usize, T) {}
+impl NextKind for Enumerated {
+    type Next<T> = (usize, T);
+
+    #[inline(always)]
+    fn new_next<T>(begin_idx: usize, value: T) -> Self::Next<T> {
+        (begin_idx, value)
+    }
+}

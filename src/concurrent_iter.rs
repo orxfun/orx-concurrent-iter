@@ -1,13 +1,16 @@
-use crate::{chunks_iter::ChunksIter, next::Next};
+use crate::{
+    chunks_iter::ChunksIter,
+    next::{NextKind, Regular},
+};
 
-pub trait ConcurrentIter {
+pub trait ConcurrentIter<K: NextKind = Regular> {
     /// Type of the items that the iterator yields.
     type Item;
 
     /// Inner type which is the source of the data to be iterated, which in addition is a regular sequential `Iterator`.
     type SeqIter: Iterator<Item = Self::Item>;
 
-    type ChunksIter<'i>: ChunksIter<Item = Self::Item>
+    type ChunksIter<'i>: ChunksIter<K, Item = Self::Item>
     where
         Self: 'i;
 
@@ -15,22 +18,14 @@ pub trait ConcurrentIter {
 
     fn skip_to_end(&self);
 
-    fn next<N: Next<Self::Item>>(&self) -> Option<N>;
+    fn next(&self) -> Option<K::Next<Self::Item>>;
 
-    fn next_chunk<'i, N: Next<<Self::ChunksIter<'i> as ChunksIter>::Iter>>(
+    fn next_chunk<'i>(
         &'i self,
         chunk_size: usize,
-    ) -> Option<N> {
+    ) -> Option<K::Next<<Self::ChunksIter<'i> as ChunksIter<K>>::Iter>> {
         self.in_chunks(chunk_size).pull()
     }
 
     fn in_chunks(&self, chunk_size: usize) -> Self::ChunksIter<'_>;
-}
-
-#[test]
-fn abc() {
-    fn xyz(iter: &impl ConcurrentIter<Item = String>) {
-        let x: String = iter.next().unwrap();
-        let y: (usize, String) = iter.next().unwrap();
-    }
 }
