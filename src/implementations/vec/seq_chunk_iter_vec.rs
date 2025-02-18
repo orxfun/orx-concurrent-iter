@@ -5,6 +5,7 @@ pub struct SeqChunksIterVec<'i, T>
 where
     T: Send + Sync,
 {
+    completed: bool,
     current: *const T,
     first: *const T,
     last: *const T,
@@ -17,6 +18,7 @@ where
 {
     pub(super) fn new(first: *const T, last: *const T) -> Self {
         Self {
+            completed: first.is_null(),
             current: first,
             first,
             last,
@@ -45,10 +47,13 @@ where
 {
     fn drop(&mut self) {
         loop {
-            match self.current == self.last {
+            match self.completed {
                 false => {
-                    self.current = unsafe { self.current.add(1) };
                     let _ = unsafe { take(self.current as *mut T) };
+                    match self.current == self.last {
+                        true => self.completed = true,
+                        false => self.current = unsafe { self.current.add(1) },
+                    }
                 }
                 true => break,
             }
@@ -63,10 +68,14 @@ where
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self.current == self.last {
+        match self.completed {
             false => {
-                self.current = unsafe { self.current.add(1) };
-                Some(unsafe { take(self.current as *mut T) })
+                let value = Some(unsafe { take(self.current as *mut T) });
+                match self.current == self.last {
+                    true => self.completed = true,
+                    false => self.current = unsafe { self.current.add(1) },
+                }
+                value
             }
             true => None,
         }
