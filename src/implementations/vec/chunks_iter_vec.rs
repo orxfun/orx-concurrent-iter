@@ -50,7 +50,7 @@ where
         self.con_iter
             .progress_and_get_chunk_ptrs(self.chunk_size)
             .map(|(begin_idx, first, last)| {
-                E::new_chunk(begin_idx, SeqChunksIterVec::new(first, last))
+                E::new_chunk(begin_idx, SeqChunksIterVec::new(false, first, last))
             })
     }
 }

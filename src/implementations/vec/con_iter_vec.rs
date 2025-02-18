@@ -1,4 +1,4 @@
-use super::chunks_iter_vec::ChunksIterVec;
+use super::{chunks_iter_vec::ChunksIterVec, vec_into_seq_iter::VecIntoSeqIter};
 use crate::{
     concurrent_iter::ConcurrentIter,
     enumeration::{Element, Enumerated, Enumeration, IsEnumerated, IsNotEnumerated, Regular},
@@ -116,7 +116,7 @@ where
 {
     type Item = T;
 
-    type SeqIter = alloc::vec::IntoIter<T>;
+    type SeqIter = VecIntoSeqIter<T>;
 
     type ChunkPuller<'i>
         = ChunksIterVec<'i, T, E>
@@ -129,28 +129,22 @@ where
 
     fn into_seq_iter(mut self) -> Self::SeqIter {
         let num_taken = self.num_taken();
-        let ptr = self.ptr as *mut T;
+        let completed = num_taken == self.vec_len;
 
-        self.ptr = core::ptr::null_mut(); // to avoid double free on drop
+        let p = self.ptr;
+        self.ptr = core::ptr::null();
 
-        match num_taken {
-            0 => {
-                let vec = unsafe { Vec::from_raw_parts(ptr, self.vec_len, self.vec_cap) };
-                vec.into_iter()
+        let (first, last, current) = match completed {
+            true => (p, p, p),
+            false => {
+                let first = p;
+                let last = unsafe { first.add(self.vec_len - 1) }; // self.vec_len is positive here
+                let current = unsafe { first.add(num_taken) }; // first + num_taken is still in bounds
+                (first, last, current)
             }
+        };
 
-            _ => {
-                // TODO: Can we avoid the left-shift?
-                let right_len = self.vec_len - num_taken;
-                for i in 0..right_len {
-                    let dst = unsafe { ptr.add(i) };
-                    let src = unsafe { ptr.add(i + num_taken) };
-                    unsafe { dst.swap(src) };
-                }
-                let vec = unsafe { Vec::from_raw_parts(ptr, right_len, self.vec_cap) };
-                vec.into_iter()
-            }
-        }
+        VecIntoSeqIter::new(completed, first, last, current, Some(self.vec_cap))
     }
 
     fn enumerated(mut self) -> Self::Enumerated
@@ -158,7 +152,7 @@ where
         E: IsNotEnumerated,
     {
         let ptr = self.ptr;
-        self.ptr = core::ptr::null_mut();
+        self.ptr = core::ptr::null();
         ConIterVec {
             ptr,
             vec_len: self.vec_len,
@@ -173,7 +167,7 @@ where
         E: IsEnumerated,
     {
         let ptr = self.ptr;
-        self.ptr = core::ptr::null_mut();
+        self.ptr = core::ptr::null();
         ConIterVec {
             ptr,
             vec_len: self.vec_len,

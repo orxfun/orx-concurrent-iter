@@ -23,7 +23,7 @@ fn all_consumed() {
     let last = unsafe { first.add(vec_len - 1) };
     let _ = ManuallyDrop::new(vec);
 
-    let iter = SeqChunksIterVec::new(first, last);
+    let iter = SeqChunksIterVec::new(false, first, last);
     for (i, x) in iter.enumerate() {
         assert_eq!(x, i.to_string());
     }
@@ -46,7 +46,7 @@ fn partially_consumed() {
     let _ = ManuallyDrop::new(vec);
 
     {
-        let mut iter = SeqChunksIterVec::new(first, last);
+        let mut iter = SeqChunksIterVec::new(false, first, last);
         for i in 0..(n / 2) {
             let x = iter.next().unwrap();
             assert_eq!(x, i.to_string());

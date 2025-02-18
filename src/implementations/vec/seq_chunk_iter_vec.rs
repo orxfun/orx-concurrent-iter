@@ -13,9 +13,9 @@ impl<'i, T> SeqChunksIterVec<'i, T>
 where
     T: Send + Sync,
 {
-    pub(super) fn new(first: *const T, last: *const T) -> Self {
+    pub(super) fn new(completed: bool, first: *const T, last: *const T) -> Self {
         Self {
-            iter: VecIntoSeqIter::new(first, last, first, None),
+            iter: VecIntoSeqIter::new(completed, first, last, first, None),
             phantom: PhantomData,
         }
     }
@@ -27,7 +27,7 @@ where
 {
     fn default() -> Self {
         let p: *const T = core::ptr::null();
-        Self::new(p.clone(), p)
+        Self::new(true, p, p)
     }
 }
 

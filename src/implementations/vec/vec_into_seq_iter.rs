@@ -17,13 +17,14 @@ where
     T: Send + Sync,
 {
     pub(super) fn new(
+        completed: bool,
         first: *const T,
         last: *const T,
         current: *const T,
         drop_vec_capacity: Option<usize>,
     ) -> Self {
         Self {
-            completed: first.is_null(),
+            completed,
             first,
             last,
             drop_vec_capacity,
@@ -42,7 +43,7 @@ where
 {
     fn default() -> Self {
         let p: *const T = core::ptr::null();
-        Self::new(p, p, p, None)
+        Self::new(true, p, p, p, None)
     }
 }
 
