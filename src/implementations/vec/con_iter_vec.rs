@@ -147,12 +147,14 @@ where
         }
     }
 
-    fn enumerated(self) -> Self::Enumerated
+    fn enumerated(mut self) -> Self::Enumerated
     where
         E: IsNotEnumerated,
     {
+        let ptr = self.ptr;
+        self.ptr = core::ptr::null_mut();
         ConIterVec {
-            ptr: self.ptr,
+            ptr,
             vec_len: self.vec_len,
             vec_cap: self.vec_cap,
             counter: self.counter.load(Ordering::Acquire).into(),
@@ -160,12 +162,14 @@ where
         }
     }
 
-    fn not_enumerated(self) -> Self::Regular
+    fn not_enumerated(mut self) -> Self::Regular
     where
         E: IsEnumerated,
     {
+        let ptr = self.ptr;
+        self.ptr = core::ptr::null_mut();
         ConIterVec {
-            ptr: self.ptr,
+            ptr,
             vec_len: self.vec_len,
             vec_cap: self.vec_cap,
             counter: self.counter.load(Ordering::Acquire).into(),
