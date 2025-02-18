@@ -4,6 +4,8 @@ pub trait Element {
         T: Send + Sync;
 
     type IterOf<I>;
+
+    fn item_from_element<T: Send + Sync>(element: Self::ElemOf<T>) -> T;
 }
 
 pub struct Value;
@@ -15,6 +17,10 @@ impl Element for Value {
         T: Send + Sync;
 
     type IterOf<I> = I;
+
+    fn item_from_element<T: Send + Sync>(element: Self::ElemOf<T>) -> T {
+        element
+    }
 }
 
 pub struct IdxValue;
@@ -26,4 +32,8 @@ impl Element for IdxValue {
         T: Send + Sync;
 
     type IterOf<I> = (usize, I);
+
+    fn item_from_element<T: Send + Sync>(element: Self::ElemOf<T>) -> T {
+        element.1
+    }
 }

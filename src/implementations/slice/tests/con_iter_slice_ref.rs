@@ -158,11 +158,11 @@ where
     assert_eq!(expected, collected);
 }
 
-#[test_matrix([1, 2, 4])]
-fn skip_to_end(nt: usize) {
+#[test_matrix([Regular, Enumerated], [1, 2, 4])]
+fn skip_to_end<K: Enumeration>(_: K, nt: usize) {
     let vec: Vec<_> = (0..N).map(|x| (x + 10).to_string()).collect();
     let slice = vec.as_slice();
-    let iter = ConIterSliceRef::<String>::new(slice);
+    let iter = ConIterSliceRef::<String, K>::new(slice);
     let until = N / 2;
 
     let bag = ConcurrentBag::new();
@@ -180,7 +180,7 @@ fn skip_to_end(nt: usize) {
 
                 match t {
                     0 => {
-                        while let Some(x) = con_iter.next() {
+                        while let Some(x) = con_iter.next().map(K::Element::item_from_element) {
                             let num: usize = x.parse().unwrap();
                             match num < until + 10 {
                                 true => {
@@ -192,7 +192,11 @@ fn skip_to_end(nt: usize) {
                         }
                     }
                     _ => {
-                        for x in con_iter.chunks_iter(7).flattened() {
+                        for x in con_iter
+                            .chunks_iter(7)
+                            .flattened()
+                            .map(K::Element::item_from_element)
+                        {
                             let num: usize = x.parse().unwrap();
                             match num < until + 10 {
                                 true => {
