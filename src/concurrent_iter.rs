@@ -33,14 +33,14 @@ pub trait ConcurrentIter<K: NextKind = Regular>: Default {
 
     fn next(&self) -> Option<K::Next<Self::Item>>;
 
-    // fn next_chunk<'i>(
-    //     &'i self,
-    //     chunk_size: usize,
-    // ) -> Option<K::Next<<Self::ChunkPuller<'i> as ChunkPuller<K>>::Iter>> {
-    //     self.in_chunks(chunk_size).pull()
-    // }
+    fn next_chunk<'i>(
+        &'i self,
+        chunk_size: usize,
+    ) -> Option<K::NextChunk<Self::Item, <Self::ChunkPuller<'i> as ChunkPuller<K>>::Iter>> {
+        self.in_chunks(chunk_size).pull()
+    }
 
-    // fn in_chunks(&self, chunk_size: usize) -> Self::ChunkPuller<'_>;
+    fn in_chunks(&self, chunk_size: usize) -> Self::ChunkPuller<'_>;
 
     // fn chunks_iter(&self, chunk_size: usize) -> ChunksIter<Self::ChunkPuller<'_>, K> {
     //     ChunksIter::new(self.in_chunks(chunk_size))
