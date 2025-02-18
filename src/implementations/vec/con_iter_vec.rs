@@ -108,25 +108,29 @@ where
         match self.ptr.is_null() {
             true => Default::default(),
             false => {
-                let p = self.ptr;
+                let iter = self.slice_into_seq_iter(self.num_taken(), true);
                 self.ptr = core::ptr::null();
-
-                let num_taken = self.num_taken();
-                let completed = num_taken == self.vec_len;
-
-                let (first, last, current) = match completed {
-                    true => (p, p, p),
-                    false => {
-                        let first = p;
-                        let last = unsafe { first.add(self.vec_len - 1) }; // self.vec_len is positive here
-                        let current = unsafe { first.add(num_taken) }; // first + num_taken is in bounds
-                        (first, last, current)
-                    }
-                };
-
-                VecIntoSeqIter::new(completed, first, last, current, Some(self.vec_cap))
+                iter
             }
         }
+    }
+
+    fn slice_into_seq_iter(&self, num_taken: usize, drop_vec: bool) -> VecIntoSeqIter<T> {
+        let p = self.ptr;
+        let completed = num_taken == self.vec_len;
+
+        let (first, last, current) = match completed {
+            true => (p, p, p),
+            false => {
+                let first = p;
+                let last = unsafe { first.add(self.vec_len - 1) }; // self.vec_len is positive here
+                let current = unsafe { first.add(num_taken) }; // first + num_taken is in bounds
+                (first, last, current)
+            }
+        };
+
+        let drop_vec_capacity = drop_vec.then_some(self.vec_cap);
+        VecIntoSeqIter::new(completed, first, last, current, drop_vec_capacity)
     }
 }
 
@@ -171,13 +175,13 @@ where
     }
 
     fn skip_to_end(&self) {
-        let num_taken_before = self.counter.fetch_max(self.vec_len, Ordering::Acquire);
-        unsafe { self.drop_elements_in_place(num_taken_before..self.vec_len) };
+        let current = self.counter.fetch_max(self.vec_len, Ordering::Acquire);
+        let num_taken_before = current.min(self.vec_len);
+        let _iter = self.slice_into_seq_iter(num_taken_before, false);
     }
 
     fn next(&self) -> Option<<<E as Enumeration>::Element as Element>::ElemOf<Self::Item>> {
-        // ptr + idx is in-bounds
-        self.progress_and_get_begin_idx(1)
+        self.progress_and_get_begin_idx(1) // ptr + idx is in-bounds
             .map(|idx| E::new_element(idx, unsafe { take(self.ptr.add(idx) as *mut T) }))
     }
 
