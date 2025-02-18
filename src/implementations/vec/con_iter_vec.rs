@@ -56,14 +56,22 @@ where
     pub(crate) fn new(vec: Vec<T>) -> Self {
         let (vec_len, vec_cap, ptr) = (vec.len(), vec.capacity(), vec.as_ptr());
         let _ = ManuallyDrop::new(vec);
-        Self::from_raw_parts(ptr, vec_len, vec_cap, 0.into())
-    }
-
-    fn from_raw_parts(ptr: *const T, vec_len: usize, vec_cap: usize, counter: AtomicUsize) -> Self {
         Self {
             ptr,
             vec_len,
             vec_cap,
+            counter: 0.into(),
+            phantom: PhantomData,
+        }
+    }
+
+    fn transform<E2: Enumeration>(mut self) -> ConIterVec<T, E2> {
+        let (ptr, counter) = (self.ptr, self.counter.load(Ordering::Acquire).into());
+        self.ptr = core::ptr::null();
+        ConIterVec {
+            ptr,
+            vec_len: self.vec_len,
+            vec_cap: self.vec_cap,
             counter,
             phantom: PhantomData,
         }
@@ -146,22 +154,18 @@ where
         self.remaining_into_seq_iter()
     }
 
-    fn enumerated(mut self) -> Self::Enumerated
+    fn enumerated(self) -> Self::Enumerated
     where
         E: IsNotEnumerated,
     {
-        let (ptr, counter) = (self.ptr, self.counter.load(Ordering::Acquire).into());
-        self.ptr = core::ptr::null();
-        ConIterVec::from_raw_parts(ptr, self.vec_len, self.vec_cap, counter)
+        self.transform()
     }
 
-    fn not_enumerated(mut self) -> Self::Regular
+    fn not_enumerated(self) -> Self::Regular
     where
         E: IsEnumerated,
     {
-        let (ptr, counter) = (self.ptr, self.counter.load(Ordering::Acquire).into());
-        self.ptr = core::ptr::null();
-        ConIterVec::from_raw_parts(ptr, self.vec_len, self.vec_cap, counter)
+        self.transform()
     }
 
     fn skip_to_end(&self) {
