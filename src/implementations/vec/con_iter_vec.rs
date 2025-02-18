@@ -94,13 +94,6 @@ where
         self.counter.load(Ordering::Acquire).min(self.vec_len)
     }
 
-    unsafe fn drop_elements_in_place(&self, range: Range<usize>) {
-        for i in range {
-            let p = self.ptr.add(i) as *mut T;
-            p.drop_in_place();
-        }
-    }
-
     fn remaining_into_seq_iter(&mut self) -> VecIntoSeqIter<T> {
         // # SAFETY
         // null ptr indicates that the data is already taken out of this iterator
