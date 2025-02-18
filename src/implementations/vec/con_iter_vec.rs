@@ -138,8 +138,9 @@ where
                 let vec = unsafe { Vec::from_raw_parts(ptr, self.vec_len, self.vec_cap) };
                 vec.into_iter()
             }
+
             _ => {
-                // TODO: ???
+                // TODO: Can we avoid the left-shift?
                 let right_len = self.vec_len - num_taken;
                 for i in 0..right_len {
                     let dst = unsafe { ptr.add(i) };
