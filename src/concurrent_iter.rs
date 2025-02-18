@@ -1,6 +1,6 @@
 use crate::{
     chunk_puller::ChunkPuller,
-    enumeration::{Element, Enumerated, Enumeration, Regular},
+    enumeration::{Element, Enumerated, Enumeration, IsEnumerated, IsNotEnumerated, Regular},
 };
 
 pub trait ConcurrentIter<E: Enumeration = Regular>: Default {
@@ -24,7 +24,13 @@ pub trait ConcurrentIter<E: Enumeration = Regular>: Default {
 
     // enumeration
 
-    fn as_enumerated(&self) -> Self::Enumerated;
+    fn as_enumerated(&self) -> Self::Enumerated
+    where
+        E: IsNotEnumerated;
+
+    fn as_not_enumerated(&self) -> Self::Regular
+    where
+        E: IsEnumerated;
 
     // iter
 

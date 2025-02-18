@@ -1,9 +1,12 @@
 use super::{
     element::{Element, Value},
     enumeration::{Enumeration, EnumerationCore},
+    is_enumerated::IsNotEnumerated,
 };
 
 pub struct Regular;
+
+impl IsNotEnumerated for Regular {}
 
 impl EnumerationCore for Regular {
     type ElemKindCore = Value;

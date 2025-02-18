@@ -1,7 +1,7 @@
 use super::chunks_iter_slice_ref::ChunksIterSliceRef;
 use crate::{
     concurrent_iter::ConcurrentIter,
-    enumeration::{Element, Enumerated, Enumeration, Regular},
+    enumeration::{Element, Enumerated, Enumeration, IsEnumerated, IsNotEnumerated, Regular},
 };
 use core::{
     iter::Skip,
@@ -65,10 +65,10 @@ where
     }
 }
 
-impl<'a, T, K> ConcurrentIter<K> for ConIterSliceRef<'a, T, K>
+impl<'a, T, E> ConcurrentIter<E> for ConIterSliceRef<'a, T, E>
 where
     T: Send + Sync,
-    K: Enumeration,
+    E: Enumeration,
 {
     type Item = &'a T;
 
@@ -79,7 +79,7 @@ where
     type Enumerated = ConIterSliceRef<'a, T, Enumerated>;
 
     type ChunkPuller<'i>
-        = ChunksIterSliceRef<'i, 'a, T, K>
+        = ChunksIterSliceRef<'i, 'a, T, E>
     where
         Self: 'i;
 
@@ -92,7 +92,22 @@ where
 
     // enumeration
 
-    fn as_enumerated(&self) -> Self::Enumerated {
+    fn as_enumerated(&self) -> Self::Enumerated
+    where
+        E: IsNotEnumerated,
+    {
+        let current = self.counter.load(Ordering::Acquire);
+        ConIterSliceRef {
+            slice: self.slice,
+            counter: current.into(),
+            phantom: PhantomData,
+        }
+    }
+
+    fn as_not_enumerated(&self) -> Self::Regular
+    where
+        E: IsEnumerated,
+    {
         let current = self.counter.load(Ordering::Acquire);
         ConIterSliceRef {
             slice: self.slice,
@@ -107,12 +122,23 @@ where
         let _ = self.counter.fetch_max(self.slice.len(), Ordering::Acquire);
     }
 
-    fn next(&self) -> Option<<<K as Enumeration>::Element as Element>::ElemOf<Self::Item>> {
+    fn next(&self) -> Option<<<E as Enumeration>::Element as Element>::ElemOf<Self::Item>> {
         self.progress_and_get_begin_idx(1)
-            .map(|begin_idx| K::new_element(begin_idx, &self.slice[begin_idx]))
+            .map(|begin_idx| E::new_element(begin_idx, &self.slice[begin_idx]))
     }
 
     fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
         Self::ChunkPuller::new(self, chunk_size)
+    }
+
+    fn next_chunk(
+        &self,
+        chunk_size: usize,
+    ) -> Option<
+        <<E as Enumeration>::Element as Element>::IterOf<
+            <Self::ChunkPuller<'_> as crate::chunk_puller::ChunkPuller<E>>::Iter,
+        >,
+    > {
+        self.chunks_iter(chunk_size).next()
     }
 }

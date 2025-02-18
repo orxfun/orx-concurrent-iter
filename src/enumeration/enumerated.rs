@@ -1,9 +1,12 @@
 use super::{
     element::{Element, IdxValue},
     enumeration::{Enumeration, EnumerationCore},
+    is_enumerated::IsEnumerated,
 };
 
 pub struct Enumerated;
+
+impl IsEnumerated for Enumerated {}
 
 impl EnumerationCore for Enumerated {
     type ElemKindCore = IdxValue;
