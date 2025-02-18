@@ -10,7 +10,7 @@
     clippy::missing_panics_doc,
     clippy::todo
 )]
-// #![cfg_attr(not(test), no_std)]
+#![cfg_attr(not(test), no_std)]
 
 extern crate alloc;
 
@@ -22,3 +22,5 @@ mod enumeration;
 mod into_concurrent_iter;
 
 mod implementations;
+
+pub use into_concurrent_iter::IntoConcurrentIter;

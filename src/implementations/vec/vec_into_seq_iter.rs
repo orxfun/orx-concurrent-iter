@@ -1,5 +1,6 @@
 use crate::implementations::ptr_utils::take;
-use std::iter::FusedIterator;
+use alloc::vec::Vec;
+use core::iter::FusedIterator;
 
 pub struct VecIntoSeqIter<T>
 where
