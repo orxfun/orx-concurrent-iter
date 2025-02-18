@@ -9,14 +9,14 @@ use core::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
-pub struct ConIterSliceRef<'a, T, K = Regular>
+pub struct ConIterSliceRef<'a, T, E = Regular>
 where
     T: Send + Sync,
-    K: Enumeration,
+    E: Enumeration,
 {
     slice: &'a [T],
     counter: AtomicUsize,
-    phantom: PhantomData<K>,
+    phantom: PhantomData<E>,
 }
 
 impl<'a, T, K> Default for ConIterSliceRef<'a, T, K>
@@ -33,10 +33,10 @@ where
     }
 }
 
-impl<'a, T, K> ConIterSliceRef<'a, T, K>
+impl<'a, T, E> ConIterSliceRef<'a, T, E>
 where
     T: Send + Sync,
-    K: Enumeration,
+    E: Enumeration,
 {
     pub(crate) fn new(slice: &'a [T]) -> Self {
         Self {
