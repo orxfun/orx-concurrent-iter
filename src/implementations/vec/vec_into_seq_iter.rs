@@ -55,7 +55,8 @@ where
         loop {
             match self.completed {
                 false => {
-                    let _ = unsafe { take(self.current as *mut T) };
+                    let p = self.current as *mut T;
+                    unsafe { p.drop_in_place() };
                     match self.current == self.last {
                         true => self.completed = true,
                         false => self.current = unsafe { self.current.add(1) },

@@ -8,7 +8,6 @@ use alloc::vec::Vec;
 use core::{
     marker::PhantomData,
     mem::ManuallyDrop,
-    ops::Range,
     sync::atomic::{AtomicUsize, Ordering},
 };
 
