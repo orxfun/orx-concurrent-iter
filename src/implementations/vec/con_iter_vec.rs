@@ -5,7 +5,6 @@ use crate::{
 };
 use alloc::vec::Vec;
 use core::{
-    iter::Skip,
     marker::PhantomData,
     mem::{ManuallyDrop, MaybeUninit},
     ops::Range,

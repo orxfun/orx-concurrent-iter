@@ -1,5 +1,5 @@
 use crate::implementations::ptr_utils::take;
-use core::marker::PhantomData;
+use core::{iter::FusedIterator, marker::PhantomData};
 
 pub struct SeqChunksIterVec<'i, T>
 where
@@ -95,3 +95,5 @@ where
         self.remaining()
     }
 }
+
+impl<'i, T> FusedIterator for SeqChunksIterVec<'i, T> where T: Send + Sync {}
