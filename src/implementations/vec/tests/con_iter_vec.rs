@@ -3,6 +3,7 @@ use crate::{
     concurrent_iter::ConcurrentIter,
     enumeration::{Element, Enumerated, Enumeration, Regular},
     implementations::vec::con_iter_vec::ConIterVec,
+    IntoConcurrentIter,
 };
 use core::fmt::Debug;
 use orx_concurrent_bag::ConcurrentBag;
@@ -25,7 +26,7 @@ fn new_vec(n: usize, elem: impl Fn(usize) -> String) -> Vec<String> {
 fn enumeration() {
     let vec: Vec<_> = (0..6).collect();
 
-    let iter = ConIterVec::<_>::new(vec);
+    let iter = vec.into_concurrent_iter();
     assert_eq!(iter.next(), Some(0));
 
     let enumerated = iter.enumerated();
