@@ -37,7 +37,7 @@ pub trait ConcurrentIter<E: Enumeration = Regular>: Default {
     fn next_chunk(
         &self,
         chunk_size: usize,
-    ) -> Option<<E::Element as Element>::ElemOf<<Self::ChunkPuller<'_> as ChunkPuller<E>>::Iter>>
+    ) -> Option<<E::Element as Element>::IterOf<<Self::ChunkPuller<'_> as ChunkPuller<E>>::Iter>>
     {
         self.chunks_iter(chunk_size).next()
     }

@@ -1,7 +1,9 @@
+use core::{fmt::Debug, time::Duration};
+
 use crate::{
     chunk_puller::ChunkPuller,
     concurrent_iter::ConcurrentIter,
-    enumeration::{Enumerated, Enumeration, Regular},
+    enumeration::{Element, Enumerated, Enumeration, Regular},
     implementations::slice::con_iter_slice_ref::ConIterSliceRef,
 };
 use orx_concurrent_bag::ConcurrentBag;
@@ -81,6 +83,42 @@ fn empty_slice<K: Enumeration>(_: K, nt: usize) {
             });
         }
     });
+}
+
+#[test_matrix([Regular, Enumerated], [1, 2, 4])]
+fn next<K: Enumeration>(_: K, nt: usize)
+where
+    for<'a> <K::Element as Element>::ElemOf<&'a String>: PartialEq + Ord + Debug,
+{
+    let n = 500;
+    let vec: Vec<_> = (0..n).map(|x| (x + 10).to_string()).collect();
+    let slice = vec.as_slice();
+    let con_iter = ConIterSliceRef::<String, K>::new(slice);
+    let iter = &con_iter;
+
+    let bag = ConcurrentBag::new();
+    let num_spawned = ConcurrentBag::new();
+    std::thread::scope(|s| {
+        for _ in 0..nt {
+            s.spawn(|| {
+                num_spawned.push(true);
+                while num_spawned.len() < nt {} // allow all threads to be spawned
+
+                let mut i = 0;
+                while let Some(x) = iter.next() {
+                    i += 1;
+                    bag.push(x);
+                }
+            });
+        }
+    });
+
+    let mut expected: Vec<_> = (0..n).map(|i| K::new_element(i, &slice[i])).collect();
+    expected.sort();
+    let mut collected = bag.into_inner().to_vec();
+    collected.sort();
+
+    assert_eq!(expected, collected);
 }
 
 #[test_matrix([Regular, Enumerated], [1, 2, 4])]

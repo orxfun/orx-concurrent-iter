@@ -4,7 +4,7 @@ use crate::{
 };
 
 pub trait ChunkPuller<K: Enumeration = Regular>:
-    Sized + Iterator<Item = <K::Element as Element>::ElemOf<Self::Iter>>
+    Sized + Iterator<Item = <K::Element as Element>::IterOf<Self::Iter>>
 {
     type ChunkItem: Send + Sync;
 

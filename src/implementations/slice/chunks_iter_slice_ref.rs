@@ -44,7 +44,7 @@ where
     T: Send + Sync,
     K: Enumeration,
 {
-    type Item = <K::Element as Element>::ElemOf<<Self as ChunkPuller<K>>::Iter>;
+    type Item = <K::Element as Element>::IterOf<<Self as ChunkPuller<K>>::Iter>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.con_iter

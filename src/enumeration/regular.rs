@@ -22,7 +22,7 @@ impl EnumerationCore for Regular {
         item
     }
 
-    fn new_chunk<T, I>(_: usize, chunk: I) -> <Self::ElemKindCore as Element>::ElemOf<I>
+    fn new_chunk<T, I>(_: usize, chunk: I) -> <Self::ElemKindCore as Element>::IterOf<I>
     where
         T: Send + Sync,
         I: ExactSizeIterator<Item = T>,
@@ -31,7 +31,7 @@ impl EnumerationCore for Regular {
     }
 
     fn destruct_chunk<T, I>(
-        chunk: <Self::ElemKindCore as Element>::ElemOf<I>,
+        chunk: <Self::ElemKindCore as Element>::IterOf<I>,
     ) -> (Self::BeginIdx, I)
     where
         T: Send + Sync,
@@ -43,7 +43,7 @@ impl EnumerationCore for Regular {
     fn seq_chunk_iter_next<I>(
         _: Self::BeginIdx,
         seq_iter: &mut Self::SeqChunkIter<I>,
-    ) -> Option<<Self::ElemKindCore as Element>::ElemOf<I::Item>>
+    ) -> Option<<Self::ElemKindCore as Element>::IterOf<I::Item>>
     where
         I: Iterator + Default,
         I::Item: Send + Sync,
