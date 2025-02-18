@@ -2,6 +2,7 @@ use super::chunks_iter_slice_ref::ChunksIterSliceRef;
 use crate::{
     concurrent_iter::ConcurrentIter,
     next::{NextKind, Regular},
+    Enumerated,
 };
 use core::{
     iter::Skip,
@@ -70,15 +71,34 @@ where
 
     type SeqIter = Skip<core::slice::Iter<'a, T>>;
 
+    type Regular = ConIterSliceRef<'a, T, Regular>;
+
+    type Enumerated = ConIterSliceRef<'a, T, Enumerated>;
+
     type ChunkPuller<'i>
         = ChunksIterSliceRef<'i, 'a, T, K>
     where
         Self: 'i;
 
+    // into
+
     fn into_seq_iter(self) -> Self::SeqIter {
         let current = self.counter.load(Ordering::Acquire);
         self.slice.iter().skip(current)
     }
+
+    // enumeration
+
+    fn as_enumerated(&self) -> Self::Enumerated {
+        let current = self.counter.load(Ordering::Acquire);
+        ConIterSliceRef {
+            slice: self.slice,
+            counter: current.into(),
+            phantom: PhantomData,
+        }
+    }
+
+    // iter
 
     fn skip_to_end(&self) {
         let _ = self.counter.fetch_max(self.slice.len(), Ordering::Acquire);

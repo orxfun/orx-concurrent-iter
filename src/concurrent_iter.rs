@@ -1,6 +1,8 @@
 use crate::{
     chunk_puller::ChunkPuller,
+    chunks_iter::ChunksIter,
     next::{NextKind, Regular},
+    Enumerated,
 };
 
 pub trait ConcurrentIter<K: NextKind = Regular>: Default {
@@ -14,7 +16,19 @@ pub trait ConcurrentIter<K: NextKind = Regular>: Default {
     where
         Self: 'i;
 
+    type Regular: ConcurrentIter<Regular, Item = Self::Item>;
+
+    type Enumerated: ConcurrentIter<Enumerated, Item = Self::Item>;
+
+    // into
+
     fn into_seq_iter(self) -> Self::SeqIter;
+
+    // enumeration
+
+    fn as_enumerated(&self) -> Self::Enumerated;
+
+    // iter
 
     fn skip_to_end(&self);
 
@@ -28,4 +42,8 @@ pub trait ConcurrentIter<K: NextKind = Regular>: Default {
     }
 
     fn in_chunks(&self, chunk_size: usize) -> Self::ChunkPuller<'_>;
+
+    fn chunks_iter(&self, chunk_size: usize) -> ChunksIter<Self::ChunkPuller<'_>, K> {
+        ChunksIter::new(self.in_chunks(chunk_size))
+    }
 }

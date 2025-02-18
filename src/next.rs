@@ -7,16 +7,20 @@ mod sealed {
 pub trait NextKind: sealed::NextKindSealed {
     type Next<T>;
 
-    type SeqIterKind<I>
+    type SeqIterKind<I>: Default
     where
-        I: Iterator;
+        I: Iterator + Default;
+
+    type BeginIdx: Default + Copy;
 
     fn new_next<T>(begin_idx: usize, value: T) -> Self::Next<T>;
 
-    fn new_seq_iter<I: Iterator>(iter: I) -> Self::SeqIterKind<I>;
+    fn destruct_next<T>(next: Self::Next<T>) -> (Self::BeginIdx, T);
 
-    fn seq_iter_next<I: Iterator>(
-        begin_idx: usize,
+    fn new_seq_iter<I: Iterator + Default>(iter: I) -> Self::SeqIterKind<I>;
+
+    fn seq_iter_next<I: Iterator + Default>(
+        begin_idx: Self::BeginIdx,
         seq_iter: &mut Self::SeqIterKind<I>,
     ) -> Option<Self::Next<I::Item>> {
         None
@@ -32,22 +36,29 @@ impl NextKind for Regular {
     type Next<T> = T;
 
     type SeqIterKind<I>
+        = I
     where
-        I: Iterator,
-    = I;
+        I: Iterator + Default;
+
+    type BeginIdx = ();
 
     #[inline(always)]
     fn new_next<T>(_: usize, value: T) -> Self::Next<T> {
         value
     }
 
-    fn new_seq_iter<I: Iterator>(iter: I) -> Self::SeqIterKind<I> {
+    #[inline(always)]
+    fn destruct_next<T>(next: Self::Next<T>) -> (Self::BeginIdx, T) {
+        ((), next)
+    }
+
+    fn new_seq_iter<I: Iterator + Default>(iter: I) -> Self::SeqIterKind<I> {
         iter
     }
 
     #[inline(always)]
-    fn seq_iter_next<I: Iterator>(
-        _: usize,
+    fn seq_iter_next<I: Iterator + Default>(
+        _: Self::BeginIdx,
         seq_iter: &mut Self::SeqIterKind<I>,
     ) -> Option<Self::Next<I::Item>> {
         seq_iter.next()
@@ -63,21 +74,28 @@ impl NextKind for Enumerated {
     type Next<T> = (usize, T);
 
     type SeqIterKind<I>
+        = Enumerate<I>
     where
-        I: Iterator,
-    = Enumerate<I>;
+        I: Iterator + Default;
+
+    type BeginIdx = usize;
 
     #[inline(always)]
-    fn new_next<T>(begin_idx: usize, value: T) -> Self::Next<T> {
+    fn new_next<T>(begin_idx: Self::BeginIdx, value: T) -> Self::Next<T> {
         (begin_idx, value)
     }
 
-    fn new_seq_iter<I: Iterator>(iter: I) -> Self::SeqIterKind<I> {
+    #[inline(always)]
+    fn destruct_next<T>(next: Self::Next<T>) -> (Self::BeginIdx, T) {
+        next
+    }
+
+    fn new_seq_iter<I: Iterator + Default>(iter: I) -> Self::SeqIterKind<I> {
         iter.enumerate()
     }
 
     #[inline(always)]
-    fn seq_iter_next<I: Iterator>(
+    fn seq_iter_next<I: Iterator + Default>(
         begin_idx: usize,
         seq_iter: &mut Self::SeqIterKind<I>,
     ) -> Option<Self::Next<I::Item>> {
