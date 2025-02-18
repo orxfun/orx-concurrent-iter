@@ -19,5 +19,6 @@ mod chunks_iter;
 mod concurrent_iter;
 mod concurrent_iterable;
 mod enumeration;
+mod into_concurrent_iter;
 
 mod implementations;
