@@ -63,7 +63,7 @@ fn vec_ref_into_con_iter() {
 fn vec_con_iter() {
     let (nt, n) = (2, 177);
     let vec: Vec<_> = (0..n).map(|x| (x + 10).to_string()).collect();
-    let iter = vec.concurrent_iter();
+    let iter = (&vec).concurrent_iter();
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();

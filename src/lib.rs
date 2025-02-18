@@ -16,6 +16,7 @@ extern crate alloc;
 
 mod chunk_puller;
 mod chunks_iter;
+mod concurrent_collection;
 mod concurrent_iter;
 mod concurrent_iterable;
 mod enumeration;

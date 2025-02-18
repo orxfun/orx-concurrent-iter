@@ -5,7 +5,7 @@ pub trait ConcurrentIterable {
 
     type Iter: ConcurrentIter<Item = Self::Item>;
 
-    fn concurrent_iter(self) -> Self::Iter;
+    fn concurrent_iter(&self) -> Self::Iter;
 }
 
 // impl
@@ -18,7 +18,7 @@ where
 
     type Iter = <&'a X as IntoConcurrentIter>::IntoIter;
 
-    fn concurrent_iter(self) -> Self::Iter {
+    fn concurrent_iter(&self) -> Self::Iter {
         self.into_concurrent_iter()
     }
 }
@@ -31,7 +31,7 @@ where
 
     type Iter = <&'a [T] as IntoConcurrentIter>::IntoIter;
 
-    fn concurrent_iter(self) -> Self::Iter {
+    fn concurrent_iter(&self) -> Self::Iter {
         self.into_concurrent_iter()
     }
 }
