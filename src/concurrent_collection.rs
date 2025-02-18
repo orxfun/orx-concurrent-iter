@@ -7,10 +7,10 @@ pub trait ConcurrentCollection {
     where
         Self: 'i;
 
-    fn as_iterable(&self) -> Self::Iterable<'_>;
+    fn as_concurrent_iterable(&self) -> Self::Iterable<'_>;
 
-    fn iter(&self) -> <Self::Iterable<'_> as ConcurrentIterable>::Iter {
-        self.as_iterable().concurrent_iter()
+    fn concurrent_iter(&self) -> <Self::Iterable<'_> as ConcurrentIterable>::Iter {
+        self.as_concurrent_iterable().concurrent_iter()
     }
 }
 
@@ -26,11 +26,11 @@ where
     where
         Self: 'i;
 
-    fn iter(&self) -> <Self::Iterable<'_> as ConcurrentIterable>::Iter {
+    fn concurrent_iter(&self) -> <Self::Iterable<'_> as ConcurrentIterable>::Iter {
         <&X as IntoConcurrentIter>::into_concurrent_iter(self)
     }
 
-    fn as_iterable(&self) -> Self::Iterable<'_> {
+    fn as_concurrent_iterable(&self) -> Self::Iterable<'_> {
         self
     }
 }

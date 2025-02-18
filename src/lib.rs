@@ -24,5 +24,6 @@ mod into_concurrent_iter;
 
 mod implementations;
 
+pub use concurrent_collection::ConcurrentCollection;
 pub use concurrent_iterable::ConcurrentIterable;
 pub use into_concurrent_iter::IntoConcurrentIter;

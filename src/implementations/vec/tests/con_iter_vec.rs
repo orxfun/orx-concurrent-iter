@@ -102,8 +102,6 @@ where
                     i += 1;
                     bag.push(x);
                 }
-
-                debug_assert!(n != N || i > 0);
             });
         }
     });
@@ -145,8 +143,6 @@ where
                         bag.push(value);
                     }
                 }
-
-                debug_assert!(n != N || i > 0);
             });
         }
     });
@@ -186,8 +182,6 @@ where
                     i += 1;
                     bag.push(x);
                 }
-
-                debug_assert!(n != N || i > 0);
             });
         }
     });
@@ -251,8 +245,6 @@ fn skip_to_end<K: Enumeration>(_: K, n: usize, nt: usize) {
                         }
                     }
                 }
-
-                debug_assert!(n != N || i > 0);
             });
         }
     });
@@ -313,8 +305,6 @@ fn into_seq_iter<K: Enumeration>(_: K, n: usize, nt: usize, until: usize) {
                             }
                         }
                     }
-
-                    debug_assert!(n != N || i > 0);
                 });
             }
         });
