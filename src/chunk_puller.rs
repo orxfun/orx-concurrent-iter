@@ -1,7 +1,4 @@
-use crate::{
-    chunks_iter::ChunksIter,
-    next::{NextKind, Regular},
-};
+use crate::next_arch::{NextKind, Regular};
 
 pub trait ChunkPuller<K: NextKind = Regular>: Sized {
     type Item;
@@ -12,7 +9,7 @@ pub trait ChunkPuller<K: NextKind = Regular>: Sized {
 
     fn pull(&mut self) -> Option<K::Next<Self::Iter>>;
 
-    fn flatten(self) -> ChunksIter<Self, K> {
-        ChunksIter::new(self)
-    }
+    // fn flatten(self) -> ChunksIter<Self, K> {
+    //     ChunksIter::new(self)
+    // }
 }
