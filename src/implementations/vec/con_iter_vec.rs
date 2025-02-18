@@ -90,10 +90,6 @@ where
             })
     }
 
-    fn num_taken(&self) -> usize {
-        self.counter.load(Ordering::Acquire).min(self.vec_len)
-    }
-
     fn remaining_into_seq_iter(&mut self) -> VecIntoSeqIter<T> {
         // # SAFETY
         // null ptr indicates that the data is already taken out of this iterator
@@ -101,7 +97,8 @@ where
         match self.ptr.is_null() {
             true => Default::default(),
             false => {
-                let iter = self.slice_into_seq_iter(self.num_taken(), true);
+                let num_taken = self.counter.load(Ordering::Acquire).min(self.vec_len);
+                let iter = self.slice_into_seq_iter(num_taken, true);
                 self.ptr = core::ptr::null();
                 iter
             }
