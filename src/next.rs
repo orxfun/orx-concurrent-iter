@@ -22,9 +22,7 @@ pub trait NextKind: sealed::NextKindSealed {
     fn seq_iter_next<I: Iterator + Default>(
         begin_idx: Self::BeginIdx,
         seq_iter: &mut Self::SeqIterKind<I>,
-    ) -> Option<Self::Next<I::Item>> {
-        None
-    }
+    ) -> Option<Self::Next<I::Item>>;
 
     #[cfg(test)]
     fn eq_next<T: PartialEq>(a: Self::Next<T>, b: Self::Next<T>) -> bool {
@@ -32,6 +30,9 @@ pub trait NextKind: sealed::NextKindSealed {
         let (b1, b2) = Self::destruct_next(b);
         a1 == b1 && a2 == b2
     }
+
+    #[cfg(test)]
+    fn eq_begin_idx(begin_idx: Self::BeginIdx, expected: usize) -> bool;
 }
 
 #[derive(Default)]
@@ -70,6 +71,11 @@ impl NextKind for Regular {
     ) -> Option<Self::Next<I::Item>> {
         seq_iter.next()
     }
+
+    #[cfg(test)]
+    fn eq_begin_idx(_: Self::BeginIdx, _: usize) -> bool {
+        true
+    }
 }
 
 #[derive(Default)]
@@ -107,5 +113,10 @@ impl NextKind for Enumerated {
         seq_iter: &mut Self::SeqIterKind<I>,
     ) -> Option<Self::Next<I::Item>> {
         seq_iter.next().map(|(i, x)| (begin_idx + i, x))
+    }
+
+    #[cfg(test)]
+    fn eq_begin_idx(begin_idx: Self::BeginIdx, expected: usize) -> bool {
+        begin_idx == expected
     }
 }
