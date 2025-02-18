@@ -15,7 +15,7 @@ impl EnumerationCore for Regular {
     where
         I: Iterator + Default;
 
-    fn new_elem<T>(_: usize, item: T) -> <Self::ElemKindCore as Element>::ElemOf<T>
+    fn new_element<T>(_: usize, item: T) -> <Self::ElemKindCore as Element>::ElemOf<T>
     where
         T: Send + Sync,
     {

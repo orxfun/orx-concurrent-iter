@@ -1,7 +1,7 @@
 use super::element::Element;
 use core::fmt::Debug;
 
-pub(crate) trait EnumerationCore {
+pub(crate) trait EnumerationCore: Send + Sync {
     type ElemKindCore: Element;
 
     type BeginIdx: Default + Copy + PartialEq + Debug;
@@ -10,7 +10,7 @@ pub(crate) trait EnumerationCore {
     where
         I: Iterator + Default;
 
-    fn new_elem<T>(idx: usize, item: T) -> <Self::ElemKindCore as Element>::ElemOf<T>
+    fn new_element<T>(idx: usize, item: T) -> <Self::ElemKindCore as Element>::ElemOf<T>
     where
         T: Send + Sync;
 

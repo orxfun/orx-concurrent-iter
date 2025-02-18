@@ -12,7 +12,7 @@ pub trait ChunkPuller<K: Enumeration = Regular>:
 
     fn chunk_size(&self) -> usize;
 
-    fn flatten(self) -> ChunksIter<Self, K> {
+    fn flattened(self) -> ChunksIter<Self, K> {
         ChunksIter::new(self)
     }
 }
