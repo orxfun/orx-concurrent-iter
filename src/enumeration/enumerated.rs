@@ -54,6 +54,19 @@ impl EnumerationCore for Enumerated {
     fn into_seq_chunk_iter<I: Iterator + Default>(iter: I) -> Self::SeqChunkIter<I> {
         iter.enumerate()
     }
+
+    // test
+
+    #[cfg(test)]
+    fn new_element_from_begin_idx<T>(
+        idx: Self::BeginIdx,
+        item: T,
+    ) -> <Self::ElemKindCore as Element>::ElemOf<T>
+    where
+        T: Send + Sync,
+    {
+        (idx, item)
+    }
 }
 
 impl Enumeration for Enumerated {

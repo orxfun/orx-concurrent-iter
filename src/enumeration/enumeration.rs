@@ -35,6 +35,16 @@ pub(crate) trait EnumerationCore: Send + Sync {
         I::Item: Send + Sync;
 
     fn into_seq_chunk_iter<I: Iterator + Default>(iter: I) -> Self::SeqChunkIter<I>;
+
+    // test
+
+    #[cfg(test)]
+    fn new_element_from_begin_idx<T>(
+        idx: Self::BeginIdx,
+        item: T,
+    ) -> <Self::ElemKindCore as Element>::ElemOf<T>
+    where
+        T: Send + Sync;
 }
 
 pub trait Enumeration: EnumerationCore<ElemKindCore = Self::Element> {
