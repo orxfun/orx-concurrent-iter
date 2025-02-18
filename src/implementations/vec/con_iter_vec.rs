@@ -44,13 +44,7 @@ where
     E: Enumeration,
 {
     fn drop(&mut self) {
-        // # SAFETY
-        // null ptr indicates that the data is already taken out of this iterator
-        // by a consuming method such as `into_seq_iter`
-        if !self.ptr.is_null() {
-            unsafe { self.drop_elements_in_place(self.num_taken()..self.vec_len) };
-            let _vec_to_drop = unsafe { Vec::from_raw_parts(self.ptr as *mut T, 0, self.vec_cap) };
-        }
+        let _iter = self.remaining_into_seq_iter();
     }
 }
 
@@ -59,15 +53,18 @@ where
     T: Send + Sync,
     E: Enumeration,
 {
-    pub(crate) fn new(mut vec: Vec<T>) -> Self {
-        let (vec_len, vec_cap) = (vec.len(), vec.capacity());
-        let ptr = vec.as_mut_ptr();
+    pub(crate) fn new(vec: Vec<T>) -> Self {
+        let (vec_len, vec_cap, ptr) = (vec.len(), vec.capacity(), vec.as_ptr());
         let _ = ManuallyDrop::new(vec);
+        Self::from_raw_parts(ptr, vec_len, vec_cap, 0.into())
+    }
+
+    fn from_raw_parts(ptr: *const T, vec_len: usize, vec_cap: usize, counter: AtomicUsize) -> Self {
         Self {
             ptr,
             vec_len,
             vec_cap,
-            counter: 0.into(),
+            counter,
             phantom: PhantomData,
         }
     }
@@ -80,15 +77,15 @@ where
         }
     }
 
-    pub(super) fn progress_and_get_chunk_ptrs(
+    pub(super) fn progress_and_get_chunk_pointers(
         &self,
         chunk_size: usize,
     ) -> Option<(usize, *const T, *const T)> {
         self.progress_and_get_begin_idx(chunk_size)
             .map(|begin_idx| {
                 let end_idx = (begin_idx + chunk_size).min(self.vec_len).max(begin_idx);
-                let first = unsafe { self.ptr.add(begin_idx) } as *const T;
-                let last = unsafe { self.ptr.add(end_idx - 1) } as *const T;
+                let first = unsafe { self.ptr.add(begin_idx) } as *const T; // ptr + begin_idx is in bounds
+                let last = unsafe { self.ptr.add(end_idx - 1) } as *const T; // ptr + end_idx - 1 is in bounds
                 (begin_idx, first, last)
             })
     }
@@ -97,14 +94,38 @@ where
         self.counter.load(Ordering::Acquire).min(self.vec_len)
     }
 
-    unsafe fn take_unchecked(&self, item_idx: usize) -> T {
-        take(self.ptr.add(item_idx) as *mut T)
-    }
-
     unsafe fn drop_elements_in_place(&self, range: Range<usize>) {
         for i in range {
             let p = self.ptr.add(i) as *mut T;
             p.drop_in_place();
+        }
+    }
+
+    fn remaining_into_seq_iter(&mut self) -> VecIntoSeqIter<T> {
+        // # SAFETY
+        // null ptr indicates that the data is already taken out of this iterator
+        // by a consuming method such as `into_seq_iter`
+        match self.ptr.is_null() {
+            true => Default::default(),
+            false => {
+                let p = self.ptr;
+                self.ptr = core::ptr::null();
+
+                let num_taken = self.num_taken();
+                let completed = num_taken == self.vec_len;
+
+                let (first, last, current) = match completed {
+                    true => (p, p, p),
+                    false => {
+                        let first = p;
+                        let last = unsafe { first.add(self.vec_len - 1) }; // self.vec_len is positive here
+                        let current = unsafe { first.add(num_taken) }; // first + num_taken is in bounds
+                        (first, last, current)
+                    }
+                };
+
+                VecIntoSeqIter::new(completed, first, last, current, Some(self.vec_cap))
+            }
         }
     }
 }
@@ -128,53 +149,25 @@ where
     type Enumerated = ConIterVec<T, Enumerated>;
 
     fn into_seq_iter(mut self) -> Self::SeqIter {
-        let num_taken = self.num_taken();
-        let completed = num_taken == self.vec_len;
-
-        let p = self.ptr;
-        self.ptr = core::ptr::null();
-
-        let (first, last, current) = match completed {
-            true => (p, p, p),
-            false => {
-                let first = p;
-                let last = unsafe { first.add(self.vec_len - 1) }; // self.vec_len is positive here
-                let current = unsafe { first.add(num_taken) }; // first + num_taken is still in bounds
-                (first, last, current)
-            }
-        };
-
-        VecIntoSeqIter::new(completed, first, last, current, Some(self.vec_cap))
+        self.remaining_into_seq_iter()
     }
 
     fn enumerated(mut self) -> Self::Enumerated
     where
         E: IsNotEnumerated,
     {
-        let ptr = self.ptr;
+        let (ptr, counter) = (self.ptr, self.counter.load(Ordering::Acquire).into());
         self.ptr = core::ptr::null();
-        ConIterVec {
-            ptr,
-            vec_len: self.vec_len,
-            vec_cap: self.vec_cap,
-            counter: self.counter.load(Ordering::Acquire).into(),
-            phantom: PhantomData,
-        }
+        ConIterVec::from_raw_parts(ptr, self.vec_len, self.vec_cap, counter)
     }
 
     fn not_enumerated(mut self) -> Self::Regular
     where
         E: IsEnumerated,
     {
-        let ptr = self.ptr;
+        let (ptr, counter) = (self.ptr, self.counter.load(Ordering::Acquire).into());
         self.ptr = core::ptr::null();
-        ConIterVec {
-            ptr,
-            vec_len: self.vec_len,
-            vec_cap: self.vec_cap,
-            counter: self.counter.load(Ordering::Acquire).into(),
-            phantom: PhantomData,
-        }
+        ConIterVec::from_raw_parts(ptr, self.vec_len, self.vec_cap, counter)
     }
 
     fn skip_to_end(&self) {
@@ -183,8 +176,9 @@ where
     }
 
     fn next(&self) -> Option<<<E as Enumeration>::Element as Element>::ElemOf<Self::Item>> {
+        // ptr + idx is in-bounds
         self.progress_and_get_begin_idx(1)
-            .map(|idx| E::new_element(idx, unsafe { self.take_unchecked(idx) }))
+            .map(|idx| E::new_element(idx, unsafe { take(self.ptr.add(idx) as *mut T) }))
     }
 
     fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {

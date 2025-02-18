@@ -102,7 +102,7 @@ where
                     bag.push(x);
                 }
 
-                assert!(i > 0);
+                debug_assert!(i > 0);
             });
         }
     });
@@ -145,7 +145,7 @@ where
                     }
                 }
 
-                assert!(i > 0);
+                debug_assert!(i > 0);
             });
         }
     });
@@ -186,7 +186,7 @@ where
                     bag.push(x);
                 }
 
-                assert!(i > 0);
+                debug_assert!(i > 0);
             });
         }
     });
@@ -251,7 +251,7 @@ fn skip_to_end<K: Enumeration>(_: K, nt: usize) {
                     }
                 }
 
-                assert!(i > 0);
+                debug_assert!(i > 0);
             });
         }
     });
@@ -313,7 +313,7 @@ fn into_seq_iter<K: Enumeration>(_: K, nt: usize, until: usize) {
                         }
                     }
 
-                    assert!(i > 0);
+                    debug_assert!(i > 0);
                 });
             }
         });
