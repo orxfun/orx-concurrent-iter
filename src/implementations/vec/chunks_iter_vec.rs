@@ -11,6 +11,19 @@ where
     chunk_size: usize,
 }
 
+impl<'i, T, E> ChunksIterVec<'i, T, E>
+where
+    T: Send + Sync,
+    E: Enumeration,
+{
+    pub(super) fn new(con_iter: &'i ConIterVec<T, E>, chunk_size: usize) -> Self {
+        Self {
+            con_iter,
+            chunk_size,
+        }
+    }
+}
+
 impl<'i, T, E> ChunkPuller<E> for ChunksIterVec<'i, T, E>
 where
     T: Send + Sync,

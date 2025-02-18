@@ -90,7 +90,7 @@ where
         self.counter.load(Ordering::Acquire).min(self.vec_len)
     }
 
-    unsafe fn take_one(&self, item_idx: usize) -> T {
+    unsafe fn take_unchecked(&self, item_idx: usize) -> T {
         let src_ptr = self.ptr.add(item_idx);
 
         let mut value = MaybeUninit::<T>::uninit();
@@ -176,14 +176,16 @@ where
     }
 
     fn skip_to_end(&self) {
-        todo!()
+        let num_taken_before = self.counter.fetch_max(self.vec_len, Ordering::Acquire);
+        unsafe { self.drop_elements_in_place(num_taken_before..self.vec_len) };
     }
 
     fn next(&self) -> Option<<<E as Enumeration>::Element as Element>::ElemOf<Self::Item>> {
-        todo!()
+        self.progress_and_get_begin_idx(1)
+            .map(|idx| E::new_element(idx, unsafe { self.take_unchecked(idx) }))
     }
 
     fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
-        todo!()
+        Self::ChunkPuller::new(self, chunk_size)
     }
 }

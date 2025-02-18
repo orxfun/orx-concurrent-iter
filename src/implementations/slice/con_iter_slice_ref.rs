@@ -120,7 +120,7 @@ where
 
     fn next(&self) -> Option<<<E as Enumeration>::Element as Element>::ElemOf<Self::Item>> {
         self.progress_and_get_begin_idx(1)
-            .map(|begin_idx| E::new_element(begin_idx, &self.slice[begin_idx]))
+            .map(|idx| E::new_element(idx, &self.slice[idx]))
     }
 
     fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
