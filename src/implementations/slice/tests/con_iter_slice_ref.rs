@@ -6,12 +6,13 @@ use crate::{
 };
 use core::fmt::Debug;
 use orx_concurrent_bag::ConcurrentBag;
+use orx_iterable::Collection;
 use test_case::test_matrix;
 
 #[cfg(miri)]
 const N: usize = 125;
 #[cfg(not(miri))]
-const N: usize = 4580;
+const N: usize = 4735;
 
 #[test_matrix([Regular, Enumerated], [1, 2, 4])]
 fn empty_slice<K: Enumeration>(_: K, nt: usize) {
@@ -178,7 +179,7 @@ fn skip_to_end<K: Enumeration>(_: K, nt: usize) {
 
                 let mut i = 0;
 
-                match t {
+                match t % 2 {
                     0 => {
                         while let Some(x) = con_iter.next().map(K::Element::item_from_element) {
                             let num: usize = x.parse().unwrap();
@@ -220,4 +221,71 @@ fn skip_to_end<K: Enumeration>(_: K, nt: usize) {
     collected.sort();
 
     assert_eq!(expected, collected);
+}
+
+#[test_matrix([Regular, Enumerated], [1, 2, 4], [0, N / 2, N])]
+fn into_seq_iter<K: Enumeration>(_: K, nt: usize, until: usize) {
+    let vec: Vec<_> = (0..N).map(|x| (x + 10).to_string()).collect();
+    let slice = vec.as_slice();
+    let iter = ConIterSliceRef::<String, K>::new(slice);
+
+    let bag = ConcurrentBag::new();
+    let num_spawned = ConcurrentBag::new();
+    let con_num_spawned = &num_spawned;
+    let con_bag = &bag;
+    let con_iter = &iter;
+    if until > 0 {
+        std::thread::scope(|s| {
+            for t in 0..nt {
+                s.spawn(move || {
+                    con_num_spawned.push(true);
+                    while con_num_spawned.len() < nt {} // allow all threads to be spawned
+
+                    let mut i = 0;
+
+                    match t % 2 {
+                        0 => {
+                            while let Some(x) = con_iter.next().map(K::Element::item_from_element) {
+                                i += 1;
+                                let num: usize = x.parse().unwrap();
+                                con_bag.push(num);
+                                if num >= until + 10 {
+                                    break;
+                                }
+                            }
+                        }
+                        _ => {
+                            let iter = con_iter.chunks_iter(7);
+                            for (_, chunk) in iter.map(K::destruct_chunk) {
+                                let mut do_break = false;
+                                for x in chunk {
+                                    let num: usize = x.parse().unwrap();
+                                    con_bag.push(num);
+                                    i += 1;
+                                    if num >= until + 10 {
+                                        do_break = true;
+                                    }
+                                }
+                                if do_break {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    assert!(i > 0);
+                });
+            }
+        });
+    }
+
+    let iter = iter.into_seq_iter();
+    let remaining: Vec<usize> = iter.map(|x| x.parse().unwrap()).collect();
+    let collected = bag.into_inner().to_vec();
+    let mut all: Vec<_> = collected.into_iter().chain(remaining.into_iter()).collect();
+    all.sort();
+
+    let expected: Vec<_> = (0..N).map(|i| i + 10).collect();
+
+    assert_eq!(all, expected);
 }
