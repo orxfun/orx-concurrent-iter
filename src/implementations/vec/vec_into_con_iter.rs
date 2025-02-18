@@ -11,10 +11,10 @@ where
 {
     type Item = T;
 
-    type Iter = ConIterVec<T>;
+    type IntoIter = ConIterVec<T>;
 
-    fn into_concurrent_iter(self) -> Self::Iter {
-        Self::Iter::new(self)
+    fn into_concurrent_iter(self) -> Self::IntoIter {
+        Self::IntoIter::new(self)
     }
 }
 
@@ -24,9 +24,9 @@ where
 {
     type Item = &'a T;
 
-    type Iter = ConIterSliceRef<'a, T>;
+    type IntoIter = ConIterSliceRef<'a, T>;
 
-    fn into_concurrent_iter(self) -> Self::Iter {
-        Self::Iter::new(self.as_slice())
+    fn into_concurrent_iter(self) -> Self::IntoIter {
+        Self::IntoIter::new(self.as_slice())
     }
 }

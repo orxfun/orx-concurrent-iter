@@ -7,9 +7,9 @@ where
 {
     type Item = &'a T;
 
-    type Iter = ConIterSliceRef<'a, T>;
+    type IntoIter = ConIterSliceRef<'a, T>;
 
-    fn into_concurrent_iter(self) -> Self::Iter {
-        Self::Iter::new(self)
+    fn into_concurrent_iter(self) -> Self::IntoIter {
+        Self::IntoIter::new(self)
     }
 }
