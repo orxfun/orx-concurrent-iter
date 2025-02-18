@@ -1,10 +1,10 @@
 use crate::{
     chunks_iter::ChunksIter,
-    next::{NextKind, Regular},
+    enumeration::{Element, Enumeration, Regular},
 };
 
-pub trait ChunkPuller<K: NextKind = Regular>:
-    Sized + Iterator<Item = K::NextChunk<Self::ChunkItem, Self::Iter>>
+pub trait ChunkPuller<K: Enumeration = Regular>:
+    Sized + Iterator<Item = <K::Element as Element>::ElemOf<Self::Iter>>
 {
     type ChunkItem: Send + Sync;
 

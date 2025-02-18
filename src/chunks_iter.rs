@@ -1,10 +1,13 @@
-use crate::{chunk_puller::ChunkPuller, next::NextKind, Regular};
+use crate::{
+    chunk_puller::ChunkPuller,
+    enumeration::{Element, Enumeration, Regular},
+};
 use core::marker::PhantomData;
 
 pub struct ChunksIter<C, K = Regular>
 where
     C: ChunkPuller<K>,
-    K: NextKind,
+    K: Enumeration,
 {
     puller: C,
     begin_idx: K::BeginIdx,
@@ -15,7 +18,7 @@ where
 impl<C, K> ChunksIter<C, K>
 where
     C: ChunkPuller<K>,
-    K: NextKind,
+    K: Enumeration,
 {
     pub(crate) fn new(puller: C) -> Self {
         Self {
@@ -26,7 +29,7 @@ where
         }
     }
 
-    fn next_chunk(&mut self) -> Option<K::Next<C::ChunkItem>> {
+    fn next_chunk(&mut self) -> Option<<K::Element as Element>::ElemOf<C::ChunkItem>> {
         match self.puller.next().map(K::destruct_chunk) {
             Some((begin_idx, chunk)) => {
                 self.begin_idx = begin_idx;
@@ -41,9 +44,9 @@ where
 impl<C, K> Iterator for ChunksIter<C, K>
 where
     C: ChunkPuller<K>,
-    K: NextKind,
+    K: Enumeration,
 {
-    type Item = K::Next<C::ChunkItem>;
+    type Item = <K::Element as Element>::ElemOf<C::ChunkItem>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let next = K::seq_chunk_iter_next(self.begin_idx, &mut self.current_chunk);

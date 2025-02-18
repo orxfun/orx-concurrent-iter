@@ -1,17 +1,16 @@
 use crate::{
     chunk_puller::ChunkPuller,
-    next::{NextKind, Regular},
-    Enumerated,
+    enumeration::{Element, Enumerated, Enumeration, Regular},
 };
 
-pub trait ConcurrentIter<K: NextKind = Regular>: Default {
+pub trait ConcurrentIter<E: Enumeration = Regular>: Default {
     /// Type of the items that the iterator yields.
     type Item: Send + Sync;
 
     /// Inner type which is the source of the data to be iterated, which in addition is a regular sequential `Iterator`.
     type SeqIter: Iterator<Item = Self::Item>;
 
-    type ChunkPuller<'i>: ChunkPuller<K, ChunkItem = Self::Item>
+    type ChunkPuller<'i>: ChunkPuller<E, ChunkItem = Self::Item>
     where
         Self: 'i;
 
@@ -31,14 +30,15 @@ pub trait ConcurrentIter<K: NextKind = Regular>: Default {
 
     fn skip_to_end(&self);
 
-    fn next(&self) -> Option<K::Next<Self::Item>>;
+    fn next(&self) -> Option<<E::Element as Element>::ElemOf<Self::Item>>;
 
     fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_>;
 
     fn next_chunk(
         &self,
         chunk_size: usize,
-    ) -> Option<K::NextChunk<Self::Item, <Self::ChunkPuller<'_> as ChunkPuller<K>>::Iter>> {
+    ) -> Option<<E::Element as Element>::ElemOf<<Self::ChunkPuller<'_> as ChunkPuller<E>>::Iter>>
+    {
         self.chunks_iter(chunk_size).next()
     }
 }
