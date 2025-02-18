@@ -68,12 +68,12 @@ fn empty_slice<K: Enumeration>(_: K, nt: usize) {
     });
 }
 
-#[test_matrix([Regular, Enumerated], [1, 2, 4])]
-fn next<K: Enumeration>(_: K, nt: usize)
+#[test_matrix([Regular, Enumerated], [0, 1, N], [1, 2, 4])]
+fn next<K: Enumeration>(_: K, n: usize, nt: usize)
 where
     for<'a> <K::Element as Element>::ElemOf<&'a String>: PartialEq + Ord + Debug,
 {
-    let vec: Vec<_> = (0..N).map(|x| (x + 10).to_string()).collect();
+    let vec: Vec<_> = (0..n).map(|x| (x + 10).to_string()).collect();
     let slice = vec.as_slice();
     let iter = ConIterSliceRef::<String, K>::new(slice);
 
@@ -96,7 +96,7 @@ where
         }
     });
 
-    let mut expected: Vec<_> = (0..N).map(|i| K::new_element(i, &slice[i])).collect();
+    let mut expected: Vec<_> = (0..n).map(|i| K::new_element(i, &slice[i])).collect();
     expected.sort();
     let mut collected = bag.into_inner().to_vec();
     collected.sort();
@@ -104,12 +104,12 @@ where
     assert_eq!(expected, collected);
 }
 
-#[test_matrix([Regular, Enumerated], [1, 2, 4])]
-fn chunks_iter<K: Enumeration>(_: K, nt: usize)
+#[test_matrix([Regular, Enumerated], [0, 1, N], [1, 2, 4])]
+fn chunks_iter<K: Enumeration>(_: K, n: usize, nt: usize)
 where
     for<'a> <K::Element as Element>::ElemOf<&'a String>: PartialEq + Ord + Debug,
 {
-    let vec: Vec<_> = (0..N).map(|x| (x + 10).to_string()).collect();
+    let vec: Vec<_> = (0..n).map(|x| (x + 10).to_string()).collect();
     let slice = vec.as_slice();
     let iter = ConIterSliceRef::<String, K>::new(slice);
 
@@ -139,7 +139,7 @@ where
     });
 
     let mut expected = vec![];
-    for i in 0..N {
+    for i in 0..n {
         let c = (i / 7) * 7;
         expected.push(K::new_element(c, &slice[i]));
     }
@@ -150,12 +150,12 @@ where
     assert_eq!(expected, collected);
 }
 
-#[test_matrix([Regular, Enumerated], [1, 2, 4])]
-fn chunks_iter_flattened<K: Enumeration>(_: K, nt: usize)
+#[test_matrix([Regular, Enumerated], [0, 1, N], [1, 2, 4])]
+fn chunks_iter_flattened<K: Enumeration>(_: K, n: usize, nt: usize)
 where
     for<'a> <K::Element as Element>::ElemOf<&'a String>: PartialEq + Ord + Debug,
 {
-    let vec: Vec<_> = (0..N).map(|x| (x + 10).to_string()).collect();
+    let vec: Vec<_> = (0..n).map(|x| (x + 10).to_string()).collect();
     let slice = vec.as_slice();
     let iter = ConIterSliceRef::<String, K>::new(slice);
 
@@ -180,7 +180,7 @@ where
         }
     });
 
-    let mut expected: Vec<_> = (0..N).map(|i| K::new_element(i, &slice[i])).collect();
+    let mut expected: Vec<_> = (0..n).map(|i| K::new_element(i, &slice[i])).collect();
     expected.sort();
     let mut collected = bag.into_inner().to_vec();
     collected.sort();
@@ -188,12 +188,12 @@ where
     assert_eq!(expected, collected);
 }
 
-#[test_matrix([Regular, Enumerated], [1, 2, 4])]
-fn skip_to_end<K: Enumeration>(_: K, nt: usize) {
-    let vec: Vec<_> = (0..N).map(|x| (x + 10).to_string()).collect();
+#[test_matrix([Regular, Enumerated], [0, 1, N], [1, 2, 4])]
+fn skip_to_end<K: Enumeration>(_: K, n: usize, nt: usize) {
+    let vec: Vec<_> = (0..n).map(|x| (x + 10).to_string()).collect();
     let slice = vec.as_slice();
     let iter = ConIterSliceRef::<String, K>::new(slice);
-    let until = N / 2;
+    let until = n / 2;
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -252,9 +252,9 @@ fn skip_to_end<K: Enumeration>(_: K, nt: usize) {
     assert_eq!(expected, collected);
 }
 
-#[test_matrix([Regular, Enumerated], [1, 2, 4], [0, N / 2, N])]
-fn into_seq_iter<K: Enumeration>(_: K, nt: usize, until: usize) {
-    let vec: Vec<_> = (0..N).map(|x| (x + 10).to_string()).collect();
+#[test_matrix([Regular, Enumerated], [0, 1, N], [1, 2, 4], [0, N / 2, N])]
+fn into_seq_iter<K: Enumeration>(_: K, n: usize, nt: usize, until: usize) {
+    let vec: Vec<_> = (0..n).map(|x| (x + 10).to_string()).collect();
     let slice = vec.as_slice();
     let iter = ConIterSliceRef::<String, K>::new(slice);
 
@@ -314,7 +314,7 @@ fn into_seq_iter<K: Enumeration>(_: K, nt: usize, until: usize) {
     let mut all: Vec<_> = collected.into_iter().chain(remaining.into_iter()).collect();
     all.sort();
 
-    let expected: Vec<_> = (0..N).map(|i| i + 10).collect();
+    let expected: Vec<_> = (0..n).map(|i| i + 10).collect();
 
     assert_eq!(all, expected);
 }
