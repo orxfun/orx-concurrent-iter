@@ -22,3 +22,16 @@ where
         self.into_concurrent_iter()
     }
 }
+
+impl<'a, T> ConcurrentIterable for &'a [T]
+where
+    T: Send + Sync,
+{
+    type Item = <&'a [T] as IntoConcurrentIter>::Item;
+
+    type Iter = <&'a [T] as IntoConcurrentIter>::IntoIter;
+
+    fn concurrent_iter(self) -> Self::Iter {
+        self.into_concurrent_iter()
+    }
+}
