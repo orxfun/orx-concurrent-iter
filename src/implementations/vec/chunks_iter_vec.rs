@@ -1,4 +1,5 @@
 use super::con_iter_vec::ConIterVec;
+use super::seq_chunk_iter_vec::SeqChunksIterVec;
 use crate::chunk_puller::ChunkPuller;
 use crate::enumeration::{Element, Enumeration};
 
@@ -31,7 +32,7 @@ where
 {
     type ChunkItem = T;
 
-    type Iter = alloc::vec::IntoIter<T>;
+    type Iter = SeqChunksIterVec<'i, T>;
 
     fn chunk_size(&self) -> usize {
         todo!()
@@ -46,9 +47,10 @@ where
     type Item = <E::Element as Element>::IterOf<<Self as ChunkPuller<E>>::Iter>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        // self.con_iter
-        //     .progress_and_get_chunk(self.chunk_size)
-        //     .map(|(begin_idx, slice)| K::new_chunk(begin_idx, slice.iter()))
-        None
+        self.con_iter
+            .progress_and_get_chunk_ptrs(self.chunk_size)
+            .map(|(begin_idx, first, last)| {
+                E::new_chunk(begin_idx, SeqChunksIterVec::new(first, last))
+            })
     }
 }

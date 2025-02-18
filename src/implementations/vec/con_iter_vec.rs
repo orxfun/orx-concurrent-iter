@@ -76,15 +76,18 @@ where
         }
     }
 
-    // pub(super) fn progress_and_get_chunk(&self, chunk_size: usize) -> Option<(usize, &'a [T])> {
-    //     self.progress_and_get_begin_idx(chunk_size)
-    //         .map(|begin_idx| {
-    //             let end_idx = (begin_idx + chunk_size)
-    //                 .min(self.slice.len())
-    //                 .max(begin_idx);
-    //             (begin_idx, &self.slice[begin_idx..end_idx])
-    //         })
-    // }
+    pub(super) fn progress_and_get_chunk_ptrs(
+        &self,
+        chunk_size: usize,
+    ) -> Option<(usize, *const T, *const T)> {
+        self.progress_and_get_begin_idx(chunk_size)
+            .map(|begin_idx| {
+                let end_idx = (begin_idx + chunk_size).min(self.vec_len).max(begin_idx);
+                let first = unsafe { self.ptr.add(begin_idx) } as *const T;
+                let last = unsafe { self.ptr.add(end_idx) } as *const T;
+                (begin_idx, first, last)
+            })
+    }
 
     fn num_taken(&self) -> usize {
         self.counter.load(Ordering::Acquire).min(self.vec_len)
