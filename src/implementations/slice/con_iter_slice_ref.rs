@@ -1,8 +1,7 @@
 use super::chunks_iter_slice_ref::ChunksIterSliceRef;
 use crate::{
     concurrent_iter::ConcurrentIter,
-    next::{NextKind, Regular},
-    Enumerated,
+    enumeration::{Element, Enumerated, Enumeration, Regular},
 };
 use core::{
     iter::Skip,
@@ -13,7 +12,7 @@ use core::{
 pub struct ConIterSliceRef<'a, T, K = Regular>
 where
     T: Send + Sync,
-    K: NextKind,
+    K: Enumeration,
 {
     slice: &'a [T],
     counter: AtomicUsize,
@@ -23,7 +22,7 @@ where
 impl<'a, T, K> Default for ConIterSliceRef<'a, T, K>
 where
     T: Send + Sync,
-    K: NextKind,
+    K: Enumeration,
 {
     fn default() -> Self {
         Self {
@@ -37,7 +36,7 @@ where
 impl<'a, T, K> ConIterSliceRef<'a, T, K>
 where
     T: Send + Sync,
-    K: NextKind,
+    K: Enumeration,
 {
     pub(crate) fn new(slice: &'a [T]) -> Self {
         Self {
@@ -69,7 +68,7 @@ where
 impl<'a, T, K> ConcurrentIter<K> for ConIterSliceRef<'a, T, K>
 where
     T: Send + Sync,
-    K: NextKind,
+    K: Enumeration,
 {
     type Item = &'a T;
 
@@ -108,7 +107,7 @@ where
         let _ = self.counter.fetch_max(self.slice.len(), Ordering::Acquire);
     }
 
-    fn next(&self) -> Option<K::Next<Self::Item>> {
+    fn next(&self) -> Option<<<K as Enumeration>::Element as Element>::ElemOf<Self::Item>> {
         self.progress_and_get_begin_idx(1)
             .map(|begin_idx| K::new_elem(begin_idx, &self.slice[begin_idx]))
     }
