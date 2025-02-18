@@ -1,13 +1,14 @@
-use super::con_iter_slice_ref::ConIterSliceRef;
+use super::con_iter_vec::ConIterVec;
 use crate::into_concurrent_iter::IntoConcurrentIter;
+use alloc::vec::Vec;
 
-impl<'a, T> IntoConcurrentIter for &'a [T]
+impl<T> IntoConcurrentIter for Vec<T>
 where
     T: Send + Sync,
 {
-    type Item = &'a T;
+    type Item = T;
 
-    type Iter = ConIterSliceRef<'a, T>;
+    type Iter = ConIterVec<T>;
 
     fn into_concurrent_iter(self) -> Self::Iter {
         Self::Iter::new(self)
