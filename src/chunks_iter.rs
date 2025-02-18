@@ -29,7 +29,7 @@ where
         }
     }
 
-    fn next_chunk(&mut self) -> Option<<K::Element as Element>::IterOf<C::ChunkItem>> {
+    fn next_chunk(&mut self) -> Option<<K::Element as Element>::ElemOf<C::ChunkItem>> {
         match self.puller.next().map(K::destruct_chunk) {
             Some((begin_idx, chunk)) => {
                 self.begin_idx = begin_idx;
@@ -46,7 +46,7 @@ where
     C: ChunkPuller<K>,
     K: Enumeration,
 {
-    type Item = <K::Element as Element>::IterOf<C::ChunkItem>;
+    type Item = <K::Element as Element>::ElemOf<C::ChunkItem>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let next = K::seq_chunk_iter_next(self.begin_idx, &mut self.current_chunk);

@@ -170,6 +170,45 @@ where
 }
 
 #[test_matrix([Regular, Enumerated], [1, 2, 4])]
+fn chunks_iter_flattened<K: Enumeration>(_: K, nt: usize)
+where
+    for<'a> <K::Element as Element>::ElemOf<&'a String>: PartialEq + Ord + Debug,
+{
+    let n = 125;
+    let vec: Vec<_> = (0..n).map(|x| (x + 10).to_string()).collect();
+    let slice = vec.as_slice();
+    let iter = ConIterSliceRef::<String, K>::new(slice);
+
+    let bag = ConcurrentBag::new();
+    let num_spawned = ConcurrentBag::new();
+    std::thread::scope(|s| {
+        for _ in 0..nt {
+            s.spawn(|| {
+                num_spawned.push(true);
+                while num_spawned.len() < nt {} // allow all threads to be spawned
+
+                let chunks_iter = iter.chunks_iter(7).flattened();
+
+                let mut i = 0;
+                for x in chunks_iter {
+                    i += 1;
+                    bag.push(x);
+                }
+
+                assert!(i > 0);
+            });
+        }
+    });
+
+    let mut expected: Vec<_> = (0..n).map(|i| K::new_element(i, &slice[i])).collect();
+    expected.sort();
+    let mut collected = bag.into_inner().to_vec();
+    collected.sort();
+
+    assert_eq!(expected, collected);
+}
+
+#[test_matrix([Regular, Enumerated], [1, 2, 4])]
 fn in_chunks<K: Enumeration>(_: K, nt: usize) {
     // let mut bag = ConcurrentBag::new();
     // let n = 123;

@@ -43,7 +43,7 @@ impl EnumerationCore for Regular {
     fn seq_chunk_iter_next<I>(
         _: Self::BeginIdx,
         seq_iter: &mut Self::SeqChunkIter<I>,
-    ) -> Option<<Self::ElemKindCore as Element>::IterOf<I::Item>>
+    ) -> Option<<Self::ElemKindCore as Element>::ElemOf<I::Item>>
     where
         I: Iterator + Default,
         I::Item: Send + Sync,
