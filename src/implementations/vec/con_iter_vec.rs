@@ -2,11 +2,12 @@ use super::chunks_iter_vec::ChunksIterVec;
 use crate::{
     concurrent_iter::ConcurrentIter,
     enumeration::{Element, Enumerated, Enumeration, IsEnumerated, IsNotEnumerated, Regular},
+    implementations::ptr_utils::take,
 };
 use alloc::vec::Vec;
 use core::{
     marker::PhantomData,
-    mem::{ManuallyDrop, MaybeUninit},
+    mem::ManuallyDrop,
     ops::Range,
     sync::atomic::{AtomicUsize, Ordering},
 };
@@ -93,12 +94,7 @@ where
     }
 
     unsafe fn take_unchecked(&self, item_idx: usize) -> T {
-        let src_ptr = self.ptr.add(item_idx);
-
-        let mut value = MaybeUninit::<T>::uninit();
-        value.as_mut_ptr().swap(src_ptr);
-
-        value.assume_init()
+        take(self.ptr.add(item_idx))
     }
 
     unsafe fn drop_elements_in_place(&self, range: Range<usize>) {
