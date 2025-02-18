@@ -60,3 +60,18 @@ fn in_chunks<K: NextKind>(_: K) {
         }
     }
 }
+
+#[test_matrix([Regular, Enumerated])]
+fn chunks_iter<K: NextKind>(_: K) {
+    let n = 123;
+    let vec: Vec<_> = (0..n).map(|x| x + 10).collect();
+    let slice = vec.as_slice();
+    let con_iter = ConIterSliceRef::<_, K>::new(slice);
+    let iter = con_iter.in_chunks(5).flatten();
+    let mut i = 0;
+    for (idx, x) in iter.map(K::destruct_next) {
+        assert!(K::eq_begin_idx(idx, i));
+        assert_eq!(*x, i + 10);
+        i += 1;
+    }
+}
