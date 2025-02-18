@@ -1,4 +1,4 @@
-use core::iter::Enumerate;
+use core::{fmt::Debug, iter::Enumerate};
 
 mod sealed {
     pub trait NextKindSealed {}
@@ -11,7 +11,7 @@ pub trait NextKind: sealed::NextKindSealed {
     where
         I: Iterator + Default;
 
-    type BeginIdx: Default + Copy;
+    type BeginIdx: Default + Copy + PartialEq + Debug;
 
     fn new_next<T>(begin_idx: usize, value: T) -> Self::Next<T>;
 
@@ -24,6 +24,13 @@ pub trait NextKind: sealed::NextKindSealed {
         seq_iter: &mut Self::SeqIterKind<I>,
     ) -> Option<Self::Next<I::Item>> {
         None
+    }
+
+    #[cfg(test)]
+    fn eq_next<T: PartialEq>(a: Self::Next<T>, b: Self::Next<T>) -> bool {
+        let (a1, a2) = Self::destruct_next(a);
+        let (b1, b2) = Self::destruct_next(b);
+        a1 == b1 && a2 == b2
     }
 }
 
