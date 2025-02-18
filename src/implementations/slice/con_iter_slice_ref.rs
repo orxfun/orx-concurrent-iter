@@ -12,6 +12,7 @@ use core::{
 
 pub struct ConIterSliceRef<'a, T, K = Regular>
 where
+    T: Send + Sync,
     K: NextKind,
 {
     slice: &'a [T],
@@ -21,6 +22,7 @@ where
 
 impl<'a, T, K> Default for ConIterSliceRef<'a, T, K>
 where
+    T: Send + Sync,
     K: NextKind,
 {
     fn default() -> Self {
@@ -34,6 +36,7 @@ where
 
 impl<'a, T, K> ConIterSliceRef<'a, T, K>
 where
+    T: Send + Sync,
     K: NextKind,
 {
     pub(crate) fn new(slice: &'a [T]) -> Self {
@@ -65,6 +68,7 @@ where
 
 impl<'a, T, K> ConcurrentIter<K> for ConIterSliceRef<'a, T, K>
 where
+    T: Send + Sync,
     K: NextKind,
 {
     type Item = &'a T;
@@ -106,10 +110,10 @@ where
 
     fn next(&self) -> Option<K::Next<Self::Item>> {
         self.progress_and_get_begin_idx(1)
-            .map(|begin_idx| K::new_next(begin_idx, &self.slice[begin_idx]))
+            .map(|begin_idx| K::new_elem(begin_idx, &self.slice[begin_idx]))
     }
 
-    fn in_chunks(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+    fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
         Self::ChunkPuller::new(self, chunk_size)
     }
 }

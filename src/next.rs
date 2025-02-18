@@ -18,10 +18,19 @@ pub(crate) trait NextKindCore {
         I: ExactSizeIterator<Item = T>;
 
     fn into_seq_chunk_iter<I: Iterator + Default>(iter: I) -> Self::SeqChunkIter<I>;
+
+    fn new_chunk<T, I>(begin_idx: usize, chunk: I) -> Self::NextChunk<T, I>
+    where
+        T: Send + Sync,
+        I: ExactSizeIterator<Item = T>;
 }
 
 pub trait NextKind: NextKindCore {
     type Next<T>: Send + Sync
+    where
+        T: Send + Sync;
+
+    fn new_elem<T>(idx: usize, item: T) -> Self::Next<T>
     where
         T: Send + Sync;
 
@@ -61,9 +70,24 @@ impl NextKindCore for Regular {
     fn into_seq_chunk_iter<I: Iterator + Default>(iter: I) -> Self::SeqChunkIter<I> {
         iter
     }
+
+    fn new_chunk<T, I>(_: usize, chunk: I) -> Self::NextChunk<T, I>
+    where
+        T: Send + Sync,
+        I: ExactSizeIterator<Item = T>,
+    {
+        chunk
+    }
 }
 impl NextKind for Regular {
     type Next<T: Send + Sync> = T;
+
+    fn new_elem<T>(_: usize, item: T) -> Self::Next<T>
+    where
+        T: Send + Sync,
+    {
+        item
+    }
 
     fn seq_chunk_iter_next<I>(
         _: Self::BeginIdx,
@@ -103,9 +127,24 @@ impl NextKindCore for Enumerated {
     fn into_seq_chunk_iter<I: Iterator + Default>(iter: I) -> Self::SeqChunkIter<I> {
         iter.enumerate()
     }
+
+    fn new_chunk<T, I>(begin_idx: usize, chunk: I) -> Self::NextChunk<T, I>
+    where
+        T: Send + Sync,
+        I: ExactSizeIterator<Item = T>,
+    {
+        (begin_idx, chunk)
+    }
 }
 impl NextKind for Enumerated {
     type Next<T: Send + Sync> = (usize, T);
+
+    fn new_elem<T>(idx: usize, item: T) -> Self::Next<T>
+    where
+        T: Send + Sync,
+    {
+        (idx, item)
+    }
 
     fn seq_chunk_iter_next<I>(
         begin_idx: Self::BeginIdx,
