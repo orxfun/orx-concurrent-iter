@@ -11,7 +11,7 @@ use test_case::test_matrix;
 #[cfg(miri)]
 const N: usize = 125;
 #[cfg(not(miri))]
-const N: usize = 5442;
+const N: usize = 4580;
 
 #[test_matrix([Regular, Enumerated], [1, 2, 4])]
 fn empty_slice<K: Enumeration>(_: K, nt: usize) {
@@ -151,6 +151,66 @@ where
     });
 
     let mut expected: Vec<_> = (0..N).map(|i| K::new_element(i, &slice[i])).collect();
+    expected.sort();
+    let mut collected = bag.into_inner().to_vec();
+    collected.sort();
+
+    assert_eq!(expected, collected);
+}
+
+#[test_matrix([1, 2, 4])]
+fn skip_to_end(nt: usize) {
+    let vec: Vec<_> = (0..N).map(|x| (x + 10).to_string()).collect();
+    let slice = vec.as_slice();
+    let iter = ConIterSliceRef::<String>::new(slice);
+    let until = N / 2;
+
+    let bag = ConcurrentBag::new();
+    let num_spawned = ConcurrentBag::new();
+    let con_num_spawned = &num_spawned;
+    let con_bag = &bag;
+    let con_iter = &iter;
+    std::thread::scope(|s| {
+        for t in 0..nt {
+            s.spawn(move || {
+                con_num_spawned.push(true);
+                while con_num_spawned.len() < nt {} // allow all threads to be spawned
+
+                let mut i = 0;
+
+                match t {
+                    0 => {
+                        while let Some(x) = con_iter.next() {
+                            let num: usize = x.parse().unwrap();
+                            match num < until + 10 {
+                                true => {
+                                    i += 1;
+                                    con_bag.push(x);
+                                }
+                                false => break,
+                            }
+                        }
+                    }
+                    _ => {
+                        for x in con_iter.chunks_iter(7).flattened() {
+                            let num: usize = x.parse().unwrap();
+                            match num < until + 10 {
+                                true => {
+                                    i += 1;
+                                    con_bag.push(x);
+                                }
+                                false => break,
+                            }
+                        }
+                    }
+                }
+
+                assert!(i > 0);
+            });
+        }
+    });
+
+    let mut expected: Vec<_> = (0..until).map(|i| &slice[i]).collect();
     expected.sort();
     let mut collected = bag.into_inner().to_vec();
     collected.sort();
