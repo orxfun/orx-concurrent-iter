@@ -22,13 +22,11 @@ pub trait ConcurrentIter<E: Enumeration = Regular>: Default {
 
     fn into_seq_iter(self) -> Self::SeqIter;
 
-    // enumeration
-
-    fn as_enumerated(&self) -> Self::Enumerated
+    fn enumerated(self) -> Self::Enumerated
     where
         E: IsNotEnumerated;
 
-    fn as_not_enumerated(&self) -> Self::Regular
+    fn not_enumerated(self) -> Self::Regular
     where
         E: IsEnumerated;
 

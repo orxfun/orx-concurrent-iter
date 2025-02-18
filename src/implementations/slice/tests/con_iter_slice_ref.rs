@@ -6,7 +6,6 @@ use crate::{
 };
 use core::fmt::Debug;
 use orx_concurrent_bag::ConcurrentBag;
-use orx_iterable::Collection;
 use test_case::test_matrix;
 
 #[cfg(miri)]
@@ -14,25 +13,55 @@ const N: usize = 125;
 #[cfg(not(miri))]
 const N: usize = 4735;
 
+#[test]
+fn enumeration() {
+    let vec: Vec<_> = (0..6).collect();
+    let slice = vec.as_slice();
+
+    let iter = ConIterSliceRef::<_>::new(slice);
+    assert_eq!(iter.next(), Some(&0));
+
+    let enumerated = iter.enumerated();
+    assert_eq!(enumerated.next(), Some((1, &1)));
+
+    let iter = enumerated.not_enumerated();
+    assert_eq!(iter.next(), Some(&2));
+
+    let enumerated = iter.enumerated();
+    assert_eq!(enumerated.next(), Some((3, &3)));
+
+    let iter = enumerated.not_enumerated();
+    assert_eq!(iter.next(), Some(&4));
+
+    let enumerated = iter.enumerated();
+    assert_eq!(enumerated.next(), Some((5, &5)));
+
+    let iter = enumerated.not_enumerated();
+    assert_eq!(iter.next(), None);
+
+    let enumerated = iter.enumerated();
+    assert_eq!(enumerated.next(), None);
+}
+
 #[test_matrix([Regular, Enumerated], [1, 2, 4])]
 fn empty_slice<K: Enumeration>(_: K, nt: usize) {
     let vec = Vec::<String>::new();
     let slice = vec.as_slice();
-    let con_iter = ConIterSliceRef::<String, K>::new(slice);
+    let iter = ConIterSliceRef::<String, K>::new(slice);
 
     std::thread::scope(|s| {
         for _ in 0..nt {
             s.spawn(|| {
-                assert!(con_iter.next().is_none());
-                assert!(con_iter.next().is_none());
+                assert!(iter.next().is_none());
+                assert!(iter.next().is_none());
 
-                assert!(con_iter.next_chunk(4).is_none());
-                assert!(con_iter.next_chunk(4).is_none());
+                assert!(iter.next_chunk(4).is_none());
+                assert!(iter.next_chunk(4).is_none());
 
-                let mut puller = con_iter.chunks_iter(5);
+                let mut puller = iter.chunks_iter(5);
                 assert!(puller.next().is_none());
 
-                let mut iter = con_iter.chunks_iter(5).flattened();
+                let mut iter = iter.chunks_iter(5).flattened();
                 assert!(iter.next().is_none());
             });
         }

@@ -90,28 +90,24 @@ where
         self.slice.iter().skip(current)
     }
 
-    // enumeration
-
-    fn as_enumerated(&self) -> Self::Enumerated
+    fn enumerated(self) -> Self::Enumerated
     where
         E: IsNotEnumerated,
     {
-        let current = self.counter.load(Ordering::Acquire);
         ConIterSliceRef {
             slice: self.slice,
-            counter: current.into(),
+            counter: self.counter,
             phantom: PhantomData,
         }
     }
 
-    fn as_not_enumerated(&self) -> Self::Regular
+    fn not_enumerated(self) -> Self::Regular
     where
         E: IsEnumerated,
     {
-        let current = self.counter.load(Ordering::Acquire);
         ConIterSliceRef {
             slice: self.slice,
-            counter: current.into(),
+            counter: self.counter,
             phantom: PhantomData,
         }
     }
