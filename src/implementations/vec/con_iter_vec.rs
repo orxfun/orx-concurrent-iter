@@ -17,12 +17,16 @@ where
     T: Send + Sync,
     E: Enumeration,
 {
-    ptr: *mut T,
+    ptr: *const T,
     vec_len: usize,
     vec_cap: usize,
     counter: AtomicUsize,
     phantom: PhantomData<E>,
 }
+
+unsafe impl<T: Send + Sync, E: Enumeration> Sync for ConIterVec<T, E> {}
+
+unsafe impl<T: Send + Sync, E: Enumeration> Send for ConIterVec<T, E> {}
 
 impl<T, E> Default for ConIterVec<T, E>
 where
@@ -45,7 +49,7 @@ where
         // by a consuming method such as `into_seq_iter`
         if !self.ptr.is_null() {
             unsafe { self.drop_elements_in_place(self.num_taken()..self.vec_len) };
-            let _vec_to_drop = unsafe { Vec::from_raw_parts(self.ptr, 0, self.vec_cap) };
+            let _vec_to_drop = unsafe { Vec::from_raw_parts(self.ptr as *mut T, 0, self.vec_cap) };
         }
     }
 }
@@ -84,7 +88,7 @@ where
             .map(|begin_idx| {
                 let end_idx = (begin_idx + chunk_size).min(self.vec_len).max(begin_idx);
                 let first = unsafe { self.ptr.add(begin_idx) } as *const T;
-                let last = unsafe { self.ptr.add(end_idx) } as *const T;
+                let last = unsafe { self.ptr.add(end_idx - 1) } as *const T;
                 (begin_idx, first, last)
             })
     }
@@ -94,12 +98,13 @@ where
     }
 
     unsafe fn take_unchecked(&self, item_idx: usize) -> T {
-        take(self.ptr.add(item_idx))
+        take(self.ptr.add(item_idx) as *mut T)
     }
 
     unsafe fn drop_elements_in_place(&self, range: Range<usize>) {
         for i in range {
-            self.ptr.add(i).drop_in_place();
+            let p = self.ptr.add(i) as *mut T;
+            p.drop_in_place();
         }
     }
 }
@@ -124,7 +129,7 @@ where
 
     fn into_seq_iter(mut self) -> Self::SeqIter {
         let num_taken = self.num_taken();
-        let ptr = self.ptr;
+        let ptr = self.ptr as *mut T;
 
         self.ptr = core::ptr::null_mut(); // to avoid double free on drop
 

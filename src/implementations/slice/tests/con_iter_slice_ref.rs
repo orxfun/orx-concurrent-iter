@@ -217,7 +217,7 @@ fn skip_to_end<K: Enumeration>(_: K, nt: usize) {
                                     i += 1;
                                     con_bag.push(x);
                                 }
-                                false => break,
+                                false => con_iter.skip_to_end(),
                             }
                         }
                     }
@@ -233,7 +233,7 @@ fn skip_to_end<K: Enumeration>(_: K, nt: usize) {
                                     i += 1;
                                     con_bag.push(x);
                                 }
-                                false => break,
+                                false => con_iter.skip_to_end(),
                             }
                         }
                     }
