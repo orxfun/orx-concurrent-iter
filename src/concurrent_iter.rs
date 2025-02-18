@@ -11,7 +11,7 @@ pub trait ConcurrentIter<K: NextKind = Regular>: Default {
     /// Inner type which is the source of the data to be iterated, which in addition is a regular sequential `Iterator`.
     type SeqIter: Iterator<Item = Self::Item>;
 
-    type ChunkPuller<'i>: ChunkPuller<K, Item = Self::Item>
+    type ChunkPuller<'i>: ChunkPuller<K, ChunkItem = Self::Item>
     where
         Self: 'i;
 
@@ -39,6 +39,6 @@ pub trait ConcurrentIter<K: NextKind = Regular>: Default {
         &self,
         chunk_size: usize,
     ) -> Option<K::NextChunk<Self::Item, <Self::ChunkPuller<'_> as ChunkPuller<K>>::Iter>> {
-        self.chunks_iter(chunk_size).pull()
+        self.chunks_iter(chunk_size).next()
     }
 }

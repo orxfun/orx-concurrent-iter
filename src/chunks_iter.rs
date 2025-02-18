@@ -26,8 +26,8 @@ where
         }
     }
 
-    fn next_chunk(&mut self) -> Option<K::Next<C::Item>> {
-        match self.puller.pull().map(K::destruct_chunk) {
+    fn next_chunk(&mut self) -> Option<K::Next<C::ChunkItem>> {
+        match self.puller.next().map(K::destruct_chunk) {
             Some((begin_idx, chunk)) => {
                 self.begin_idx = begin_idx;
                 self.current_chunk = K::into_seq_chunk_iter(chunk);
@@ -43,7 +43,7 @@ where
     C: ChunkPuller<K>,
     K: NextKind,
 {
-    type Item = K::Next<C::Item>;
+    type Item = K::Next<C::ChunkItem>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let next = K::seq_chunk_iter_next(self.begin_idx, &mut self.current_chunk);
