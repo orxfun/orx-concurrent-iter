@@ -1,3 +1,4 @@
+use super::chunks_iter_vec::ChunksIterVec;
 use crate::{
     concurrent_iter::ConcurrentIter,
     enumeration::{Element, Enumerated, Enumeration, IsEnumerated, IsNotEnumerated, Regular},
@@ -6,11 +7,10 @@ use alloc::vec::Vec;
 use core::{
     iter::Skip,
     marker::PhantomData,
-    mem::ManuallyDrop,
+    mem::{ManuallyDrop, MaybeUninit},
+    ops::Range,
     sync::atomic::{AtomicUsize, Ordering},
 };
-
-use super::chunks_iter_vec::ChunksIterVec;
 
 pub struct ConIterVec<T, E = Regular>
 where
@@ -31,6 +31,22 @@ where
 {
     fn default() -> Self {
         Self::new(Vec::new())
+    }
+}
+
+impl<T, E> Drop for ConIterVec<T, E>
+where
+    T: Send + Sync,
+    E: Enumeration,
+{
+    fn drop(&mut self) {
+        // # SAFETY
+        // null ptr indicates that the data is already taken out of this iterator
+        // by a consuming method such as `into_seq_iter`
+        if !self.ptr.is_null() {
+            unsafe { self.drop_elements_in_place(self.num_taken()..self.vec_len) };
+            let _vec_to_drop = unsafe { Vec::from_raw_parts(self.ptr, 0, self.vec_cap) };
+        }
     }
 }
 
@@ -69,6 +85,25 @@ where
     //             (begin_idx, &self.slice[begin_idx..end_idx])
     //         })
     // }
+
+    fn num_taken(&self) -> usize {
+        self.counter.load(Ordering::Acquire).min(self.vec_len)
+    }
+
+    unsafe fn take_one(&self, item_idx: usize) -> T {
+        let src_ptr = self.ptr.add(item_idx);
+
+        let mut value = MaybeUninit::<T>::uninit();
+        value.as_mut_ptr().swap(src_ptr);
+
+        value.assume_init()
+    }
+
+    unsafe fn drop_elements_in_place(&self, range: Range<usize>) {
+        for i in range {
+            self.ptr.add(i).drop_in_place();
+        }
+    }
 }
 
 impl<T, E> ConcurrentIter<E> for ConIterVec<T, E>
@@ -78,7 +113,7 @@ where
 {
     type Item = T;
 
-    type SeqIter = Skip<alloc::vec::IntoIter<T>>;
+    type SeqIter = alloc::vec::IntoIter<T>;
 
     type ChunkPuller<'i>
         = ChunksIterVec<'i, T, E>
@@ -89,22 +124,55 @@ where
 
     type Enumerated = ConIterVec<T, Enumerated>;
 
-    fn into_seq_iter(self) -> Self::SeqIter {
-        todo!()
+    fn into_seq_iter(mut self) -> Self::SeqIter {
+        let num_taken = self.num_taken();
+        let ptr = self.ptr;
+
+        self.ptr = core::ptr::null_mut(); // to avoid double free on drop
+
+        match num_taken {
+            0 => {
+                let vec = unsafe { Vec::from_raw_parts(ptr, self.vec_len, self.vec_cap) };
+                vec.into_iter()
+            }
+            _ => {
+                // TODO: ???
+                let right_len = self.vec_len - num_taken;
+                for i in 0..right_len {
+                    let dst = unsafe { ptr.add(i) };
+                    let src = unsafe { ptr.add(i + num_taken) };
+                    unsafe { dst.swap(src) };
+                }
+                let vec = unsafe { Vec::from_raw_parts(ptr, right_len, self.vec_cap) };
+                vec.into_iter()
+            }
+        }
     }
 
     fn enumerated(self) -> Self::Enumerated
     where
         E: IsNotEnumerated,
     {
-        todo!()
+        ConIterVec {
+            ptr: self.ptr,
+            vec_len: self.vec_len,
+            vec_cap: self.vec_cap,
+            counter: self.counter.load(Ordering::Acquire).into(),
+            phantom: PhantomData,
+        }
     }
 
     fn not_enumerated(self) -> Self::Regular
     where
         E: IsEnumerated,
     {
-        todo!()
+        ConIterVec {
+            ptr: self.ptr,
+            vec_len: self.vec_len,
+            vec_cap: self.vec_cap,
+            counter: self.counter.load(Ordering::Acquire).into(),
+            phantom: PhantomData,
+        }
     }
 
     fn skip_to_end(&self) {
