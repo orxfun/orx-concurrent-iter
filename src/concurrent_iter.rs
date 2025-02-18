@@ -11,9 +11,9 @@ pub trait ConcurrentIter<K: NextKind = Regular>: Default {
     /// Inner type which is the source of the data to be iterated, which in addition is a regular sequential `Iterator`.
     type SeqIter: Iterator<Item = Self::Item>;
 
-    // type ChunkPuller<'i>: ChunkPuller<K, Item = Self::Item>
-    // where
-    //     Self: 'i;
+    type ChunkPuller<'i>: ChunkPuller<K, Item = Self::Item>
+    where
+        Self: 'i;
 
     type Regular: ConcurrentIter<Regular, Item = Self::Item>;
 

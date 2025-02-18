@@ -1,13 +1,13 @@
-use crate::next_arch::{NextKind, Regular};
+use crate::next::{NextKind, Regular};
 
 pub trait ChunkPuller<K: NextKind = Regular>: Sized {
-    type Item;
+    type Item: Send + Sync;
 
     type Iter: ExactSizeIterator<Item = Self::Item> + Default;
 
     fn chunk_size(&self) -> usize;
 
-    fn pull(&mut self) -> Option<K::Next<Self::Iter>>;
+    fn pull(&mut self) -> Option<K::NextChunk<Self::Item, Self::Iter>>;
 
     // fn flatten(self) -> ChunksIter<Self, K> {
     //     ChunksIter::new(self)
