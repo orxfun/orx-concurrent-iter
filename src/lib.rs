@@ -19,8 +19,5 @@ mod chunks_iter;
 mod concurrent_iter;
 mod concurrent_iterable;
 mod enumeration;
-mod next;
 
 // mod implementations;
-
-pub use next::{Enumerated, Regular};
