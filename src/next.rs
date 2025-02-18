@@ -1,10 +1,10 @@
 use core::{fmt::Debug, iter::Enumerate};
 
-mod sealed {
+pub(crate) mod sealed {
     pub trait NextKindSealed {}
 }
 
-pub trait NextKind: sealed::NextKindSealed {
+pub trait NextKind: sealed::NextKindSealed + Send + Sync {
     type Next<T>;
 
     type SeqIterKind<I>: Default
@@ -25,6 +25,9 @@ pub trait NextKind: sealed::NextKindSealed {
     ) -> Option<Self::Next<I::Item>>;
 
     #[cfg(test)]
+    fn construct_next<T>(begin_idx: Self::BeginIdx, value: T) -> Self::Next<T>;
+
+    #[cfg(test)]
     fn eq_next<T: PartialEq>(a: Self::Next<T>, b: Self::Next<T>) -> bool {
         let (a1, a2) = Self::destruct_next(a);
         let (b1, b2) = Self::destruct_next(b);
@@ -32,13 +35,18 @@ pub trait NextKind: sealed::NextKindSealed {
     }
 
     #[cfg(test)]
-    fn eq_begin_idx(begin_idx: Self::BeginIdx, expected: usize) -> bool;
+    fn validate_begin_idx(begin_idx: Self::BeginIdx, validate: impl Fn(usize) -> bool) -> bool;
+
+    #[cfg(test)]
+    fn map_begin_idx(begin_idx: Self::BeginIdx, map: impl Fn(usize) -> usize) -> Self::BeginIdx;
 }
 
 #[derive(Default)]
 pub struct Regular;
 
-impl sealed::NextKindSealed for Regular {}
+impl sealed::NextKindSealed for Regular {
+    //
+}
 
 impl NextKind for Regular {
     type Next<T> = T;
@@ -73,15 +81,27 @@ impl NextKind for Regular {
     }
 
     #[cfg(test)]
-    fn eq_begin_idx(_: Self::BeginIdx, _: usize) -> bool {
+    fn construct_next<T>(_: Self::BeginIdx, value: T) -> Self::Next<T> {
+        value
+    }
+
+    #[cfg(test)]
+    fn validate_begin_idx(_: Self::BeginIdx, _: impl Fn(usize) -> bool) -> bool {
         true
+    }
+
+    #[cfg(test)]
+    fn map_begin_idx(_: Self::BeginIdx, _: impl Fn(usize) -> usize) -> Self::BeginIdx {
+        ()
     }
 }
 
 #[derive(Default)]
 pub struct Enumerated;
 
-impl sealed::NextKindSealed for Enumerated {}
+impl sealed::NextKindSealed for Enumerated {
+    //
+}
 
 impl NextKind for Enumerated {
     type Next<T> = (usize, T);
@@ -116,7 +136,17 @@ impl NextKind for Enumerated {
     }
 
     #[cfg(test)]
-    fn eq_begin_idx(begin_idx: Self::BeginIdx, expected: usize) -> bool {
-        begin_idx == expected
+    fn construct_next<T>(begin_idx: Self::BeginIdx, value: T) -> Self::Next<T> {
+        (begin_idx, value)
+    }
+
+    #[cfg(test)]
+    fn validate_begin_idx(begin_idx: Self::BeginIdx, validate: impl Fn(usize) -> bool) -> bool {
+        validate(begin_idx)
+    }
+
+    #[cfg(test)]
+    fn map_begin_idx(begin_idx: Self::BeginIdx, map: impl Fn(usize) -> usize) -> Self::BeginIdx {
+        map(begin_idx)
     }
 }
