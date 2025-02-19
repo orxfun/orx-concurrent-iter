@@ -5,6 +5,8 @@ use crate::{
 };
 use core::{iter::Cloned, marker::PhantomData};
 
+use super::chunks_iter_cloned::ChunksIterCloned;
+
 pub struct ConIterCloned<'a, I, T, E = Regular>
 where
     E: Enumeration,
@@ -54,7 +56,7 @@ where
     type SeqIter = Cloned<I::SeqIter>;
 
     type ChunkPuller<'i>
-        = DoNothingChunkPuller<E, T>
+        = ChunksIterCloned<'a, T, E, I::ChunkPuller<'i>>
     where
         Self: 'i;
 
@@ -82,6 +84,6 @@ where
     }
 
     fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
-        todo!()
+        Self::ChunkPuller::new(self.con_iter.chunks_iter(chunk_size))
     }
 }
