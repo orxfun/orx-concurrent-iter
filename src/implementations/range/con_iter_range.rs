@@ -13,7 +13,7 @@ pub struct ConIterRange<T, E = Regular>
 where
     T: Send + Sync + Copy + From<usize> + Into<usize> + Add<T, Output = T>,
     E: Enumeration,
-    Range<T>: Default + Iterator<Item = T>,
+    Range<T>: Default + ExactSizeIterator<Item = T>,
 {
     begin: usize,
     len: usize,
@@ -25,7 +25,7 @@ impl<T, E> Default for ConIterRange<T, E>
 where
     T: Send + Sync + Copy + From<usize> + Into<usize> + Add<T, Output = T>,
     E: Enumeration,
-    Range<T>: Default + Iterator<Item = T>,
+    Range<T>: Default + ExactSizeIterator<Item = T>,
 {
     fn default() -> Self {
         Self::new(Default::default())
@@ -36,7 +36,7 @@ impl<T, E> ConIterRange<T, E>
 where
     T: Send + Sync + Copy + From<usize> + Into<usize> + Add<T, Output = T>,
     E: Enumeration,
-    Range<T>: Default + Iterator<Item = T>,
+    Range<T>: Default + ExactSizeIterator<Item = T>,
 {
     pub(crate) fn new(range: Range<T>) -> Self {
         let begin: usize = range.start.into();
@@ -83,7 +83,7 @@ impl<T, E> ConcurrentIter<E> for ConIterRange<T, E>
 where
     T: Send + Sync + Copy + From<usize> + Into<usize> + Add<T, Output = T>,
     E: Enumeration,
-    Range<T>: Default + Iterator<Item = T>,
+    Range<T>: Default + ExactSizeIterator<Item = T>,
 {
     type Item = T;
 
