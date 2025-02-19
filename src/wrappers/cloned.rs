@@ -63,7 +63,7 @@ where
     type Enumerated = Cloned<'a, I::Enumerated, T, Enumerated>;
 
     fn into_seq_iter(self) -> Self::SeqIter {
-        todo!()
+        self.con_iter.into_seq_iter().cloned()
     }
 
     fn enumerated(self) -> Self::Enumerated
