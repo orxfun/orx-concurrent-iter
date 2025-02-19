@@ -1,11 +1,11 @@
 use crate::{
     chunk_puller::DoNothingChunkPuller,
     concurrent_iter::ConcurrentIter,
-    enumeration::{Element, Enumerated, Enumeration, IsEnumerated, IsNotEnumerated, Regular},
+    enumeration::{Element, Enumeration, Regular},
 };
-use core::marker::PhantomData;
+use core::{iter::Cloned, marker::PhantomData};
 
-pub struct Cloned<'a, I, T, E = Regular>
+pub struct ConIterCloned<'a, I, T, E = Regular>
 where
     E: Enumeration,
     T: Send + Sync + Clone,
@@ -15,7 +15,7 @@ where
     phantom: PhantomData<&'a (T, E)>,
 }
 
-impl<'a, I, T, E> Default for Cloned<'a, I, T, E>
+impl<'a, I, T, E> Default for ConIterCloned<'a, I, T, E>
 where
     E: Enumeration,
     T: Send + Sync + Clone,
@@ -29,7 +29,7 @@ where
     }
 }
 
-impl<'a, I, T, E> Cloned<'a, I, T, E>
+impl<'a, I, T, E> ConIterCloned<'a, I, T, E>
 where
     E: Enumeration,
     T: Send + Sync + Clone,
@@ -43,7 +43,7 @@ where
     }
 }
 
-impl<'a, I, T, E> ConcurrentIter<E> for Cloned<'a, I, T, E>
+impl<'a, I, T, E> ConcurrentIter<E> for ConIterCloned<'a, I, T, E>
 where
     E: Enumeration,
     T: Send + Sync + Clone,
@@ -51,7 +51,7 @@ where
 {
     type Item = T;
 
-    type SeqIter = core::iter::Cloned<I::SeqIter>;
+    type SeqIter = Cloned<I::SeqIter>;
 
     type ChunkPuller<'i>
         = DoNothingChunkPuller<E, T>
@@ -59,7 +59,7 @@ where
         Self: 'i;
 
     type EnumerationOf<E2>
-        = Cloned<'a, I::EnumerationOf<E2>, T, E2>
+        = ConIterCloned<'a, I::EnumerationOf<E2>, T, E2>
     where
         E2: Enumeration;
 
@@ -68,7 +68,7 @@ where
     }
 
     fn into_enumeration_of<E2: Enumeration>(self) -> Self::EnumerationOf<E2> {
-        Cloned::new(self.con_iter.into_enumeration_of())
+        ConIterCloned::new(self.con_iter.into_enumeration_of())
     }
 
     fn skip_to_end(&self) {
