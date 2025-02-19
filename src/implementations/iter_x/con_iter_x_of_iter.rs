@@ -1,16 +1,13 @@
+use super::mut_handle::{MutHandle, State, AVAILABLE, COMPLETED, IS_MUTATING};
+use crate::{
+    chunk_puller::DoNothingChunkPuller,
+    concurrent_iter::ConcurrentIter,
+    enumeration::{Element, Enumeration, Regular},
+};
 use core::{
     cell::UnsafeCell,
     sync::atomic::{AtomicU8, AtomicUsize, Ordering},
 };
-
-use crate::{
-    chunk_puller::DoNothingChunkPuller, concurrent_iter::ConcurrentIter, enumeration::Regular,
-};
-
-type State = u8;
-const AVAILABLE: State = 0;
-const IS_MUTATING: State = 1;
-const COMPLETED: State = 2;
 
 pub struct ConIterXOfIter<I, T>
 where
@@ -19,8 +16,7 @@ where
 {
     iter: UnsafeCell<I>,
     initial_len: Option<usize>,
-    counter: AtomicUsize,
-    is_mutating: AtomicU8,
+    is_mutating: State,
 }
 
 // TODO: drop when Vec.into_iter() for instance
@@ -49,31 +45,8 @@ where
         Self {
             iter: iter.into(),
             initial_len,
-            counter: 0.into(),
             is_mutating: AVAILABLE.into(),
         }
-    }
-
-    fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
-        match number_to_fetch {
-            0 => None,
-            _ => {
-                let begin_idx = self.counter.fetch_add(number_to_fetch, Ordering::Relaxed);
-                loop {
-                    match self.try_get_handle() {
-                        Ok(()) => return Some(begin_idx),
-                        Err(COMPLETED) => return None,
-                        _ => {}
-                    }
-                }
-            }
-        }
-    }
-
-    fn try_get_handle(&self) -> Result<(), State> {
-        self.is_mutating
-            .compare_exchange(AVAILABLE, IS_MUTATING, Ordering::Acquire, Ordering::Relaxed)
-            .map(|_| ())
     }
 }
 
@@ -99,7 +72,7 @@ where
         self.is_mutating.store(COMPLETED, Ordering::SeqCst);
     }
 
-    fn next(&self) -> Option<<<Regular as crate::enumeration::Enumeration>::Element as crate::enumeration::Element>::ElemOf<Self::Item>>{
+    fn next(&self) -> Option<<<Regular as Enumeration>::Element as Element>::ElemOf<Self::Item>> {
         todo!()
     }
 
