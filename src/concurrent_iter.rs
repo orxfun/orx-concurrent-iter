@@ -28,13 +28,19 @@ pub trait ConcurrentIter<E: Enumeration = Regular>: Default {
 
     fn into_enumeration_of<E2: Enumeration>(self) -> Self::EnumerationOf<E2>;
 
-    fn enumerated(self) -> Self::Enumerated
+    fn enumerated(self) -> Self::EnumerationOf<Enumerated>
     where
-        E: IsNotEnumerated;
+        E: IsNotEnumerated,
+    {
+        self.into_enumeration_of()
+    }
 
-    fn not_enumerated(self) -> Self::Regular
+    fn not_enumerated(self) -> Self::EnumerationOf<Regular>
     where
-        E: IsEnumerated;
+        E: IsEnumerated,
+    {
+        self.into_enumeration_of()
+    }
 
     // iter
 

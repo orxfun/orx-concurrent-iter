@@ -64,18 +64,6 @@ where
         }
     }
 
-    fn transform<E2: Enumeration>(mut self) -> ConIterVec<T, E2> {
-        let (ptr, counter) = (self.ptr, self.counter.load(Ordering::Acquire).into());
-        self.ptr = core::ptr::null();
-        ConIterVec {
-            ptr,
-            vec_len: self.vec_len,
-            vec_cap: self.vec_cap,
-            counter,
-            phantom: PhantomData,
-        }
-    }
-
     fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
         let begin_idx = self.counter.fetch_add(number_to_fetch, Ordering::Relaxed);
         match begin_idx < self.vec_len {
@@ -168,20 +156,6 @@ where
             counter,
             phantom: PhantomData,
         }
-    }
-
-    fn enumerated(self) -> Self::Enumerated
-    where
-        E: IsNotEnumerated,
-    {
-        self.transform()
-    }
-
-    fn not_enumerated(self) -> Self::Regular
-    where
-        E: IsEnumerated,
-    {
-        self.transform()
     }
 
     fn skip_to_end(&self) {

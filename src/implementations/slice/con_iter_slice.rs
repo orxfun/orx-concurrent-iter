@@ -46,15 +46,6 @@ where
         }
     }
 
-    fn transform<E2: Enumeration>(self) -> ConIterSliceRef<'a, T, E2> {
-        let counter = self.counter.load(Ordering::Acquire).into();
-        ConIterSliceRef {
-            slice: self.slice,
-            counter,
-            phantom: PhantomData,
-        }
-    }
-
     fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
         let begin_idx = self.counter.fetch_add(number_to_fetch, Ordering::Relaxed);
         match begin_idx < self.slice.len() {
@@ -111,20 +102,6 @@ where
             counter,
             phantom: PhantomData,
         }
-    }
-
-    fn enumerated(self) -> Self::Enumerated
-    where
-        E: IsNotEnumerated,
-    {
-        self.transform()
-    }
-
-    fn not_enumerated(self) -> Self::Regular
-    where
-        E: IsEnumerated,
-    {
-        self.transform()
     }
 
     // iter
