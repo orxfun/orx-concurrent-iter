@@ -8,7 +8,7 @@ pub trait IntoClonedConcurrentIter<'a, T, E = Regular>
 where
     E: Enumeration,
     T: Send + Sync + Clone + 'a,
-    Self: ConcurrentIter<E, Item = &'a T>,
+    Self: ConcurrentIter<E, Item = &'a T> + Sized,
 {
     fn cloned(self) -> ConIterCloned<'a, Self, T, E>;
 }

@@ -47,7 +47,7 @@ impl<'a, I, T, E> ConcurrentIterEnum<E, T> for ConIterCopied<'a, I, T, E>
 where
     E: Enumeration,
     T: Send + Sync + Copy,
-    I: ConcurrentIter<E, Item = &'a T>,
+    I: ConcurrentIter<E, Item = &'a T> + ConcurrentIterEnum<E, &'a T>,
 {
     type EnumerationOf<E2>
         = ConIterCopied<'a, I::EnumerationOf<E2>, T, E2>

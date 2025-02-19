@@ -8,7 +8,7 @@ pub trait IntoCopiedConcurrentIter<'a, T, E = Regular>
 where
     E: Enumeration,
     T: Send + Sync + Copy + 'a,
-    Self: ConcurrentIter<E, Item = &'a T>,
+    Self: ConcurrentIter<E, Item = &'a T> + Sized,
 {
     fn copied(self) -> ConIterCopied<'a, Self, T, E>;
 }
