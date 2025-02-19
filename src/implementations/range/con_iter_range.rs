@@ -129,6 +129,6 @@ where
     }
 
     fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
-        todo!()
+        Self::ChunkPuller::new(self, chunk_size)
     }
 }
