@@ -1,5 +1,4 @@
 use crate::{
-    chunk_puller::DoNothingChunkPuller,
     concurrent_iter::ConcurrentIter,
     enumeration::{Element, Enumeration, Regular},
 };
