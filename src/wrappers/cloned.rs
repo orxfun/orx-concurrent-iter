@@ -72,11 +72,12 @@ where
     }
 
     fn skip_to_end(&self) {
-        todo!()
+        self.con_iter.skip_to_end()
     }
 
     fn next(&self) -> Option<<<E as Enumeration>::Element as Element>::ElemOf<Self::Item>> {
-        todo!()
+        // self.con_iter.next().cloned()
+        None
     }
 
     fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
