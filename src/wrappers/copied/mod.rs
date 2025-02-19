@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 mod chunks_iter_copied;
 mod con_iter_copied;
 mod into_copied;
