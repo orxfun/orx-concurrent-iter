@@ -50,6 +50,16 @@ where
         }
     }
 
+    fn transform<E2: Enumeration>(self) -> ConIterRange<T, E2> {
+        let counter = self.counter.load(Ordering::Acquire).into();
+        ConIterRange {
+            begin: self.begin,
+            len: self.len,
+            counter,
+            phantom: PhantomData,
+        }
+    }
+
     fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
         let begin_idx = self.counter.fetch_add(number_to_fetch, Ordering::Relaxed);
         match begin_idx < self.len {
@@ -99,22 +109,23 @@ where
     where
         E: IsNotEnumerated,
     {
-        todo!()
+        self.transform()
     }
 
     fn not_enumerated(self) -> Self::Regular
     where
         E: IsEnumerated,
     {
-        todo!()
+        self.transform()
     }
 
     fn skip_to_end(&self) {
-        todo!()
+        let _ = self.counter.fetch_max(self.len, Ordering::Acquire);
     }
 
     fn next(&self) -> Option<<<E as Enumeration>::Element as Element>::ElemOf<Self::Item>> {
-        todo!()
+        self.progress_and_get_begin_idx(1)
+            .map(|idx| E::new_element(idx, T::from(self.begin + idx)))
     }
 
     fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
