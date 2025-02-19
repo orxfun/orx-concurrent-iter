@@ -1,10 +1,9 @@
+use super::chunks_iter_cloned::ChunksIterCloned;
 use crate::{
     concurrent_iter::ConcurrentIter,
     enumeration::{Element, Enumeration, Regular},
 };
 use core::{iter::Cloned, marker::PhantomData};
-
-use super::chunks_iter_cloned::ChunksIterCloned;
 
 pub struct ConIterCloned<'a, I, T, E = Regular>
 where
