@@ -20,9 +20,9 @@ mod concurrent_collection;
 mod concurrent_iter;
 mod concurrent_iterable;
 mod enumeration;
-mod into_concurrent_iter;
-
 mod implementations;
+mod into_concurrent_iter;
+mod wrappers;
 
 pub use concurrent_collection::ConcurrentCollection;
 pub use concurrent_iterable::ConcurrentIterable;
