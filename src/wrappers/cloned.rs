@@ -76,8 +76,9 @@ where
     }
 
     fn next(&self) -> Option<<<E as Enumeration>::Element as Element>::ElemOf<Self::Item>> {
-        // self.con_iter.next().cloned()
-        None
+        self.con_iter
+            .next()
+            .map(<<E as Enumeration>::Element as Element>::cloned_elem)
     }
 
     fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
