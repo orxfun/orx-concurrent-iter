@@ -19,7 +19,7 @@ impl<'a, I, T, E> Default for ConIterCloned<'a, I, T, E>
 where
     E: Enumeration,
     T: Send + Sync + Clone,
-    I: ConcurrentIter<E, Item = &'a T>,
+    I: ConcurrentIter<E, Item = &'a T> + Default,
 {
     fn default() -> Self {
         Self {
