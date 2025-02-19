@@ -3,7 +3,15 @@ use crate::{
     enumeration::{Element, Enumerated, Enumeration, IsEnumerated, IsNotEnumerated, Regular},
 };
 
-pub trait ConcurrentIter<E: Enumeration = Regular>: Default {
+pub trait ConcurrentIterEnum<E: Enumeration, T>: Default {
+    type EnumerationOf<E2>: ConcurrentIter<E2, Item = T>
+    where
+        E2: Enumeration;
+
+    fn into_enumeration_of<E2: Enumeration>(self) -> Self::EnumerationOf<E2>;
+}
+
+pub trait ConcurrentIter<E: Enumeration = Regular>: ConcurrentIterEnum<E, Self::Item> {
     /// Type of the items that the iterator yields.
     type Item: Send + Sync;
 
@@ -14,15 +22,9 @@ pub trait ConcurrentIter<E: Enumeration = Regular>: Default {
     where
         Self: 'i;
 
-    type EnumerationOf<E2>: ConcurrentIter<E2, Item = Self::Item>
-    where
-        E2: Enumeration;
-
     // into
 
     fn into_seq_iter(self) -> Self::SeqIter;
-
-    fn into_enumeration_of<E2: Enumeration>(self) -> Self::EnumerationOf<E2>;
 
     fn enumerated(self) -> Self::EnumerationOf<Enumerated>
     where

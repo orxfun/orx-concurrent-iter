@@ -1,7 +1,7 @@
 use super::chunks_iter_range::ChunksIterRange;
 use crate::{
-    concurrent_iter::ConcurrentIter,
-    enumeration::{Element, Enumerated, Enumeration, IsEnumerated, IsNotEnumerated, Regular},
+    concurrent_iter::{ConcurrentIter, ConcurrentIterEnum},
+    enumeration::{Element, Enumeration, Regular},
 };
 use core::{
     marker::PhantomData,
@@ -69,6 +69,28 @@ where
     }
 }
 
+impl<T, E> ConcurrentIterEnum<E, T> for ConIterRange<T, E>
+where
+    T: Send + Sync + Copy + From<usize> + Into<usize> + Add<T, Output = T>,
+    E: Enumeration,
+    Range<T>: Default + ExactSizeIterator<Item = T>,
+{
+    type EnumerationOf<E2>
+        = ConIterRange<T, E2>
+    where
+        E2: Enumeration;
+
+    fn into_enumeration_of<E2: Enumeration>(self) -> Self::EnumerationOf<E2> {
+        let counter = self.counter.load(Ordering::Acquire).into();
+        ConIterRange {
+            begin: self.begin,
+            len: self.len,
+            counter,
+            phantom: PhantomData,
+        }
+    }
+}
+
 impl<T, E> ConcurrentIter<E> for ConIterRange<T, E>
 where
     T: Send + Sync + Copy + From<usize> + Into<usize> + Add<T, Output = T>,
@@ -84,26 +106,11 @@ where
     where
         Self: 'i;
 
-    type EnumerationOf<E2>
-        = ConIterRange<T, E2>
-    where
-        E2: Enumeration;
-
     fn into_seq_iter(self) -> Self::SeqIter {
         let current = self.counter.load(Ordering::Acquire);
         let begin = T::from(self.begin + current);
         let end = T::from(self.begin + self.len);
         begin..end
-    }
-
-    fn into_enumeration_of<E2: Enumeration>(self) -> Self::EnumerationOf<E2> {
-        let counter = self.counter.load(Ordering::Acquire).into();
-        ConIterRange {
-            begin: self.begin,
-            len: self.len,
-            counter,
-            phantom: PhantomData,
-        }
     }
 
     fn skip_to_end(&self) {

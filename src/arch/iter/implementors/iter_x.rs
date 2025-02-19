@@ -1,6 +1,5 @@
-use alloc::vec::Vec;
-
 use crate::iter::{buffered::iter_x::BufferIterX, con_iter_x::ConcurrentIterX};
+use alloc::vec::Vec;
 use core::{
     cell::UnsafeCell,
     sync::atomic::{AtomicU8, AtomicUsize, Ordering},

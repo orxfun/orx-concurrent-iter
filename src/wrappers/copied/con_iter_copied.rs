@@ -1,6 +1,6 @@
 use super::chunks_iter_copied::ChunksIterCopied;
 use crate::{
-    concurrent_iter::ConcurrentIter,
+    concurrent_iter::{ConcurrentIter, ConcurrentIterEnum},
     enumeration::{Element, Enumeration, Regular},
 };
 use core::{iter::Cloned, marker::PhantomData};
@@ -43,6 +43,22 @@ where
     }
 }
 
+impl<'a, I, T, E> ConcurrentIterEnum<E, T> for ConIterCopied<'a, I, T, E>
+where
+    E: Enumeration,
+    T: Send + Sync + Copy,
+    I: ConcurrentIter<E, Item = &'a T>,
+{
+    type EnumerationOf<E2>
+        = ConIterCopied<'a, I::EnumerationOf<E2>, T, E2>
+    where
+        E2: Enumeration;
+
+    fn into_enumeration_of<E2: Enumeration>(self) -> Self::EnumerationOf<E2> {
+        ConIterCopied::new(self.con_iter.into_enumeration_of())
+    }
+}
+
 impl<'a, I, T, E> ConcurrentIter<E> for ConIterCopied<'a, I, T, E>
 where
     E: Enumeration,
@@ -58,17 +74,8 @@ where
     where
         Self: 'i;
 
-    type EnumerationOf<E2>
-        = ConIterCopied<'a, I::EnumerationOf<E2>, T, E2>
-    where
-        E2: Enumeration;
-
     fn into_seq_iter(self) -> Self::SeqIter {
         self.con_iter.into_seq_iter().cloned()
-    }
-
-    fn into_enumeration_of<E2: Enumeration>(self) -> Self::EnumerationOf<E2> {
-        ConIterCopied::new(self.con_iter.into_enumeration_of())
     }
 
     fn skip_to_end(&self) {

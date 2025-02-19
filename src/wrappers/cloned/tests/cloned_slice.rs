@@ -1,6 +1,6 @@
 use crate::{
     chunk_puller::ChunkPuller,
-    concurrent_iter::ConcurrentIter,
+    concurrent_iter::{ConcurrentIter, ConcurrentIterEnum},
     enumeration::{Element, Enumerated, Enumeration, Regular},
     ConcurrentIterable, IntoClonedConcurrentIter, IntoConcurrentIter,
 };

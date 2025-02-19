@@ -1,7 +1,7 @@
 use super::{chunks_iter_vec::ChunksIterVec, vec_into_seq_iter::VecIntoSeqIter};
 use crate::{
-    concurrent_iter::ConcurrentIter,
-    enumeration::{Element, Enumerated, Enumeration, IsEnumerated, IsNotEnumerated, Regular},
+    concurrent_iter::{ConcurrentIter, ConcurrentIterEnum},
+    enumeration::{Element, Enumeration, Regular},
     implementations::ptr_utils::take,
 };
 use alloc::vec::Vec;
@@ -119,6 +119,29 @@ where
     }
 }
 
+impl<T, E> ConcurrentIterEnum<E, T> for ConIterVec<T, E>
+where
+    T: Send + Sync,
+    E: Enumeration,
+{
+    type EnumerationOf<E2>
+        = ConIterVec<T, E2>
+    where
+        E2: Enumeration;
+
+    fn into_enumeration_of<E2: Enumeration>(mut self) -> Self::EnumerationOf<E2> {
+        let (ptr, counter) = (self.ptr, self.counter.load(Ordering::Acquire).into());
+        self.ptr = core::ptr::null();
+        ConIterVec {
+            ptr,
+            vec_len: self.vec_len,
+            vec_cap: self.vec_cap,
+            counter,
+            phantom: PhantomData,
+        }
+    }
+}
+
 impl<T, E> ConcurrentIter<E> for ConIterVec<T, E>
 where
     T: Send + Sync,
@@ -133,25 +156,8 @@ where
     where
         Self: 'i;
 
-    type EnumerationOf<E2>
-        = ConIterVec<T, E2>
-    where
-        E2: Enumeration;
-
     fn into_seq_iter(mut self) -> Self::SeqIter {
         self.remaining_into_seq_iter()
-    }
-
-    fn into_enumeration_of<E2: Enumeration>(mut self) -> Self::EnumerationOf<E2> {
-        let (ptr, counter) = (self.ptr, self.counter.load(Ordering::Acquire).into());
-        self.ptr = core::ptr::null();
-        ConIterVec {
-            ptr,
-            vec_len: self.vec_len,
-            vec_cap: self.vec_cap,
-            counter,
-            phantom: PhantomData,
-        }
     }
 
     fn skip_to_end(&self) {

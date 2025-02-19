@@ -1,7 +1,7 @@
 use super::chunks_iter_slice::ChunksIterSliceRef;
 use crate::{
-    concurrent_iter::ConcurrentIter,
-    enumeration::{Element, Enumerated, Enumeration, IsEnumerated, IsNotEnumerated, Regular},
+    concurrent_iter::{ConcurrentIter, ConcurrentIterEnum},
+    enumeration::{Element, Enumeration, Regular},
 };
 use core::{
     iter::Skip,
@@ -65,6 +65,26 @@ where
     }
 }
 
+impl<'a, T, E> ConcurrentIterEnum<E, &'a T> for ConIterSliceRef<'a, T, E>
+where
+    T: Send + Sync,
+    E: Enumeration,
+{
+    type EnumerationOf<E2>
+        = ConIterSliceRef<'a, T, E2>
+    where
+        E2: Enumeration;
+
+    fn into_enumeration_of<E2: Enumeration>(self) -> Self::EnumerationOf<E2> {
+        let counter = self.counter.load(Ordering::Acquire).into();
+        ConIterSliceRef {
+            slice: self.slice,
+            counter,
+            phantom: PhantomData,
+        }
+    }
+}
+
 impl<'a, T, E> ConcurrentIter<E> for ConIterSliceRef<'a, T, E>
 where
     T: Send + Sync,
@@ -73,11 +93,6 @@ where
     type Item = &'a T;
 
     type SeqIter = Skip<core::slice::Iter<'a, T>>;
-
-    type EnumerationOf<E2>
-        = ConIterSliceRef<'a, T, E2>
-    where
-        E2: Enumeration;
 
     type ChunkPuller<'i>
         = ChunksIterSliceRef<'i, 'a, T, E>
@@ -89,15 +104,6 @@ where
     fn into_seq_iter(self) -> Self::SeqIter {
         let current = self.counter.load(Ordering::Acquire);
         self.slice.iter().skip(current)
-    }
-
-    fn into_enumeration_of<E2: Enumeration>(self) -> Self::EnumerationOf<E2> {
-        let counter = self.counter.load(Ordering::Acquire).into();
-        ConIterSliceRef {
-            slice: self.slice,
-            counter,
-            phantom: PhantomData,
-        }
     }
 
     // iter
