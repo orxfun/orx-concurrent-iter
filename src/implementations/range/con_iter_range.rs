@@ -38,7 +38,7 @@ where
     E: Enumeration,
     Range<T>: Default + ExactSizeIterator<Item = T>,
 {
-    pub(crate) fn new(range: Range<T>) -> Self {
+    pub(super) fn new(range: Range<T>) -> Self {
         let begin: usize = range.start.into();
         let end: usize = range.end.into();
         let len = end - begin;

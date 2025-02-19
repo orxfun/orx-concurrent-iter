@@ -52,7 +52,7 @@ where
     T: Send + Sync,
     E: Enumeration,
 {
-    pub(crate) fn new(vec: Vec<T>) -> Self {
+    pub(super) fn new(vec: Vec<T>) -> Self {
         let (vec_len, vec_cap, ptr) = (vec.len(), vec.capacity(), vec.as_ptr());
         let _ = ManuallyDrop::new(vec);
         Self {

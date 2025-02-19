@@ -1,6 +1,10 @@
 use core::{
     cell::UnsafeCell,
-    sync::atomic::{AtomicU8, AtomicUsize},
+    sync::atomic::{AtomicU8, AtomicUsize, Ordering},
+};
+
+use crate::{
+    chunk_puller::DoNothingChunkPuller, concurrent_iter::ConcurrentIter, enumeration::Regular,
 };
 
 type State = u8;
@@ -34,11 +38,10 @@ where
 impl<I, T> ConIterXOfIter<I, T>
 where
     T: Send + Sync,
-    I: Iterator<Item = T> + Default,
+    I: Iterator<Item = T>,
 {
-    fn new(iter: I) -> Self {
+    pub(super) fn new(iter: I) -> Self {
         let initial_len = match iter.size_hint() {
-            (_, None) => None,
             (lower, Some(upper)) if lower == upper => Some(lower),
             _ => None,
         };
@@ -49,5 +52,58 @@ where
             counter: 0.into(),
             is_mutating: AVAILABLE.into(),
         }
+    }
+
+    fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
+        match number_to_fetch {
+            0 => None,
+            _ => {
+                let begin_idx = self.counter.fetch_add(number_to_fetch, Ordering::Relaxed);
+                loop {
+                    match self.try_get_handle() {
+                        Ok(()) => return Some(begin_idx),
+                        Err(COMPLETED) => return None,
+                        _ => {}
+                    }
+                }
+            }
+        }
+    }
+
+    fn try_get_handle(&self) -> Result<(), State> {
+        self.is_mutating
+            .compare_exchange(AVAILABLE, IS_MUTATING, Ordering::Acquire, Ordering::Relaxed)
+            .map(|_| ())
+    }
+}
+
+impl<I, T> ConcurrentIter<Regular> for ConIterXOfIter<I, T>
+where
+    T: Send + Sync,
+    I: Iterator<Item = T>,
+{
+    type Item = T;
+
+    type SeqIter = I;
+
+    type ChunkPuller<'i>
+        = DoNothingChunkPuller<Regular, T>
+    where
+        Self: 'i;
+
+    fn into_seq_iter(self) -> Self::SeqIter {
+        self.iter.into_inner()
+    }
+
+    fn skip_to_end(&self) {
+        todo!()
+    }
+
+    fn next(&self) -> Option<<<Regular as crate::enumeration::Enumeration>::Element as crate::enumeration::Element>::ElemOf<Self::Item>>{
+        todo!()
+    }
+
+    fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+        todo!()
     }
 }
