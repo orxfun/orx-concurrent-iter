@@ -1,5 +1,4 @@
 use crate::{
-    chunk_puller::DoNothingChunkPuller,
     concurrent_iter::ConcurrentIter,
     enumeration::{Element, Enumerated, Enumeration, IsEnumerated, IsNotEnumerated, Regular},
 };
@@ -8,6 +7,8 @@ use core::{
     ops::{Add, Range},
     sync::atomic::{AtomicUsize, Ordering},
 };
+
+use super::chunks_iter_range::ChunksIterRange;
 
 pub struct ConIterRange<T, E = Regular>
 where
@@ -90,7 +91,7 @@ where
     type SeqIter = Range<T>;
 
     type ChunkPuller<'i>
-        = DoNothingChunkPuller<E, T>
+        = ChunksIterRange<'i, T, E>
     where
         Self: 'i;
 
