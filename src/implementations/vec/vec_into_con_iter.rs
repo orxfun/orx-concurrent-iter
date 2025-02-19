@@ -1,6 +1,6 @@
 use super::con_iter_vec::ConIterVec;
 use crate::{
-    implementations::slice::con_iter_slice_ref::ConIterSliceRef,
+    implementations::slice::con_iter_slice::ConIterSliceRef,
     into_concurrent_iter::IntoConcurrentIter,
 };
 use alloc::vec::Vec;

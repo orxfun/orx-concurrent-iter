@@ -1,4 +1,4 @@
-use super::con_iter_slice_ref::ConIterSliceRef;
+use super::con_iter_slice::ConIterSliceRef;
 use crate::into_concurrent_iter::IntoConcurrentIter;
 
 impl<'a, T> IntoConcurrentIter for &'a [T]

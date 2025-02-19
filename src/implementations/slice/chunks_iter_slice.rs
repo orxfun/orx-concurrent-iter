@@ -1,4 +1,4 @@
-use super::con_iter_slice_ref::ConIterSliceRef;
+use super::con_iter_slice::ConIterSliceRef;
 use crate::chunk_puller::ChunkPuller;
 use crate::enumeration::{Element, Enumeration};
 

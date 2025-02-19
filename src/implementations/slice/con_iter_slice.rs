@@ -1,4 +1,4 @@
-use super::chunks_iter_slice_ref::ChunksIterSliceRef;
+use super::chunks_iter_slice::ChunksIterSliceRef;
 use crate::{
     concurrent_iter::ConcurrentIter,
     enumeration::{Element, Enumerated, Enumeration, IsEnumerated, IsNotEnumerated, Regular},

@@ -2,7 +2,7 @@ use crate::{
     chunk_puller::ChunkPuller,
     concurrent_iter::ConcurrentIter,
     enumeration::{Element, Enumerated, Enumeration, Regular},
-    implementations::slice::con_iter_slice_ref::ConIterSliceRef,
+    implementations::slice::con_iter_slice::ConIterSliceRef,
     IntoConcurrentIter,
 };
 use core::fmt::Debug;
