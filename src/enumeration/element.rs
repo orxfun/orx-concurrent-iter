@@ -1,3 +1,5 @@
+use core::iter::Cloned;
+
 pub trait Element {
     type ElemOf<T>: Send + Sync
     where
@@ -8,6 +10,10 @@ pub trait Element {
     fn item_from_element<T: Send + Sync>(element: Self::ElemOf<T>) -> T;
 
     fn cloned_elem<T: Send + Sync + Clone>(elem: Self::ElemOf<&T>) -> Self::ElemOf<T>;
+
+    fn cloned_iter<'a, T: Send + Sync + Clone + 'a, I: Iterator<Item = &'a T>>(
+        iter: Self::IterOf<I>,
+    ) -> Self::IterOf<Cloned<I>>;
 }
 
 pub struct Value;
@@ -27,6 +33,12 @@ impl Element for Value {
     fn cloned_elem<T: Send + Sync + Clone>(elem: Self::ElemOf<&T>) -> Self::ElemOf<T> {
         elem.clone()
     }
+
+    fn cloned_iter<'a, T: Send + Sync + Clone + 'a, I: Iterator<Item = &'a T>>(
+        iter: Self::IterOf<I>,
+    ) -> Self::IterOf<Cloned<I>> {
+        iter.cloned()
+    }
 }
 
 pub struct IdxValue;
@@ -45,5 +57,11 @@ impl Element for IdxValue {
 
     fn cloned_elem<T: Send + Sync + Clone>(elem: Self::ElemOf<&T>) -> Self::ElemOf<T> {
         (elem.0, elem.1.clone())
+    }
+
+    fn cloned_iter<'a, T: Send + Sync + Clone + 'a, I: Iterator<Item = &'a T>>(
+        iter: Self::IterOf<I>,
+    ) -> Self::IterOf<Cloned<I>> {
+        (iter.0, iter.1.cloned())
     }
 }
