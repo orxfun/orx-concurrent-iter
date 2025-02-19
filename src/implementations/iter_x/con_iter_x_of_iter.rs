@@ -96,7 +96,7 @@ where
     }
 
     fn skip_to_end(&self) {
-        todo!()
+        self.is_mutating.store(COMPLETED, Ordering::SeqCst);
     }
 
     fn next(&self) -> Option<<<Regular as crate::enumeration::Enumeration>::Element as crate::enumeration::Element>::ElemOf<Self::Item>>{
