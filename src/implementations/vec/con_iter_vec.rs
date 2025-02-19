@@ -145,12 +145,29 @@ where
     where
         Self: 'i;
 
+    type EnumerationOf<E2>
+        = ConIterVec<T, E2>
+    where
+        E2: Enumeration;
+
     type Regular = ConIterVec<T, Regular>;
 
     type Enumerated = ConIterVec<T, Enumerated>;
 
     fn into_seq_iter(mut self) -> Self::SeqIter {
         self.remaining_into_seq_iter()
+    }
+
+    fn into_enumeration_of<E2: Enumeration>(mut self) -> Self::EnumerationOf<E2> {
+        let (ptr, counter) = (self.ptr, self.counter.load(Ordering::Acquire).into());
+        self.ptr = core::ptr::null();
+        ConIterVec {
+            ptr,
+            vec_len: self.vec_len,
+            vec_cap: self.vec_cap,
+            counter,
+            phantom: PhantomData,
+        }
     }
 
     fn enumerated(self) -> Self::Enumerated

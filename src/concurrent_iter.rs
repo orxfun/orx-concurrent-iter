@@ -14,6 +14,10 @@ pub trait ConcurrentIter<E: Enumeration = Regular>: Default {
     where
         Self: 'i;
 
+    type EnumerationOf<E2>: ConcurrentIter<E2, Item = Self::Item>
+    where
+        E2: Enumeration;
+
     type Regular: ConcurrentIter<Regular, Item = Self::Item>;
 
     type Enumerated: ConcurrentIter<Enumerated, Item = Self::Item>;
@@ -21,6 +25,8 @@ pub trait ConcurrentIter<E: Enumeration = Regular>: Default {
     // into
 
     fn into_seq_iter(self) -> Self::SeqIter;
+
+    fn into_enumeration_of<E2: Enumeration>(self) -> Self::EnumerationOf<E2>;
 
     fn enumerated(self) -> Self::Enumerated
     where

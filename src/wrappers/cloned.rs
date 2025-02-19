@@ -1,7 +1,7 @@
 use crate::{
     chunk_puller::DoNothingChunkPuller,
     concurrent_iter::ConcurrentIter,
-    enumeration::{Enumerated, Enumeration, Regular},
+    enumeration::{Element, Enumerated, Enumeration, IsEnumerated, IsNotEnumerated, Regular},
 };
 use core::marker::PhantomData;
 
@@ -68,14 +68,14 @@ where
 
     fn enumerated(self) -> Self::Enumerated
     where
-        E: crate::enumeration::IsNotEnumerated,
+        E: IsNotEnumerated,
     {
         todo!()
     }
 
     fn not_enumerated(self) -> Self::Regular
     where
-        E: crate::enumeration::IsEnumerated,
+        E: IsEnumerated,
     {
         todo!()
     }
@@ -84,13 +84,7 @@ where
         todo!()
     }
 
-    fn next(
-        &self,
-    ) -> Option<
-        <<E as crate::enumeration::Enumeration>::Element as crate::enumeration::Element>::ElemOf<
-            Self::Item,
-        >,
-    > {
+    fn next(&self) -> Option<<<E as Enumeration>::Element as Element>::ElemOf<Self::Item>> {
         todo!()
     }
 

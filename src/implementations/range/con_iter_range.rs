@@ -94,6 +94,11 @@ where
     where
         Self: 'i;
 
+    type EnumerationOf<E2>
+        = ConIterRange<T, E2>
+    where
+        E2: Enumeration;
+
     type Regular = ConIterRange<T, Regular>;
 
     type Enumerated = ConIterRange<T, Enumerated>;
@@ -103,6 +108,16 @@ where
         let begin = T::from(self.begin + current);
         let end = T::from(self.begin + self.len);
         begin..end
+    }
+
+    fn into_enumeration_of<E2: Enumeration>(self) -> Self::EnumerationOf<E2> {
+        let counter = self.counter.load(Ordering::Acquire).into();
+        ConIterRange {
+            begin: self.begin,
+            len: self.len,
+            counter,
+            phantom: PhantomData,
+        }
     }
 
     fn enumerated(self) -> Self::Enumerated

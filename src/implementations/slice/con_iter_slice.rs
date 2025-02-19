@@ -83,6 +83,11 @@ where
 
     type SeqIter = Skip<core::slice::Iter<'a, T>>;
 
+    type EnumerationOf<E2>
+        = ConIterSliceRef<'a, T, E2>
+    where
+        E2: Enumeration;
+
     type Regular = ConIterSliceRef<'a, T, Regular>;
 
     type Enumerated = ConIterSliceRef<'a, T, Enumerated>;
@@ -97,6 +102,15 @@ where
     fn into_seq_iter(self) -> Self::SeqIter {
         let current = self.counter.load(Ordering::Acquire);
         self.slice.iter().skip(current)
+    }
+
+    fn into_enumeration_of<E2: Enumeration>(self) -> Self::EnumerationOf<E2> {
+        let counter = self.counter.load(Ordering::Acquire).into();
+        ConIterSliceRef {
+            slice: self.slice,
+            counter,
+            phantom: PhantomData,
+        }
     }
 
     fn enumerated(self) -> Self::Enumerated
