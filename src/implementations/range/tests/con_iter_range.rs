@@ -5,7 +5,7 @@ use crate::{
     implementations::range::con_iter_range::ConIterRange,
     IntoConcurrentIter,
 };
-use core::fmt::Debug;
+use core::{fmt::Debug, ops::Range};
 use orx_concurrent_bag::ConcurrentBag;
 use test_case::test_matrix;
 
@@ -14,40 +14,40 @@ const N: usize = 125;
 #[cfg(not(miri))]
 const N: usize = 4735;
 
-// #[test]
-// fn enumeration() {
-//     let vec: Vec<_> = (0..6).collect();
+#[test]
+fn enumeration() {
+    let vec: Range<usize> = 0..6;
 
-//     let iter = vec.into_concurrent_iter();
-//     assert_eq!(iter.next(), Some(0));
+    let iter = vec.into_concurrent_iter();
+    assert_eq!(iter.next(), Some(0));
 
-//     let enumerated = iter.enumerated();
-//     assert_eq!(enumerated.next(), Some((1, 1)));
+    let enumerated = iter.enumerated();
+    assert_eq!(enumerated.next(), Some((1, 1)));
 
-//     let iter = enumerated.not_enumerated();
-//     assert_eq!(iter.next(), Some(2));
+    let iter = enumerated.not_enumerated();
+    assert_eq!(iter.next(), Some(2));
 
-//     let enumerated = iter.enumerated();
-//     assert_eq!(enumerated.next(), Some((3, 3)));
+    let enumerated = iter.enumerated();
+    assert_eq!(enumerated.next(), Some((3, 3)));
 
-//     let iter = enumerated.not_enumerated();
-//     assert_eq!(iter.next(), Some(4));
+    let iter = enumerated.not_enumerated();
+    assert_eq!(iter.next(), Some(4));
 
-//     let enumerated = iter.enumerated();
-//     assert_eq!(enumerated.next(), Some((5, 5)));
+    let enumerated = iter.enumerated();
+    assert_eq!(enumerated.next(), Some((5, 5)));
 
-//     let iter = enumerated.not_enumerated();
-//     assert_eq!(iter.next(), None);
+    let iter = enumerated.not_enumerated();
+    assert_eq!(iter.next(), None);
 
-//     let enumerated = iter.enumerated();
-//     assert_eq!(enumerated.next(), None);
+    let enumerated = iter.enumerated();
+    assert_eq!(enumerated.next(), None);
 
-//     let iter = enumerated.not_enumerated();
-//     assert_eq!(iter.next(), None);
+    let iter = enumerated.not_enumerated();
+    assert_eq!(iter.next(), None);
 
-//     let enumerated = iter.enumerated();
-//     assert_eq!(enumerated.next(), None);
-// }
+    let enumerated = iter.enumerated();
+    assert_eq!(enumerated.next(), None);
+}
 
 #[test_matrix([Regular, Enumerated], [1, 2, 4])]
 fn empty_range<E: Enumeration>(_: E, nt: usize) {
