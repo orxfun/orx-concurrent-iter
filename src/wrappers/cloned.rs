@@ -68,7 +68,7 @@ where
     }
 
     fn into_enumeration_of<E2: Enumeration>(self) -> Self::EnumerationOf<E2> {
-        todo!()
+        Cloned::new(self.con_iter.into_enumeration_of())
     }
 
     fn skip_to_end(&self) {
