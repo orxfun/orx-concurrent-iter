@@ -12,8 +12,8 @@ use core::{
 pub struct ConIterRange<T, E = Regular>
 where
     T: Send + Sync + Copy + From<usize> + Into<usize> + Add<T, Output = T>,
-    E: Enumeration,
     Range<T>: Default + ExactSizeIterator<Item = T>,
+    E: Enumeration,
 {
     begin: usize,
     len: usize,
