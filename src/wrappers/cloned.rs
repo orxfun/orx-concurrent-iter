@@ -58,25 +58,16 @@ where
     where
         Self: 'i;
 
-    type Regular = Cloned<'a, I::Regular, T, Regular>;
-
-    type Enumerated = Cloned<'a, I::Enumerated, T, Enumerated>;
+    type EnumerationOf<E2>
+        = Cloned<'a, I::EnumerationOf<E2>, T, E2>
+    where
+        E2: Enumeration;
 
     fn into_seq_iter(self) -> Self::SeqIter {
         self.con_iter.into_seq_iter().cloned()
     }
 
-    fn enumerated(self) -> Self::Enumerated
-    where
-        E: IsNotEnumerated,
-    {
-        todo!()
-    }
-
-    fn not_enumerated(self) -> Self::Regular
-    where
-        E: IsEnumerated,
-    {
+    fn into_enumeration_of<E2: Enumeration>(self) -> Self::EnumerationOf<E2> {
         todo!()
     }
 

@@ -1,7 +1,7 @@
 use super::element::Element;
 use core::fmt::Debug;
 
-pub(crate) trait EnumerationCore: Send + Sync {
+pub trait EnumerationCore: Send + Sync + 'static {
     type ElemKindCore: Element;
 
     type BeginIdx: Default + Copy + PartialEq + Debug;
