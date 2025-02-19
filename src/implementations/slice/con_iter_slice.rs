@@ -127,15 +127,4 @@ where
     fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
         Self::ChunkPuller::new(self, chunk_size)
     }
-
-    fn next_chunk(
-        &self,
-        chunk_size: usize,
-    ) -> Option<
-        <<E as Enumeration>::Element as Element>::IterOf<
-            <Self::ChunkPuller<'_> as crate::chunk_puller::ChunkPuller<E>>::Iter,
-        >,
-    > {
-        self.chunks_iter(chunk_size).next()
-    }
 }
