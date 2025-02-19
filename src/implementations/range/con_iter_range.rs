@@ -89,7 +89,10 @@ where
     type Enumerated = ConIterRange<T, Enumerated>;
 
     fn into_seq_iter(self) -> Self::SeqIter {
-        todo!()
+        let current = self.counter.load(Ordering::Acquire);
+        let begin = T::from(current);
+        let end = T::from(self.begin + self.len);
+        begin..end
     }
 
     fn enumerated(self) -> Self::Enumerated
