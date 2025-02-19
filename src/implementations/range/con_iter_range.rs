@@ -1,3 +1,4 @@
+use super::chunks_iter_range::ChunksIterRange;
 use crate::{
     concurrent_iter::ConcurrentIter,
     enumeration::{Element, Enumerated, Enumeration, IsEnumerated, IsNotEnumerated, Regular},
@@ -7,8 +8,6 @@ use core::{
     ops::{Add, Range},
     sync::atomic::{AtomicUsize, Ordering},
 };
-
-use super::chunks_iter_range::ChunksIterRange;
 
 pub struct ConIterRange<T, E = Regular>
 where
@@ -101,7 +100,7 @@ where
 
     fn into_seq_iter(self) -> Self::SeqIter {
         let current = self.counter.load(Ordering::Acquire);
-        let begin = T::from(current);
+        let begin = T::from(self.begin + current);
         let end = T::from(self.begin + self.len);
         begin..end
     }
