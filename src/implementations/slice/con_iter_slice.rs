@@ -19,10 +19,10 @@ where
     phantom: PhantomData<E>,
 }
 
-impl<'a, T, K> Default for ConIterSliceRef<'a, T, K>
+impl<'a, T, E> Default for ConIterSliceRef<'a, T, E>
 where
     T: Send + Sync,
-    K: Enumeration,
+    E: Enumeration,
 {
     fn default() -> Self {
         Self {
@@ -54,7 +54,7 @@ where
         }
     }
 
-    pub(super) fn progress_and_get_chunk(&self, chunk_size: usize) -> Option<(usize, &'a [T])> {
+    pub(super) fn progress_and_get_slice(&self, chunk_size: usize) -> Option<(usize, &'a [T])> {
         self.progress_and_get_begin_idx(chunk_size)
             .map(|begin_idx| {
                 let end_idx = (begin_idx + chunk_size)

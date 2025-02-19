@@ -48,7 +48,7 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         self.con_iter
-            .progress_and_get_chunk(self.chunk_size)
+            .progress_and_get_slice(self.chunk_size)
             .map(|(begin_idx, slice)| E::new_chunk(begin_idx, slice.iter()))
     }
 }
