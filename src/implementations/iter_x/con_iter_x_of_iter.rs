@@ -16,7 +16,7 @@ where
 {
     iter: UnsafeCell<I>,
     initial_len: Option<usize>,
-    is_mutating: State,
+    state: State,
 }
 
 // TODO: drop when Vec.into_iter() for instance
@@ -45,7 +45,7 @@ where
         Self {
             iter: iter.into(),
             initial_len,
-            is_mutating: AVAILABLE.into(),
+            state: AVAILABLE.into(),
         }
     }
 }
@@ -69,11 +69,18 @@ where
     }
 
     fn skip_to_end(&self) {
-        self.is_mutating.store(COMPLETED, Ordering::SeqCst);
+        self.state.store(COMPLETED, Ordering::SeqCst);
     }
 
     fn next(&self) -> Option<<<Regular as Enumeration>::Element as Element>::ElemOf<Self::Item>> {
-        todo!()
+        MutHandle::get_handle(&self.state).and_then(|mut handle| {
+            // SAFETY: no other thread has the handle
+            let next = unsafe { &mut *self.iter.get() }.next();
+            if next.is_none() {
+                handle.set_target_to_completed();
+            }
+            next
+        })
     }
 
     fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
