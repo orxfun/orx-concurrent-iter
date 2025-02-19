@@ -1,4 +1,6 @@
-use crate::{concurrent_iter::ConcurrentIter, IntoConcurrentIter};
+use crate::{
+    concurrent_iter::ConcurrentIter, ConcurrentCollection, ConcurrentIterable, IntoConcurrentIter,
+};
 use orx_concurrent_bag::ConcurrentBag;
 
 #[test]
@@ -61,11 +63,9 @@ fn vec_ref_as_into_concurrent_iter() {
 
 #[test]
 fn vec_as_concurrent_iterable() {
-    use crate::ConcurrentIterable;
-
     let (nt, n) = (2, 177);
     let vec: Vec<_> = (0..n).map(|x| (x + 10).to_string()).collect();
-    let iter = (&vec).concurrent_iter();
+    let iter = (&&vec).concurrent_iter();
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -92,8 +92,6 @@ fn vec_as_concurrent_iterable() {
 
 #[test]
 fn vec_as_concurrent_collection() {
-    use crate::ConcurrentCollection;
-
     let (nt, n) = (2, 177);
     let vec: Vec<_> = (0..n).map(|x| (x + 10).to_string()).collect();
     let iter = vec.concurrent_iter();

@@ -2,11 +2,10 @@ use crate::{concurrent_iter::ConcurrentIter, ConcurrentIterable, IntoConcurrentI
 use orx_concurrent_bag::ConcurrentBag;
 
 #[test]
-fn slice_as_into_concurrent_iter() {
+fn range_as_into_concurrent_iter() {
     let (nt, n) = (2, 177);
-    let vec: Vec<_> = (0..n).map(|x| (x + 10).to_string()).collect();
-    let slice = vec.as_slice();
-    let iter = slice.into_concurrent_iter();
+    let range = 10..(10 + n);
+    let iter = range.into_concurrent_iter();
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -23,7 +22,7 @@ fn slice_as_into_concurrent_iter() {
         }
     });
 
-    let mut expected: Vec<_> = (0..n).map(|i| &slice[i]).collect();
+    let mut expected: Vec<_> = (0..n).map(|i| 10 + i).collect();
     expected.sort();
     let mut collected = bag.into_inner().to_vec();
     collected.sort();
@@ -32,11 +31,10 @@ fn slice_as_into_concurrent_iter() {
 }
 
 #[test]
-fn slice_as_concurrent_iterable() {
+fn range_as_concurrent_iterable() {
     let (nt, n) = (2, 177);
-    let vec: Vec<_> = (0..n).map(|x| (x + 10).to_string()).collect();
-    let slice = vec.as_slice();
-    let iter = slice.concurrent_iter();
+    let range = 10..(10 + n);
+    let iter = range.concurrent_iter();
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -53,7 +51,7 @@ fn slice_as_concurrent_iterable() {
         }
     });
 
-    let mut expected: Vec<_> = (0..n).map(|i| &slice[i]).collect();
+    let mut expected: Vec<_> = (0..n).map(|i| i + 10).collect();
     expected.sort();
     let mut collected = bag.into_inner().to_vec();
     collected.sort();
