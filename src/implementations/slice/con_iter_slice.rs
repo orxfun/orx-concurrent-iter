@@ -79,10 +79,6 @@ where
     where
         E2: Enumeration;
 
-    type Regular = ConIterSliceRef<'a, T, Regular>;
-
-    type Enumerated = ConIterSliceRef<'a, T, Enumerated>;
-
     type ChunkPuller<'i>
         = ChunksIterSliceRef<'i, 'a, T, E>
     where

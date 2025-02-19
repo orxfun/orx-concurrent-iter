@@ -89,10 +89,6 @@ where
     where
         E2: Enumeration;
 
-    type Regular = ConIterRange<T, Regular>;
-
-    type Enumerated = ConIterRange<T, Enumerated>;
-
     fn into_seq_iter(self) -> Self::SeqIter {
         let current = self.counter.load(Ordering::Acquire);
         let begin = T::from(self.begin + current);

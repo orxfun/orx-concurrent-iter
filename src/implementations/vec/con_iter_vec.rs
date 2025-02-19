@@ -138,10 +138,6 @@ where
     where
         E2: Enumeration;
 
-    type Regular = ConIterVec<T, Regular>;
-
-    type Enumerated = ConIterVec<T, Enumerated>;
-
     fn into_seq_iter(mut self) -> Self::SeqIter {
         self.remaining_into_seq_iter()
     }
