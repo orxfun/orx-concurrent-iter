@@ -1,13 +1,10 @@
-use super::mut_handle::{MutHandle, State, AVAILABLE, COMPLETED, IS_MUTATING};
+use super::mut_handle::{AtomicState, MutHandle, AVAILABLE, COMPLETED};
 use crate::{
     chunk_puller::DoNothingChunkPuller,
     concurrent_iter::ConcurrentIter,
     enumeration::{Element, Enumeration, Regular},
 };
-use core::{
-    cell::UnsafeCell,
-    sync::atomic::{AtomicU8, AtomicUsize, Ordering},
-};
+use core::{cell::UnsafeCell, sync::atomic::Ordering};
 
 pub struct ConIterXOfIter<I, T>
 where
@@ -16,7 +13,7 @@ where
 {
     iter: UnsafeCell<I>,
     initial_len: Option<usize>,
-    state: State,
+    state: AtomicState,
 }
 
 // TODO: drop when Vec.into_iter() for instance
