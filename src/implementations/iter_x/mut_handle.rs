@@ -8,6 +8,7 @@ pub(super) const COMPLETED: u8 = 2;
 
 pub(super) struct MutHandle<'a> {
     state: &'a State,
+    final_state: u8,
 }
 
 impl<'a> MutHandle<'a> {
@@ -19,10 +20,32 @@ impl<'a> MutHandle<'a> {
                 Ordering::Acquire,
                 Ordering::Relaxed,
             ) {
-                Ok(_) => return Some(Self { state }),
+                Ok(_) => {
+                    return Some(Self {
+                        state,
+                        final_state: AVAILABLE,
+                    })
+                }
                 Err(COMPLETED) => return None,
                 _ => {}
             }
         }
+    }
+
+    pub(super) fn set_target_to_completed(&mut self) {
+        self.final_state = COMPLETED;
+    }
+}
+
+impl<'a> Drop for MutHandle<'a> {
+    fn drop(&mut self) {
+        self.state
+            .compare_exchange(
+                IS_MUTATING,
+                self.final_state,
+                Ordering::Release,
+                Ordering::Relaxed,
+            )
+            .expect("Failed to update the concurrent state after concurrent state mutation");
     }
 }
