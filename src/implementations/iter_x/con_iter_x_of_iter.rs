@@ -11,7 +11,7 @@ where
     T: Send + Sync,
     I: Iterator<Item = T>,
 {
-    iter: UnsafeCell<I>,
+    pub(super) iter: UnsafeCell<I>,
     initial_len: Option<usize>,
     state: AtomicState,
 }
@@ -45,6 +45,10 @@ where
             state: AVAILABLE.into(),
         }
     }
+
+    pub(super) fn get_handle(&self) -> Option<MutHandle<'_>> {
+        MutHandle::get_handle(&self.state)
+    }
 }
 
 impl<I, T> ConcurrentIter<Regular> for ConIterXOfIter<I, T>
@@ -70,7 +74,7 @@ where
     }
 
     fn next(&self) -> Option<<<Regular as Enumeration>::Element as Element>::ElemOf<Self::Item>> {
-        MutHandle::get_handle(&self.state).and_then(|mut handle| {
+        self.get_handle().and_then(|mut handle| {
             // SAFETY: no other thread has the handle
             let next = unsafe { &mut *self.iter.get() }.next();
             if next.is_none() {

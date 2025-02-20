@@ -20,10 +20,11 @@ where
     I: Iterator<Item = T>,
 {
     pub(super) fn new(con_iter: &'i ConIterXOfIter<I, T>, chunk_size: usize) -> Self {
-        Self {
-            con_iter,
-            buffer: (0..chunk_size).map(|_| None).collect(),
+        let mut buffer = Vec::with_capacity(chunk_size);
+        for _ in 0..chunk_size {
+            buffer.push(None);
         }
+        Self { con_iter, buffer }
     }
 }
 
@@ -37,7 +38,7 @@ where
     type Iter = ChunksIterXOfIter<'i, T>;
 
     fn chunk_size(&self) -> usize {
-        self.buffer.capacity()
+        self.buffer.len()
     }
 }
 
@@ -49,7 +50,30 @@ where
     type Item = ChunksIterXOfIter<'i, T>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        todo!()
+        let a = self.con_iter.get_handle().and_then(|mut handle| {
+            let iter = unsafe { &mut *self.con_iter.iter.get() };
+            let mut slice_len = self.buffer.len();
+            for i in 0..self.buffer.len() {
+                let next = iter.next();
+                match next.is_some() {
+                    true => self.buffer[i] = iter.next(),
+                    false => {
+                        slice_len = i;
+                        handle.set_target_to_completed();
+                        break;
+                    }
+                }
+            }
+
+            match slice_len {
+                0 => None,
+                n => {
+                    let buffer = &mut self.buffer[0..n];
+                    Some(ChunksIterXOfIter { buffer, current: 0 })
+                }
+            }
+        });
+        None
     }
 }
 
