@@ -1,5 +1,5 @@
-use super::super::mut_handle::{AtomicState, MutHandle, AVAILABLE, COMPLETED};
 use super::chunk_puller_x_of_iter::ChunkPullerXOfIter;
+use super::mut_handle::{AtomicState, MutHandle, AVAILABLE, COMPLETED};
 use crate::{
     concurrent_iter::ConcurrentIter,
     enumeration::{Element, Enumeration, Regular},
