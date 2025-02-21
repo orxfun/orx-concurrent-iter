@@ -11,7 +11,7 @@ where
     I: Iterator<Item = T>,
     E: Enumeration,
 {
-    con_iter: &'i ConIterOfIter<I, T>,
+    con_iter: &'i ConIterOfIter<I, T, E>,
     buffer: Vec<Option<T>>,
     phantom: PhantomData<E>,
 }
@@ -22,7 +22,7 @@ where
     I: Iterator<Item = T>,
     E: Enumeration,
 {
-    pub(super) fn new(con_iter: &'i ConIterOfIter<I, T>, chunk_size: usize) -> Self {
+    pub(super) fn new(con_iter: &'i ConIterOfIter<I, T, E>, chunk_size: usize) -> Self {
         let mut buffer = Vec::with_capacity(chunk_size);
         for _ in 0..chunk_size {
             buffer.push(None);
@@ -41,10 +41,10 @@ where
     I: Iterator<Item = T>,
     E: Enumeration,
 {
-    type ChunkItem = <E::Element as Element>::ElemOf<T>;
+    type ChunkItem = T;
 
     type Iter<'c>
-        = ChunksIterOfIter<'c, T, E>
+        = ChunksIterOfIter<'c, T>
     where
         Self: 'c;
 
@@ -59,19 +59,17 @@ where
 
 // iter
 
-pub struct ChunksIterOfIter<'i, T, E>
+pub struct ChunksIterOfIter<'i, T>
 where
     T: Send + Sync,
-    E: Enumeration,
 {
-    buffer: &'i mut [Option<<E::Element as Element>::ElemOf<T>>],
+    buffer: &'i mut [Option<T>],
     current: usize,
 }
 
-impl<'i, T, E> Default for ChunksIterOfIter<'i, T, E>
+impl<'i, T> Default for ChunksIterOfIter<'i, T>
 where
     T: Send + Sync,
-    E: Enumeration,
 {
     fn default() -> Self {
         Self {
@@ -81,12 +79,11 @@ where
     }
 }
 
-impl<'i, T, E> Iterator for ChunksIterOfIter<'i, T, E>
+impl<'i, T> Iterator for ChunksIterOfIter<'i, T>
 where
     T: Send + Sync,
-    E: Enumeration,
 {
-    type Item = <E::Element as Element>::ElemOf<T>;
+    type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.buffer.get_mut(self.current).and_then(|x| {
@@ -101,19 +98,13 @@ where
     }
 }
 
-impl<'i, T, E> ExactSizeIterator for ChunksIterOfIter<'i, T, E>
+impl<'i, T> ExactSizeIterator for ChunksIterOfIter<'i, T>
 where
     T: Send + Sync,
-    E: Enumeration,
 {
     fn len(&self) -> usize {
         self.buffer.len().saturating_sub(self.current)
     }
 }
 
-impl<'i, T, E> FusedIterator for ChunksIterOfIter<'i, T, E>
-where
-    T: Send + Sync,
-    E: Enumeration,
-{
-}
+impl<'i, T> FusedIterator for ChunksIterOfIter<'i, T> where T: Send + Sync {}

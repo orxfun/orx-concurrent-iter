@@ -81,7 +81,7 @@ fn new_vec(n: usize, elem: impl Fn(usize) -> String) -> Vec<String> {
 // }
 
 #[test_matrix([Regular, Enumerated], [0, 1, N], [1, 2, 4])]
-fn abc_next<E: Enumeration>(_: E, n: usize, nt: usize)
+fn next<E: Enumeration>(_: E, n: usize, nt: usize)
 where
     for<'a> <E::Element as Element>::ElemOf<String>: PartialEq + Ord + Debug,
 {

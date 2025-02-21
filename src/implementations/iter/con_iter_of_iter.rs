@@ -1,4 +1,5 @@
 use super::{
+    chunk_puller_iter::ChunkPullerOfIter,
     iter_cell::IterCell,
     mut_handle::{AtomicState, MutHandle, COMPLETED},
 };
@@ -72,7 +73,7 @@ where
     type SeqIter = I;
 
     type ChunkPuller<'i>
-        = DoNothingChunkPuller<E, T>
+        = ChunkPullerOfIter<'i, I, T, E>
     where
         Self: 'i;
 
