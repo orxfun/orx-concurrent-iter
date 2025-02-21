@@ -1,14 +1,14 @@
 use super::{
     super::mut_handle::{AtomicState, MutHandle, COMPLETED},
-    mut_iter::MutIter,
+    iter_cell::IterCell,
     num_taken::NumTaken,
 };
 use crate::{
-    chunk_puller::{ChunkPuller, DoNothingChunkPuller},
+    chunk_puller::DoNothingChunkPuller,
     concurrent_iter::ConcurrentIter,
     enumeration::{Element, Enumeration, Regular},
 };
-use core::{cell::UnsafeCell, marker::PhantomData, sync::atomic::Ordering};
+use core::marker::PhantomData;
 
 pub struct ConIterOfIter<I, T, E = Regular>
 where
@@ -16,7 +16,7 @@ where
     I: Iterator<Item = T>,
     E: Enumeration,
 {
-    iter: MutIter<T, I>,
+    iter: IterCell<T, I>,
     num_taken: NumTaken,
     initial_len: Option<usize>,
     state: AtomicState,
