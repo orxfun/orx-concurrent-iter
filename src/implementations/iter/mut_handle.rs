@@ -14,7 +14,10 @@ impl<'a> MutHandle<'a> {
         loop {
             let update = state.fetch_update(Ordering::Acquire, Ordering::Relaxed, |count_before| {
                 match count_before >= 0 {
-                    true => Some(-count_before),
+                    true => {
+                        let neg_count_before = -count_before;
+                        Some(neg_count_before)
+                    }
                     false => None,
                 }
             });
@@ -24,7 +27,7 @@ impl<'a> MutHandle<'a> {
                         state,
                         neg_count_before: -count_before,
                         count_after: count_before as usize + num_to_pull,
-                    })
+                    });
                 }
                 Err(COMPLETED) => return None,
                 _ => {}

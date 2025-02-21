@@ -1,4 +1,4 @@
-use super::mut_handle::{AtomicState, MutHandle, COMPLETED};
+use super::super::mut_handle::{AtomicState, MutHandle, COMPLETED};
 use crate::{
     chunk_puller::DoNothingChunkPuller,
     concurrent_iter::ConcurrentIter,
@@ -12,6 +12,7 @@ where
     I: Iterator<Item = T>,
 {
     pub(super) iter: UnsafeCell<I>,
+    pub(super) num_taken: UnsafeCell<usize>,
     initial_len: Option<usize>,
     state: AtomicState,
 }
@@ -44,12 +45,13 @@ where
         Self {
             iter: iter.into(),
             initial_len,
+            num_taken: 0.into(),
             state: 0.into(),
         }
     }
 
-    pub(super) fn get_handle(&self, num_to_pull: usize) -> Option<MutHandle<'_>> {
-        MutHandle::get_handle(&self.state, num_to_pull)
+    pub(super) fn get_handle(&self) -> Option<MutHandle<'_>> {
+        MutHandle::get_handle(&self.state)
     }
 }
 
@@ -76,11 +78,15 @@ where
     }
 
     fn next(&self) -> Option<<<Regular as Enumeration>::Element as Element>::ElemOf<Self::Item>> {
-        self.get_handle(1).and_then(|mut handle| {
+        self.get_handle().and_then(|mut handle| {
             // SAFETY: no other thread has the handle
             let next = unsafe { &mut *self.iter.get() }.next();
-            if next.is_none() {
-                handle.set_count_after(0);
+            match next.is_some() {
+                true => {
+                    let num_taken = unsafe { &mut *self.num_taken.get() };
+                    *num_taken += 1;
+                }
+                false => handle.set_target_to_completed(),
             }
             next
         })
