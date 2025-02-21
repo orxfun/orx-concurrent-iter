@@ -5,24 +5,24 @@ use alloc::vec::Vec;
 use core::iter::FusedIterator;
 use core::marker::PhantomData;
 
-pub struct ChunkPullerOfIter<'i, I, T, E = Regular>
+pub struct ChunkPullerOfIter<'i, I, E = Regular>
 where
-    T: Send + Sync,
-    I: Iterator<Item = T>,
+    I: Iterator,
+    I::Item: Send + Sync,
     E: Enumeration,
 {
-    con_iter: &'i ConIterOfIter<I, T, E>,
-    buffer: Vec<Option<T>>,
+    con_iter: &'i ConIterOfIter<I, E>,
+    buffer: Vec<Option<I::Item>>,
     phantom: PhantomData<E>,
 }
 
-impl<'i, I, T, E> ChunkPullerOfIter<'i, I, T, E>
+impl<'i, I, E> ChunkPullerOfIter<'i, I, E>
 where
-    T: Send + Sync,
-    I: Iterator<Item = T>,
+    I: Iterator,
+    I::Item: Send + Sync,
     E: Enumeration,
 {
-    pub(super) fn new(con_iter: &'i ConIterOfIter<I, T, E>, chunk_size: usize) -> Self {
+    pub(super) fn new(con_iter: &'i ConIterOfIter<I, E>, chunk_size: usize) -> Self {
         let mut buffer = Vec::with_capacity(chunk_size);
         for _ in 0..chunk_size {
             buffer.push(None);
@@ -35,16 +35,16 @@ where
     }
 }
 
-impl<'i, I, T, E> ChunkPuller<E> for ChunkPullerOfIter<'i, I, T, E>
+impl<'i, I, E> ChunkPuller<E> for ChunkPullerOfIter<'i, I, E>
 where
-    T: Send + Sync,
-    I: Iterator<Item = T>,
+    I: Iterator,
+    I::Item: Send + Sync,
     E: Enumeration,
 {
-    type ChunkItem = T;
+    type ChunkItem = I::Item;
 
     type Iter<'c>
-        = ChunksIterOfIter<'c, T>
+        = ChunksIterOfIter<'c, I::Item>
     where
         Self: 'c;
 

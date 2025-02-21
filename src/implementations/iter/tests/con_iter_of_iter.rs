@@ -26,7 +26,7 @@ fn new_vec(n: usize, elem: impl Fn(usize) -> String) -> Vec<String> {
 fn enumeration() {
     let vec: Vec<_> = (0..6).collect();
 
-    let iter = ConIterOfIter::<_, usize>::new(vec.into_iter().filter(|x| *x < 99));
+    let iter = ConIterOfIter::<_>::new(vec.into_iter().filter(|x| *x < 99));
     assert_eq!(iter.next(), Some(0));
 
     let enumerated = iter.enumerated();
@@ -60,7 +60,7 @@ fn enumeration() {
 #[test_matrix([Regular, Enumerated], [1, 2, 4])]
 fn empty_vec<E: Enumeration>(_: E, nt: usize) {
     let vec = Vec::<String>::new();
-    let iter = ConIterOfIter::<_, String, E>::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
+    let iter = ConIterOfIter::<_, E>::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
 
     std::thread::scope(|s| {
         for _ in 0..nt {
@@ -86,7 +86,7 @@ where
     for<'a> <E::Element as Element>::ElemOf<String>: PartialEq + Ord + Debug,
 {
     let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = ConIterOfIter::<_, String, E>::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
+    let iter = ConIterOfIter::<_, E>::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -118,7 +118,7 @@ where
     for<'a> <E::Element as Element>::ElemOf<String>: PartialEq + Ord + Debug,
 {
     let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = ConIterOfIter::<_, String, E>::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
+    let iter = ConIterOfIter::<_, E>::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -158,7 +158,7 @@ where
     for<'a> <E::Element as Element>::ElemOf<String>: PartialEq + Ord + Debug,
 {
     let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = ConIterOfIter::<_, String, E>::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
+    let iter = ConIterOfIter::<_, E>::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -190,7 +190,7 @@ where
 #[test_matrix([Regular, Enumerated], [0, 1, N], [1, 2, 4])]
 fn skip_to_end<E: Enumeration>(_: E, n: usize, nt: usize) {
     let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = ConIterOfIter::<_, String, E>::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
+    let iter = ConIterOfIter::<_, E>::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
     let until = n / 2;
 
     let bag = ConcurrentBag::new();
@@ -243,7 +243,7 @@ fn skip_to_end<E: Enumeration>(_: E, n: usize, nt: usize) {
 #[test_matrix([Regular, Enumerated], [0, 1, N], [1, 2, 4], [0, N / 2, N])]
 fn into_seq_iter<E: Enumeration>(_: E, n: usize, nt: usize, until: usize) {
     let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = ConIterOfIter::<_, String, E>::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
+    let iter = ConIterOfIter::<_, E>::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();

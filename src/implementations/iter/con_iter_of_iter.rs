@@ -9,26 +9,38 @@ use crate::{
 };
 use core::{marker::PhantomData, sync::atomic::Ordering};
 
-pub struct ConIterOfIter<I, T, E = Regular>
+pub struct ConIterOfIter<I, E = Regular>
 where
-    T: Send + Sync,
-    I: Iterator<Item = T>,
+    I: Iterator,
+    I::Item: Send + Sync,
     E: Enumeration,
 {
-    iter: IterCell<T, I>,
+    iter: IterCell<I::Item, I>,
     initial_len: Option<usize>,
     state: AtomicState,
     phantom: PhantomData<E>,
 }
 
-unsafe impl<I: Iterator<Item = T>, T: Send + Sync, E: Enumeration> Sync for ConIterOfIter<I, T, E> {}
-
-unsafe impl<I: Iterator<Item = T>, T: Send + Sync, E: Enumeration> Send for ConIterOfIter<I, T, E> {}
-
-impl<I, T, E> Default for ConIterOfIter<I, T, E>
+unsafe impl<I, E> Sync for ConIterOfIter<I, E>
 where
-    T: Send + Sync,
-    I: Iterator<Item = T> + Default,
+    I: Iterator,
+    I::Item: Send + Sync,
+    E: Enumeration,
+{
+}
+
+unsafe impl<I, E> Send for ConIterOfIter<I, E>
+where
+    I: Iterator,
+    I::Item: Send + Sync,
+    E: Enumeration,
+{
+}
+
+impl<I, E> Default for ConIterOfIter<I, E>
+where
+    I: Iterator + Default,
+    I::Item: Send + Sync,
     E: Enumeration,
 {
     fn default() -> Self {
@@ -36,10 +48,10 @@ where
     }
 }
 
-impl<I, T, E> ConIterOfIter<I, T, E>
+impl<I, E> ConIterOfIter<I, E>
 where
-    T: Send + Sync,
-    I: Iterator<Item = T>,
+    I: Iterator,
+    I::Item: Send + Sync,
     E: Enumeration,
 {
     pub(super) fn new(iter: I) -> Self {
@@ -67,21 +79,21 @@ where
     /// * begin_idx: index of the first taken item.
     /// * num_taken: number of items pulled from the iterator; the method tries to pull `buffer.len()` items, however, might stop
     ///   early if the iterator is completely consumed.
-    pub(super) fn next_chunk_to_buffer(&self, buffer: &mut [Option<T>]) -> (usize, usize) {
+    pub(super) fn next_chunk_to_buffer(&self, buffer: &mut [Option<I::Item>]) -> (usize, usize) {
         self.get_handle()
             .map(|handle| self.iter.next_chunk_to_buffer(handle, buffer))
             .unwrap_or((0, 0))
     }
 }
 
-impl<I, T, E> ConcurrentIterEnum<E, T> for ConIterOfIter<I, T, E>
+impl<I, E> ConcurrentIterEnum<E, I::Item> for ConIterOfIter<I, E>
 where
-    T: Send + Sync,
-    I: Iterator<Item = T>,
+    I: Iterator,
+    I::Item: Send + Sync,
     E: Enumeration,
 {
     type EnumerationOf<E2>
-        = ConIterOfIter<I, T, E2>
+        = ConIterOfIter<I, E2>
     where
         E2: Enumeration;
 
@@ -95,18 +107,18 @@ where
     }
 }
 
-impl<I, T, E> ConcurrentIter<E> for ConIterOfIter<I, T, E>
+impl<I, E> ConcurrentIter<E> for ConIterOfIter<I, E>
 where
-    T: Send + Sync,
-    I: Iterator<Item = T>,
+    I: Iterator,
+    I::Item: Send + Sync,
     E: Enumeration,
 {
-    type Item = T;
+    type Item = I::Item;
 
     type SeqIter = I;
 
     type ChunkPuller<'i>
-        = ChunkPullerOfIter<'i, I, T, E>
+        = ChunkPullerOfIter<'i, I, E>
     where
         Self: 'i;
 
