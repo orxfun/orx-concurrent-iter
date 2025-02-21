@@ -53,6 +53,11 @@ where
     }
 
     fn pull(&mut self) -> Option<<<E as Enumeration>::Element as Element>::IterOf<Self::Iter<'_>>> {
+        // self.con_iter
+        //     .progress_and_get_chunk_pointers(self.chunk_size)
+        //     .map(|(begin_idx, first, last)| {
+        //         E::new_chunk(begin_idx, SeqChunksIterVec::new(false, first, last))
+        //     });
         todo!()
     }
 }

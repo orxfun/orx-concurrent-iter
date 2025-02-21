@@ -35,6 +35,11 @@ where
         self.iter.into_inner()
     }
 
+    /// Pulls the next element from the iterator and returns its enumerated value.
+    ///
+    /// Returns None if the iterator is completely consumed.
+    /// In this case, the `handle` will finalize its state as COMPLETED when dropped.
+    ///
     /// # SAFETY
     ///
     /// Only one thread can call this method at a given instant.
@@ -59,5 +64,48 @@ where
                 None
             }
         }
+    }
+
+    /// Pulls and writes chunk-size (`buffer.len()`) elements from the iterator into the given `buffer` starting from position 0.
+    ///
+    /// Returns the pair of (begin_idx, num_taken):
+    ///
+    /// * begin_idx: index of the first taken item.
+    /// * num_taken: number of items pulled from the iterator; the method tries to pull `buffer.len()` items, however, might stop
+    ///   early if the iterator is completely consumed.
+    ///
+    /// If the method returns num_taken < buffer.len(); i.e., if the iterator is completely consumed,
+    /// the `handle` will finalize its state as COMPLETED when dropped.
+    ///
+    /// # SAFETY
+    ///
+    /// Only one thread can call this method at a given instant.
+    /// This is satisfied by the mut handle.
+    pub fn next_chunk_to_buffer(
+        &self,
+        mut handle: MutHandle,
+        buffer: &mut [Option<T>],
+    ) -> (usize, usize) {
+        let num_taken = unsafe { &mut *self.num_taken.get() };
+        let begin_idx = *num_taken;
+
+        let iter = unsafe { &mut *self.iter.get() };
+        let mut num_taken_now = buffer.len();
+
+        for (i, x) in buffer.iter_mut().enumerate() {
+            match iter.next() {
+                Some(item) => {
+                    *x = Some(item);
+                }
+                None => {
+                    num_taken_now = i;
+                    handle.set_target_to_completed();
+                }
+            }
+        }
+
+        *num_taken += num_taken_now;
+
+        (begin_idx, num_taken_now)
     }
 }
