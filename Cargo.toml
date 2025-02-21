@@ -10,10 +10,10 @@ keywords = ["concurrency", "iterator", "iteration", "atomic", "parallelism"]
 categories = ["data-structures", "concurrency", "rust-patterns", "no-std"]
 
 [dependencies]
+orx-iterable = "1.2.0"
 
 [dev-dependencies]
 orx-pseudo-default = { version = "2.0.0", default-features = false }
-orx-iterable = "1.2.0"
 orx-pinned-vec = { path = "../orx-pinned-vec" }
 orx-fixed-vec = { path = "../orx-fixed-vec" }
 orx-split-vec = { path = "../orx-split-vec" }
