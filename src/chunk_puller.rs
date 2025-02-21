@@ -26,6 +26,15 @@ pub struct DoNothingChunkPuller<E, T>(PhantomData<(E, T)>)
 where
     E: Enumeration,
     T: Send + Sync;
+impl<E, T> DoNothingChunkPuller<E, T>
+where
+    E: Enumeration,
+    T: Send + Sync,
+{
+    pub fn new<X>(_: X, _: usize) -> Self {
+        Self(Default::default())
+    }
+}
 impl<E, T> Default for DoNothingChunkPuller<E, T>
 where
     E: Enumeration,
