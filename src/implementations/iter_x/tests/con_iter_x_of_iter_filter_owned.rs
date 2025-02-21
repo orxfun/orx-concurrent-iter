@@ -57,8 +57,8 @@ fn new_vec(n: usize, elem: impl Fn(usize) -> String) -> Vec<String> {
 fn empty_iter(nt: usize) {
     let vecs = [Vec::<String>::new(), new_vec(56, |x| (x + 10).to_string())];
     for vec in vecs {
-        let iter = vec.iter().filter(|x| x.as_str() == "abc");
-        let iter = ConIterXOfIter::<_, &String>::new(iter);
+        let iter = vec.into_iter().filter(|x| x.as_str() == "abc");
+        let iter = ConIterXOfIter::<_, String>::new(iter);
 
         std::thread::scope(|s| {
             for _ in 0..nt {
@@ -82,8 +82,8 @@ fn empty_iter(nt: usize) {
 #[test_matrix([0, 1, N], [1, 2, 4])]
 fn next(n: usize, nt: usize) {
     let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = vec.iter().filter(|x| x.as_str() != "abc");
-    let iter = ConIterXOfIter::<_, &String>::new(iter);
+    let iter = vec.into_iter().filter(|x| x.as_str() != "abc");
+    let iter = ConIterXOfIter::<_, String>::new(iter);
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -99,7 +99,7 @@ fn next(n: usize, nt: usize) {
         }
     });
 
-    let mut expected: Vec<_> = (0..n).map(|i| &vec[i]).collect();
+    let mut expected: Vec<_> = (0..n).map(|i| (i + 10).to_string()).collect();
     expected.sort();
     let mut collected = bag.into_inner().to_vec();
     collected.sort();
@@ -110,8 +110,8 @@ fn next(n: usize, nt: usize) {
 #[test_matrix([0, 1, N], [1, 2, 4])]
 fn chunks_iter(n: usize, nt: usize) {
     let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = vec.iter().filter(|x| x.as_str() != "abc");
-    let iter = ConIterXOfIter::<_, &String>::new(iter);
+    let iter = vec.into_iter().filter(|x| x.as_str() != "abc");
+    let iter = ConIterXOfIter::<_, String>::new(iter);
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -134,7 +134,7 @@ fn chunks_iter(n: usize, nt: usize) {
 
     let mut expected = vec![];
     for i in 0..n {
-        expected.push(&vec[i]);
+        expected.push((i + 10).to_string());
     }
     expected.sort();
     let mut collected = bag.into_inner().to_vec();
@@ -146,8 +146,8 @@ fn chunks_iter(n: usize, nt: usize) {
 #[test_matrix([0, 1, N], [1, 2, 4])]
 fn chunks_iter_flattened(n: usize, nt: usize) {
     let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = vec.iter().filter(|x| x.as_str() != "abc");
-    let iter = ConIterXOfIter::<_, &String>::new(iter);
+    let iter = vec.into_iter().filter(|x| x.as_str() != "abc");
+    let iter = ConIterXOfIter::<_, String>::new(iter);
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -166,7 +166,7 @@ fn chunks_iter_flattened(n: usize, nt: usize) {
         }
     });
 
-    let mut expected: Vec<_> = (0..n).map(|i| &vec[i]).collect();
+    let mut expected: Vec<_> = (0..n).map(|i| (i + 10).to_string()).collect();
     expected.sort();
     let mut collected = bag.into_inner().to_vec();
     collected.sort();
@@ -175,10 +175,10 @@ fn chunks_iter_flattened(n: usize, nt: usize) {
 }
 
 #[test_matrix([0, 1, N], [1, 2, 4])]
-fn skip_to_end(n: usize, nt: usize) {
+fn y_skip_to_end(n: usize, nt: usize) {
     let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = vec.iter().filter(|x| x.as_str() != "abc");
-    let iter = ConIterXOfIter::<_, &String>::new(iter);
+    let iter = vec.into_iter().filter(|x| x.as_str() != "abc");
+    let iter = ConIterXOfIter::<_, String>::new(iter);
     let until = n / 2;
 
     let bag = ConcurrentBag::new();
@@ -216,7 +216,7 @@ fn skip_to_end(n: usize, nt: usize) {
         }
     });
 
-    let mut expected: Vec<_> = (0..until).map(|i| &vec[i]).collect();
+    let mut expected: Vec<_> = (0..until).map(|i| (i + 10).to_string()).collect();
     expected.sort();
     let mut collected = bag.into_inner().to_vec();
     collected.sort();
@@ -225,10 +225,10 @@ fn skip_to_end(n: usize, nt: usize) {
 }
 
 #[test_matrix([0, 1, N], [1, 2, 4], [0, N / 2, N])]
-fn into_seq_iter(n: usize, nt: usize, until: usize) {
+fn y_into_seq_iter(n: usize, nt: usize, until: usize) {
     let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = vec.iter().filter(|x| x.as_str() != "abc");
-    let iter = ConIterXOfIter::<_, &String>::new(iter);
+    let iter = vec.into_iter().filter(|x| x.as_str() != "abc");
+    let iter = ConIterXOfIter::<_, String>::new(iter);
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();

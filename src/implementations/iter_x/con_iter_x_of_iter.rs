@@ -22,8 +22,6 @@ unsafe impl<I: Iterator<Item = T>, T: Send + Sync> Sync for ConIterXOfIter<I, T>
 
 unsafe impl<I: Iterator<Item = T>, T: Send + Sync> Send for ConIterXOfIter<I, T> {}
 
-// TODO: drop when Vec.into_iter() for instance
-
 impl<I, T> Default for ConIterXOfIter<I, T>
 where
     T: Send + Sync,
