@@ -1,6 +1,6 @@
 use crate::{
     chunk_puller::ChunkPuller, concurrent_iter::ConcurrentIter,
-    implementations::iter_x::con_iter_x_of_iter::ConIterXOfIter, IntoConcurrentIter,
+    implementations::iter_x::con_iter_x_of_iter::ConIterXOfIter,
 };
 use orx_concurrent_bag::ConcurrentBag;
 use test_case::test_matrix;
@@ -17,41 +17,6 @@ fn new_vec(n: usize, elem: impl Fn(usize) -> String) -> Vec<String> {
     }
     vec
 }
-
-// #[test]
-// fn enumeration() {
-//     let vec: Vec<_> = (0..6).collect();
-
-//     let iter = vec.into_concurrent_iter();
-//     assert_eq!(iter.next(), Some(0));
-
-//     let enumerated = iter.enumerated();
-//     assert_eq!(enumerated.next(), Some((1, 1)));
-
-//     let iter = enumerated.not_enumerated();
-//     assert_eq!(iter.next(), Some(2));
-
-//     let enumerated = iter.enumerated();
-//     assert_eq!(enumerated.next(), Some((3, 3)));
-
-//     let iter = enumerated.not_enumerated();
-//     assert_eq!(iter.next(), Some(4));
-
-//     let enumerated = iter.enumerated();
-//     assert_eq!(enumerated.next(), Some((5, 5)));
-
-//     let iter = enumerated.not_enumerated();
-//     assert_eq!(iter.next(), None);
-
-//     let enumerated = iter.enumerated();
-//     assert_eq!(enumerated.next(), None);
-
-//     let iter = enumerated.not_enumerated();
-//     assert_eq!(iter.next(), None);
-
-//     let enumerated = iter.enumerated();
-//     assert_eq!(enumerated.next(), None);
-// }
 
 #[test_matrix([1, 2, 4])]
 fn empty_iter(nt: usize) {

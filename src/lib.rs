@@ -26,5 +26,6 @@ pub mod wrappers;
 
 pub use concurrent_collection::ConcurrentCollection;
 pub use concurrent_iterable::ConcurrentIterable;
+pub use implementations::IntoConIterXOfIter;
 pub use into_concurrent_iter::IntoConcurrentIter;
 pub use wrappers::{IntoClonedConcurrentIter, IntoCopiedConcurrentIter};
