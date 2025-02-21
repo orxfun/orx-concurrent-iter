@@ -1,4 +1,4 @@
-use super::con_iter_slice::ConIterSliceRef;
+use super::con_iter_slice::ConIterSlice;
 use crate::{into_concurrent_iter::IntoConcurrentIter, ConcurrentIterable};
 
 impl<'a, T> IntoConcurrentIter for &'a [T]
@@ -7,7 +7,7 @@ where
 {
     type Item = &'a T;
 
-    type IntoIter = ConIterSliceRef<'a, T>;
+    type IntoIter = ConIterSlice<'a, T>;
 
     fn into_concurrent_iter(self) -> Self::IntoIter {
         Self::IntoIter::new(self)
@@ -20,7 +20,7 @@ where
 {
     type Item = &'a T;
 
-    type Iter = ConIterSliceRef<'a, T>;
+    type Iter = ConIterSlice<'a, T>;
 
     fn concurrent_iter(&self) -> Self::Iter {
         Self::Iter::new(self)

@@ -1,4 +1,4 @@
-use super::chunks_iter_range::ChunksIterRange;
+use super::chunk_puller_range::ChunkPullerRange;
 use crate::{
     concurrent_iter::{ConcurrentIter, ConcurrentIterEnum},
     enumeration::{Element, Enumeration, Regular},
@@ -102,7 +102,7 @@ where
     type SeqIter = Range<T>;
 
     type ChunkPuller<'i>
-        = ChunksIterRange<'i, T, E>
+        = ChunkPullerRange<'i, T, E>
     where
         Self: 'i;
 

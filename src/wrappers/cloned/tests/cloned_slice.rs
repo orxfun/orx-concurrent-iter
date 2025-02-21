@@ -58,13 +58,12 @@ fn cloned_empty_slice<K: Enumeration>(_: K, nt: usize) {
                 assert!(iter.next().is_none());
                 assert!(iter.next().is_none());
 
-                assert!(iter.next_chunk(4).is_none());
-                assert!(iter.next_chunk(4).is_none());
-
                 let mut puller = iter.chunks_iter(5);
-                assert!(puller.next().is_none());
+                assert!(puller.pull().is_none());
+                assert!(puller.pull().is_none());
 
                 let mut iter = iter.chunks_iter(5).flattened();
+                assert!(iter.next().is_none());
                 assert!(iter.next().is_none());
             });
         }
@@ -122,13 +121,10 @@ where
                 num_spawned.push(true);
                 while num_spawned.len() < nt {} // allow all threads to be spawned
 
-                let chunks_iter = iter.chunks_iter(7);
-
-                let mut i = 0;
-                for (begin_idx, chunk) in chunks_iter.map(K::destruct_chunk) {
+                let mut chunks_iter = iter.chunks_iter(7);
+                while let Some((begin_idx, chunk)) = chunks_iter.pull().map(K::destruct_chunk) {
                     assert!(chunk.len() <= 7);
                     for x in chunk {
-                        i += 1;
                         let value = K::new_element_from_begin_idx(begin_idx, x);
                         bag.push(value);
                     }
@@ -168,9 +164,7 @@ where
 
                 let chunks_iter = iter.chunks_iter(7).flattened();
 
-                let mut i = 0;
                 for x in chunks_iter {
-                    i += 1;
                     bag.push(x);
                 }
             });
@@ -205,17 +199,12 @@ fn skip_to_end<K: Enumeration>(_: K, n: usize, nt: usize) {
                 con_num_spawned.push(true);
                 while con_num_spawned.len() < nt {} // allow all threads to be spawned
 
-                let mut i = 0;
-
                 match t % 2 {
                     0 => {
                         while let Some(x) = con_iter.next().map(K::Element::item_from_element) {
                             let num: usize = x.parse().unwrap();
                             match num < until + 10 {
-                                true => {
-                                    i += 1;
-                                    con_bag.push(x);
-                                }
+                                true => _ = con_bag.push(x),
                                 false => con_iter.skip_to_end(),
                             }
                         }
@@ -228,10 +217,7 @@ fn skip_to_end<K: Enumeration>(_: K, n: usize, nt: usize) {
                         {
                             let num: usize = x.parse().unwrap();
                             match num < until + 10 {
-                                true => {
-                                    i += 1;
-                                    con_bag.push(x);
-                                }
+                                true => _ = con_bag.push(x),
                                 false => con_iter.skip_to_end(),
                             }
                         }
@@ -267,12 +253,9 @@ fn into_seq_iter<K: Enumeration>(_: K, n: usize, nt: usize, until: usize) {
                     con_num_spawned.push(true);
                     while con_num_spawned.len() < nt {} // allow all threads to be spawned
 
-                    let mut i = 0;
-
                     match t % 2 {
                         0 => {
                             while let Some(x) = con_iter.next().map(K::Element::item_from_element) {
-                                i += 1;
                                 let num: usize = x.parse().unwrap();
                                 con_bag.push(num);
                                 if num >= until + 10 {
@@ -281,13 +264,12 @@ fn into_seq_iter<K: Enumeration>(_: K, n: usize, nt: usize, until: usize) {
                             }
                         }
                         _ => {
-                            let iter = con_iter.chunks_iter(7);
-                            for (_, chunk) in iter.map(K::destruct_chunk) {
+                            let mut iter = con_iter.chunks_iter(7);
+                            while let Some((_, chunk)) = iter.pull().map(K::destruct_chunk) {
                                 let mut do_break = false;
                                 for x in chunk {
                                     let num: usize = x.parse().unwrap();
                                     con_bag.push(num);
-                                    i += 1;
                                     if num >= until + 10 {
                                         do_break = true;
                                     }

@@ -1,4 +1,4 @@
-use core::iter::Cloned;
+use core::iter::{Cloned, Copied};
 
 pub trait Element {
     type ElemOf<T>: Send + Sync
@@ -14,6 +14,10 @@ pub trait Element {
     fn cloned_iter<'a, T: Send + Sync + Clone + 'a, I: Iterator<Item = &'a T>>(
         iter: Self::IterOf<I>,
     ) -> Self::IterOf<Cloned<I>>;
+
+    fn copied_iter<'a, T: Send + Sync + Copy + 'a, I: Iterator<Item = &'a T>>(
+        iter: Self::IterOf<I>,
+    ) -> Self::IterOf<Copied<I>>;
 }
 
 pub struct Value;
@@ -39,6 +43,12 @@ impl Element for Value {
     ) -> Self::IterOf<Cloned<I>> {
         iter.cloned()
     }
+
+    fn copied_iter<'a, T: Send + Sync + Copy + 'a, I: Iterator<Item = &'a T>>(
+        iter: Self::IterOf<I>,
+    ) -> Self::IterOf<Copied<I>> {
+        iter.copied()
+    }
 }
 
 pub struct IdxValue;
@@ -63,5 +73,11 @@ impl Element for IdxValue {
         iter: Self::IterOf<I>,
     ) -> Self::IterOf<Cloned<I>> {
         (iter.0, iter.1.cloned())
+    }
+
+    fn copied_iter<'a, T: Send + Sync + Copy + 'a, I: Iterator<Item = &'a T>>(
+        iter: Self::IterOf<I>,
+    ) -> Self::IterOf<Copied<I>> {
+        (iter.0, iter.1.copied())
     }
 }

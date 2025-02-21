@@ -3,7 +3,7 @@ use crate::chunk_puller::ChunkPuller;
 use crate::enumeration::{Element, Enumeration};
 use core::ops::{Add, Range};
 
-pub struct ChunksIterRange<'i, T, E>
+pub struct ChunkPullerRange<'i, T, E>
 where
     T: Send + Sync + Copy + From<usize> + Into<usize> + Add<T, Output = T>,
     E: Enumeration,
@@ -13,7 +13,7 @@ where
     chunk_size: usize,
 }
 
-impl<'i, T, E> ChunksIterRange<'i, T, E>
+impl<'i, T, E> ChunkPullerRange<'i, T, E>
 where
     T: Send + Sync + Copy + From<usize> + Into<usize> + Add<T, Output = T>,
     E: Enumeration,
@@ -27,7 +27,7 @@ where
     }
 }
 
-impl<'i, T, E> ChunkPuller<E> for ChunksIterRange<'i, T, E>
+impl<'i, T, E> ChunkPuller<E> for ChunkPullerRange<'i, T, E>
 where
     T: Send + Sync + Copy + From<usize> + Into<usize> + Add<T, Output = T>,
     E: Enumeration,
@@ -35,22 +35,16 @@ where
 {
     type ChunkItem = T;
 
-    type Iter = Range<T>;
+    type Iter<'c>
+        = Range<T>
+    where
+        Self: 'c;
 
     fn chunk_size(&self) -> usize {
         self.chunk_size
     }
-}
 
-impl<'i, T, E> Iterator for ChunksIterRange<'i, T, E>
-where
-    T: Send + Sync + Copy + From<usize> + Into<usize> + Add<T, Output = T>,
-    E: Enumeration,
-    Range<T>: Default + ExactSizeIterator<Item = T>,
-{
-    type Item = <E::Element as Element>::IterOf<<Self as ChunkPuller<E>>::Iter>;
-
-    fn next(&mut self) -> Option<Self::Item> {
+    fn pull(&mut self) -> Option<<<E as Enumeration>::Element as Element>::IterOf<Self::Iter<'_>>> {
         self.con_iter
             .progress_and_get_range(self.chunk_size)
             .map(|(begin_idx, a, b)| E::new_chunk(begin_idx, a..b))

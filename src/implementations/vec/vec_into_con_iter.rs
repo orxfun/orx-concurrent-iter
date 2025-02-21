@@ -1,7 +1,6 @@
 use super::con_iter_vec::ConIterVec;
 use crate::{
-    implementations::slice::con_iter_slice::ConIterSliceRef,
-    into_concurrent_iter::IntoConcurrentIter,
+    implementations::slice::con_iter_slice::ConIterSlice, into_concurrent_iter::IntoConcurrentIter,
 };
 use alloc::vec::Vec;
 
@@ -24,7 +23,7 @@ where
 {
     type Item = &'a T;
 
-    type IntoIter = ConIterSliceRef<'a, T>;
+    type IntoIter = ConIterSlice<'a, T>;
 
     fn into_concurrent_iter(self) -> Self::IntoIter {
         Self::IntoIter::new(self.as_slice())

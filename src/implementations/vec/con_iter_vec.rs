@@ -1,4 +1,4 @@
-use super::{chunks_iter_vec::ChunksIterVec, vec_into_seq_iter::VecIntoSeqIter};
+use super::{chunk_puller_vec::ChunkPullerVec, vec_into_seq_iter::VecIntoSeqIter};
 use crate::{
     concurrent_iter::{ConcurrentIter, ConcurrentIterEnum},
     enumeration::{Element, Enumeration, Regular},
@@ -152,7 +152,7 @@ where
     type SeqIter = VecIntoSeqIter<T>;
 
     type ChunkPuller<'i>
-        = ChunksIterVec<'i, T, E>
+        = ChunkPullerVec<'i, T, E>
     where
         Self: 'i;
 

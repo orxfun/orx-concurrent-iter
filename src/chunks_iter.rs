@@ -4,23 +4,23 @@ use crate::{
 };
 use core::marker::PhantomData;
 
-pub struct ChunksIter<C, K = Regular>
+pub struct ChunksIter<'c, P, K = Regular>
 where
-    C: ChunkPuller<K>,
+    P: ChunkPuller<K> + 'c,
     K: Enumeration,
 {
-    puller: C,
+    puller: P,
     begin_idx: K::BeginIdx,
-    current_chunk: K::SeqChunkIter<C::Iter>,
+    current_chunk: K::SeqChunkIter<P::Iter<'c>>,
     phantom: PhantomData<K>,
 }
 
-impl<C, K> ChunksIter<C, K>
+impl<'c, P, K> ChunksIter<'c, P, K>
 where
-    C: ChunkPuller<K>,
+    P: ChunkPuller<K> + 'c,
     K: Enumeration,
 {
-    pub(crate) fn new(puller: C) -> Self {
+    pub(crate) fn new(puller: P) -> Self {
         Self {
             puller,
             begin_idx: Default::default(),
@@ -29,8 +29,9 @@ where
         }
     }
 
-    fn next_chunk(&mut self) -> Option<<K::Element as Element>::ElemOf<C::ChunkItem>> {
-        match self.puller.next().map(K::destruct_chunk) {
+    fn next_chunk(&mut self) -> Option<<K::Element as Element>::ElemOf<P::ChunkItem>> {
+        let puller = unsafe { &mut *(&mut self.puller as *mut P) };
+        match puller.pull().map(K::destruct_chunk) {
             Some((begin_idx, chunk)) => {
                 self.begin_idx = begin_idx;
                 self.current_chunk = K::into_seq_chunk_iter(chunk);
@@ -41,12 +42,12 @@ where
     }
 }
 
-impl<C, K> Iterator for ChunksIter<C, K>
+impl<'c, P, K> Iterator for ChunksIter<'c, P, K>
 where
-    C: ChunkPuller<K>,
+    P: ChunkPuller<K> + 'c,
     K: Enumeration,
 {
-    type Item = <K::Element as Element>::ElemOf<C::ChunkItem>;
+    type Item = <K::Element as Element>::ElemOf<P::ChunkItem>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let next = K::seq_chunk_iter_next(self.begin_idx, &mut self.current_chunk);

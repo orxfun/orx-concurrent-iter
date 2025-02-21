@@ -49,12 +49,4 @@ pub trait ConcurrentIter<E: Enumeration = Regular>: Sized {
     fn next(&self) -> Option<<E::Element as Element>::ElemOf<Self::Item>>;
 
     fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_>;
-
-    fn next_chunk(
-        &self,
-        chunk_size: usize,
-    ) -> Option<<E::Element as Element>::IterOf<<Self::ChunkPuller<'_> as ChunkPuller<E>>::Iter>>
-    {
-        self.chunks_iter(chunk_size).next()
-    }
 }

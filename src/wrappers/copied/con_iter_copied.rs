@@ -1,4 +1,4 @@
-use super::chunks_iter_copied::ChunksIterCopied;
+use super::chunk_puller_copied::ChunkPullerCopied;
 use crate::{
     concurrent_iter::{ConcurrentIter, ConcurrentIterEnum},
     enumeration::{Element, Enumeration, Regular},
@@ -70,7 +70,7 @@ where
     type SeqIter = Cloned<I::SeqIter>;
 
     type ChunkPuller<'i>
-        = ChunksIterCopied<'a, T, E, I::ChunkPuller<'i>>
+        = ChunkPullerCopied<'a, T, E, I::ChunkPuller<'i>>
     where
         Self: 'i;
 

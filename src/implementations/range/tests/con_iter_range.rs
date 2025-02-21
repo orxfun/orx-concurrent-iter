@@ -59,13 +59,12 @@ fn empty_range<E: Enumeration>(_: E, nt: usize) {
                 assert!(iter.next().is_none());
                 assert!(iter.next().is_none());
 
-                assert!(iter.next_chunk(4).is_none());
-                assert!(iter.next_chunk(4).is_none());
-
                 let mut puller = iter.chunks_iter(5);
-                assert!(puller.next().is_none());
+                assert!(puller.pull().is_none());
+                assert!(puller.pull().is_none());
 
                 let mut iter = iter.chunks_iter(5).flattened();
+                assert!(iter.next().is_none());
                 assert!(iter.next().is_none());
             });
         }
@@ -117,9 +116,9 @@ where
                 num_spawned.push(true);
                 while num_spawned.len() < nt {} // allow all threads to be spawned
 
-                let chunks_iter = iter.chunks_iter(7);
+                let mut chunks_iter = iter.chunks_iter(7);
 
-                for (begin_idx, chunk) in chunks_iter.map(K::destruct_chunk) {
+                while let Some((begin_idx, chunk)) = chunks_iter.pull().map(K::destruct_chunk) {
                     assert!(chunk.len() <= 7);
                     for x in chunk {
                         let value = K::new_element_from_begin_idx(begin_idx, x);
@@ -250,8 +249,8 @@ fn into_seq_iter<K: Enumeration>(_: K, n: usize, nt: usize, until: usize) {
                             }
                         }
                         _ => {
-                            let iter = con_iter.chunks_iter(7);
-                            for (_, chunk) in iter.map(K::destruct_chunk) {
+                            let mut iter = con_iter.chunks_iter(7);
+                            while let Some((_, chunk)) = iter.pull().map(K::destruct_chunk) {
                                 let mut do_break = false;
                                 for num in chunk {
                                     con_bag.push(num);
