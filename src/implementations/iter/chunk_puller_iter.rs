@@ -53,12 +53,14 @@ where
     }
 
     fn pull(&mut self) -> Option<<<E as Enumeration>::Element as Element>::IterOf<Self::Iter<'_>>> {
-        // self.con_iter
-        //     .progress_and_get_chunk_pointers(self.chunk_size)
-        //     .map(|(begin_idx, first, last)| {
-        //         E::new_chunk(begin_idx, SeqChunksIterVec::new(false, first, last))
-        //     });
-        todo!()
+        match self.con_iter.next_chunk_to_buffer(&mut self.buffer) {
+            (_, 0) => None,
+            (begin_idx, slice_len) => {
+                let buffer = &mut self.buffer[0..slice_len];
+                let chunk_iter = ChunksIterOfIter { buffer, current: 0 };
+                Some(E::new_chunk(begin_idx, chunk_iter))
+            }
+        }
     }
 }
 
