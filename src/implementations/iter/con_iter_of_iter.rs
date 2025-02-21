@@ -1,6 +1,6 @@
 use super::{
-    super::mut_handle::{AtomicState, MutHandle, COMPLETED},
     iter_cell::IterCell,
+    mut_handle::{AtomicState, MutHandle, COMPLETED},
 };
 use crate::{
     chunk_puller::DoNothingChunkPuller,
@@ -55,6 +55,10 @@ where
             phantom: PhantomData,
         }
     }
+
+    pub(super) fn get_handle(&self) -> Option<MutHandle<'_>> {
+        MutHandle::get_handle(&self.state)
+    }
 }
 
 impl<I, T, E> ConcurrentIter<E> for ConIterOfIter<I, T, E>
@@ -81,7 +85,8 @@ where
     }
 
     fn next(&self) -> Option<<<E as Enumeration>::Element as Element>::ElemOf<Self::Item>> {
-        todo!()
+        self.get_handle()
+            .and_then(|handle| self.iter.next::<E>(handle))
     }
 
     fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
