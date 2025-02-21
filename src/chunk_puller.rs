@@ -31,6 +31,7 @@ where
     E: Enumeration,
     T: Send + Sync,
 {
+    #[allow(dead_code)]
     pub fn new<X>(_: X, _: usize) -> Self {
         Self(Default::default())
     }

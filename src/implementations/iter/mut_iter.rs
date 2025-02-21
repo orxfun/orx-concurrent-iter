@@ -21,3 +21,13 @@ where
         }
     }
 }
+
+impl<T, I> MutIter<T, I>
+where
+    T: Send + Sync,
+    I: Iterator<Item = T>,
+{
+    pub fn into_inner(self) -> I {
+        self.iter.into_inner()
+    }
+}

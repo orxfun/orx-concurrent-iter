@@ -68,7 +68,7 @@ where
 {
     type Item = T;
 
-    type SeqIter = core::iter::Empty<T>;
+    type SeqIter = I;
 
     type ChunkPuller<'i>
         = DoNothingChunkPuller<E, T>
@@ -76,7 +76,7 @@ where
         Self: 'i;
 
     fn into_seq_iter(self) -> Self::SeqIter {
-        todo!()
+        self.iter.into_inner()
     }
 
     fn skip_to_end(&self) {
@@ -88,6 +88,6 @@ where
     }
 
     fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
-        todo!()
+        Self::ChunkPuller::new(self, chunk_size)
     }
 }
