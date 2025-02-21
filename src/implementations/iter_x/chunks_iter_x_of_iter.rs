@@ -1,9 +1,8 @@
 use super::con_iter_x_of_iter::ConIterXOfIter;
 use crate::chunk_puller::ChunkPuller;
-use crate::enumeration::{Element, Enumeration, Regular};
+use crate::enumeration::Regular;
 use alloc::vec::Vec;
 use core::iter::FusedIterator;
-use core::ops::{Add, Range};
 
 pub struct ChunksPullerXOfIter<'i, I, T>
 where
@@ -73,7 +72,7 @@ where
                 }
             }
         });
-        None
+        a
     }
 }
 
