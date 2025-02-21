@@ -3,19 +3,63 @@ use crate::chunk_puller::ChunkPuller;
 use crate::enumeration::{Element, Enumeration, Regular};
 use alloc::vec::Vec;
 use core::iter::FusedIterator;
+use core::marker::PhantomData;
 
-pub struct ChunkPullerOfIter<'i, I, T>
+pub struct ChunkPullerOfIter<'i, I, T, E = Regular>
 where
     T: Send + Sync,
     I: Iterator<Item = T>,
+    E: Enumeration,
 {
     con_iter: &'i ConIterOfIter<I, T>,
     buffer: Vec<Option<T>>,
+    phantom: PhantomData<E>,
+}
+
+impl<'i, I, T, E> ChunkPullerOfIter<'i, I, T, E>
+where
+    T: Send + Sync,
+    I: Iterator<Item = T>,
+    E: Enumeration,
+{
+    pub(super) fn new(con_iter: &'i ConIterOfIter<I, T>, chunk_size: usize) -> Self {
+        let mut buffer = Vec::with_capacity(chunk_size);
+        for _ in 0..chunk_size {
+            buffer.push(None);
+        }
+        Self {
+            con_iter,
+            buffer,
+            phantom: PhantomData,
+        }
+    }
+}
+
+impl<'i, I, T, E> ChunkPuller<E> for ChunkPullerOfIter<'i, I, T, E>
+where
+    T: Send + Sync,
+    I: Iterator<Item = T>,
+    E: Enumeration,
+{
+    type ChunkItem = <E::Element as Element>::ElemOf<T>;
+
+    type Iter<'c>
+        = ChunksIterOfIter<'c, T, E>
+    where
+        Self: 'c;
+
+    fn chunk_size(&self) -> usize {
+        self.buffer.len()
+    }
+
+    fn pull(&mut self) -> Option<<<E as Enumeration>::Element as Element>::IterOf<Self::Iter<'_>>> {
+        todo!()
+    }
 }
 
 // iter
 
-pub struct ChunksIterOfIter<'i, E, T>
+pub struct ChunksIterOfIter<'i, T, E>
 where
     T: Send + Sync,
     E: Enumeration,
@@ -24,7 +68,7 @@ where
     current: usize,
 }
 
-impl<'i, E, T> Default for ChunksIterOfIter<'i, E, T>
+impl<'i, T, E> Default for ChunksIterOfIter<'i, T, E>
 where
     T: Send + Sync,
     E: Enumeration,
@@ -37,7 +81,7 @@ where
     }
 }
 
-impl<'i, E, T> Iterator for ChunksIterOfIter<'i, E, T>
+impl<'i, T, E> Iterator for ChunksIterOfIter<'i, T, E>
 where
     T: Send + Sync,
     E: Enumeration,
@@ -57,7 +101,7 @@ where
     }
 }
 
-impl<'i, E, T> ExactSizeIterator for ChunksIterOfIter<'i, E, T>
+impl<'i, T, E> ExactSizeIterator for ChunksIterOfIter<'i, T, E>
 where
     T: Send + Sync,
     E: Enumeration,
@@ -67,7 +111,7 @@ where
     }
 }
 
-impl<'i, E, T> FusedIterator for ChunksIterOfIter<'i, E, T>
+impl<'i, T, E> FusedIterator for ChunksIterOfIter<'i, T, E>
 where
     T: Send + Sync,
     E: Enumeration,
