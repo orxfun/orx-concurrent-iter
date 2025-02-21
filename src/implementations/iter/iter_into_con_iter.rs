@@ -2,19 +2,19 @@ use super::con_iter_of_iter::ConIterOfIter;
 use crate::ConcurrentIterable;
 use orx_iterable::{transformations::CloningIterable, Iterable};
 
-pub trait IterIntoConcurrentIter<T>: Iterator<Item = T> + Sized
+pub trait IterIntoConcurrentIter: Iterator + Sized
 where
-    T: Send + Sync,
+    Self::Item: Send + Sync,
 {
-    fn iter_into_concurrent_iter(self) -> ConIterOfIter<Self, T>;
+    fn iter_into_concurrent_iter(self) -> ConIterOfIter<Self, Self::Item>;
 }
 
-impl<T, I> IterIntoConcurrentIter<T> for I
+impl<I> IterIntoConcurrentIter for I
 where
-    I: Iterator<Item = T>,
-    T: Send + Sync,
+    I: Iterator,
+    Self::Item: Send + Sync,
 {
-    fn iter_into_concurrent_iter(self) -> ConIterOfIter<Self, T> {
+    fn iter_into_concurrent_iter(self) -> ConIterOfIter<Self, Self::Item> {
         ConIterOfIter::new(self)
     }
 }
