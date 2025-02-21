@@ -4,7 +4,7 @@ use crate::enumeration::{Element, Enumeration, Regular};
 use alloc::vec::Vec;
 use core::iter::FusedIterator;
 
-pub struct ChunksPullerXOfIter<'i, I, T>
+pub struct ChunkPullerXOfIter<'i, I, T>
 where
     T: Send + Sync,
     I: Iterator<Item = T>,
@@ -13,7 +13,7 @@ where
     buffer: Vec<Option<T>>,
 }
 
-impl<'i, I, T> ChunksPullerXOfIter<'i, I, T>
+impl<'i, I, T> ChunkPullerXOfIter<'i, I, T>
 where
     T: Send + Sync,
     I: Iterator<Item = T>,
@@ -27,7 +27,7 @@ where
     }
 }
 
-impl<'i, I, T> ChunkPuller<Regular> for ChunksPullerXOfIter<'i, I, T>
+impl<'i, I, T> ChunkPuller<Regular> for ChunkPullerXOfIter<'i, I, T>
 where
     T: Send + Sync,
     I: Iterator<Item = T>,
@@ -52,7 +52,7 @@ where
             for i in 0..self.buffer.len() {
                 let next = iter.next();
                 match next.is_some() {
-                    true => self.buffer[i] = iter.next(),
+                    true => self.buffer[i] = next,
                     false => {
                         slice_len = i;
                         handle.set_target_to_completed();

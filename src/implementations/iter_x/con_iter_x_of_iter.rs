@@ -1,6 +1,8 @@
-use super::mut_handle::{AtomicState, MutHandle, AVAILABLE, COMPLETED};
+use super::{
+    chunk_puller_x_of_iter::ChunkPullerXOfIter,
+    mut_handle::{AtomicState, MutHandle, AVAILABLE, COMPLETED},
+};
 use crate::{
-    chunk_puller::DoNothingChunkPuller,
     concurrent_iter::ConcurrentIter,
     enumeration::{Element, Enumeration, Regular},
 };
@@ -61,7 +63,7 @@ where
     type SeqIter = I;
 
     type ChunkPuller<'i>
-        = DoNothingChunkPuller<Regular, T>
+        = ChunkPullerXOfIter<'i, I, T>
     where
         Self: 'i;
 
@@ -85,6 +87,6 @@ where
     }
 
     fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
-        todo!()
+        Self::ChunkPuller::new(self, chunk_size)
     }
 }
