@@ -4,4 +4,4 @@ mod range;
 mod slice;
 mod vec;
 
-pub use iter::IterIntoConcurrentIterator;
+pub use iter::IterIntoConcurrentIter;
