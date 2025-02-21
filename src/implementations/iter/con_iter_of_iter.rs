@@ -4,7 +4,7 @@ use super::{
     mut_handle::{AtomicState, MutHandle, COMPLETED},
 };
 use crate::{
-    concurrent_iter::ConcurrentIter,
+    concurrent_iter::{ConcurrentIter, ConcurrentIterEnum},
     enumeration::{Element, Enumeration, Regular},
 };
 use core::{marker::PhantomData, sync::atomic::Ordering};
@@ -71,6 +71,27 @@ where
         self.get_handle()
             .map(|handle| self.iter.next_chunk_to_buffer(handle, buffer))
             .unwrap_or((0, 0))
+    }
+}
+
+impl<I, T, E> ConcurrentIterEnum<E, T> for ConIterOfIter<I, T, E>
+where
+    T: Send + Sync,
+    I: Iterator<Item = T>,
+    E: Enumeration,
+{
+    type EnumerationOf<E2>
+        = ConIterOfIter<I, T, E2>
+    where
+        E2: Enumeration;
+
+    fn into_enumeration_of<E2: Enumeration>(self) -> Self::EnumerationOf<E2> {
+        ConIterOfIter {
+            iter: self.iter,
+            initial_len: self.initial_len,
+            state: self.state,
+            phantom: PhantomData,
+        }
     }
 }
 
