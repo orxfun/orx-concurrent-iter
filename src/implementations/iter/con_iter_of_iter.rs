@@ -6,7 +6,7 @@ use crate::{
 };
 use core::{cell::UnsafeCell, sync::atomic::Ordering};
 
-pub struct ConIterXOfIter<I, T>
+pub struct ConIterOfIter<I, T>
 where
     T: Send + Sync,
     I: Iterator<Item = T>,
@@ -16,11 +16,11 @@ where
     state: AtomicState,
 }
 
-unsafe impl<I: Iterator<Item = T>, T: Send + Sync> Sync for ConIterXOfIter<I, T> {}
+unsafe impl<I: Iterator<Item = T>, T: Send + Sync> Sync for ConIterOfIter<I, T> {}
 
-unsafe impl<I: Iterator<Item = T>, T: Send + Sync> Send for ConIterXOfIter<I, T> {}
+unsafe impl<I: Iterator<Item = T>, T: Send + Sync> Send for ConIterOfIter<I, T> {}
 
-impl<I, T> Default for ConIterXOfIter<I, T>
+impl<I, T> Default for ConIterOfIter<I, T>
 where
     T: Send + Sync,
     I: Iterator<Item = T> + Default,
@@ -30,7 +30,7 @@ where
     }
 }
 
-impl<I, T> ConIterXOfIter<I, T>
+impl<I, T> ConIterOfIter<I, T>
 where
     T: Send + Sync,
     I: Iterator<Item = T>,
@@ -53,7 +53,7 @@ where
     }
 }
 
-impl<I, T> ConcurrentIter<Regular> for ConIterXOfIter<I, T>
+impl<I, T> ConcurrentIter<Regular> for ConIterOfIter<I, T>
 where
     T: Send + Sync,
     I: Iterator<Item = T>,
@@ -76,15 +76,14 @@ where
     }
 
     fn next(&self) -> Option<<<Regular as Enumeration>::Element as Element>::ElemOf<Self::Item>> {
-        None
-        // self.get_handle().and_then(|mut handle| {
-        //     // SAFETY: no other thread has the handle
-        //     let next = unsafe { &mut *self.iter.get() }.next();
-        //     if next.is_none() {
-        //         handle.set_target_to_completed();
-        //     }
-        //     next
-        // })
+        self.get_handle(1).and_then(|mut handle| {
+            // SAFETY: no other thread has the handle
+            let next = unsafe { &mut *self.iter.get() }.next();
+            if next.is_none() {
+                handle.set_count_after(0);
+            }
+            next
+        })
     }
 
     fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
