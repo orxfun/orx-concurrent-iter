@@ -39,13 +39,20 @@ impl<'a> MutHandle<'a> {
 
 impl<'a> Drop for MutHandle<'a> {
     fn drop(&mut self) {
-        self.state
-            .compare_exchange(
-                IS_MUTATING,
-                self.final_state,
-                Ordering::Release,
-                Ordering::Relaxed,
-            )
-            .expect("Failed to update the concurrent state after concurrent state mutation");
+        match self.state.compare_exchange(
+            IS_MUTATING,
+            self.final_state,
+            Ordering::Release,
+            Ordering::Relaxed,
+        ) {
+            Ok(_) => {}
+            Err(s) => {
+                assert_eq!(
+                    s,
+                    COMPLETED, // possible due to skip_to_end
+                    "Failed to update the concurrent state after concurrent state mutation"
+                );
+            }
+        };
     }
 }

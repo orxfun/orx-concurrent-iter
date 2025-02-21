@@ -284,3 +284,55 @@ fn into_seq_iter(n: usize, nt: usize, until: usize) {
 
     assert_eq!(all, expected);
 }
+
+#[test]
+fn abc() {
+    let n = N;
+    let nt = 4;
+    let vec = new_vec(n, |x| (x + 10).to_string());
+    let iter = vec.iter().filter(|x| x.as_str() != "abc");
+    let iter = ConIterXOfIter::<_, &String>::new(iter);
+    let until = n / 2;
+
+    let bag = ConcurrentBag::new();
+    let num_spawned = ConcurrentBag::new();
+    let con_num_spawned = &num_spawned;
+    let con_bag = &bag;
+    let con_iter = &iter;
+    std::thread::scope(|s| {
+        for t in 0..nt {
+            s.spawn(move || {
+                con_num_spawned.push(true);
+                while con_num_spawned.len() < nt {} // allow all threads to be spawned
+
+                match t % 2 {
+                    0 => {
+                        while let Some(x) = con_iter.next() {
+                            let num: usize = x.parse().unwrap();
+                            match num < until + 10 {
+                                true => _ = con_bag.push(x),
+                                false => con_iter.skip_to_end(),
+                            }
+                        }
+                    }
+                    _ => {
+                        for x in con_iter.chunks_iter(7).flattened() {
+                            let num: usize = x.parse().unwrap();
+                            match num < until + 10 {
+                                true => _ = con_bag.push(x),
+                                false => con_iter.skip_to_end(),
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+
+    let mut expected: Vec<_> = (0..until).map(|i| &vec[i]).collect();
+    expected.sort();
+    let mut collected = bag.into_inner().to_vec();
+    collected.sort();
+
+    assert_eq!(expected, collected);
+}
