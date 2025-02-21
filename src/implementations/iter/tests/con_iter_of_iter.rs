@@ -22,40 +22,40 @@ fn new_vec(n: usize, elem: impl Fn(usize) -> String) -> Vec<String> {
     vec
 }
 
-// #[test]
-// fn enumeration() {
-//     let vec: Vec<_> = (0..6).collect();
+#[test]
+fn enumeration() {
+    let vec: Vec<_> = (0..6).collect();
 
-//     let iter = vec.into_concurrent_iter();
-//     assert_eq!(iter.next(), Some(0));
+    let iter = ConIterOfIter::<_, usize>::new(vec.into_iter().filter(|x| *x < 99));
+    assert_eq!(iter.next(), Some(0));
 
-//     let enumerated = iter.enumerated();
-//     assert_eq!(enumerated.next(), Some((1, 1)));
+    let enumerated = iter.enumerated();
+    assert_eq!(enumerated.next(), Some((1, 1)));
 
-//     let iter = enumerated.not_enumerated();
-//     assert_eq!(iter.next(), Some(2));
+    let iter = enumerated.not_enumerated();
+    assert_eq!(iter.next(), Some(2));
 
-//     let enumerated = iter.enumerated();
-//     assert_eq!(enumerated.next(), Some((3, 3)));
+    let enumerated = iter.enumerated();
+    assert_eq!(enumerated.next(), Some((3, 3)));
 
-//     let iter = enumerated.not_enumerated();
-//     assert_eq!(iter.next(), Some(4));
+    let iter = enumerated.not_enumerated();
+    assert_eq!(iter.next(), Some(4));
 
-//     let enumerated = iter.enumerated();
-//     assert_eq!(enumerated.next(), Some((5, 5)));
+    let enumerated = iter.enumerated();
+    assert_eq!(enumerated.next(), Some((5, 5)));
 
-//     let iter = enumerated.not_enumerated();
-//     assert_eq!(iter.next(), None);
+    let iter = enumerated.not_enumerated();
+    assert_eq!(iter.next(), None);
 
-//     let enumerated = iter.enumerated();
-//     assert_eq!(enumerated.next(), None);
+    let enumerated = iter.enumerated();
+    assert_eq!(enumerated.next(), None);
 
-//     let iter = enumerated.not_enumerated();
-//     assert_eq!(iter.next(), None);
+    let iter = enumerated.not_enumerated();
+    assert_eq!(iter.next(), None);
 
-//     let enumerated = iter.enumerated();
-//     assert_eq!(enumerated.next(), None);
-// }
+    let enumerated = iter.enumerated();
+    assert_eq!(enumerated.next(), None);
+}
 
 #[test_matrix([Regular, Enumerated], [1, 2, 4])]
 fn empty_vec<E: Enumeration>(_: E, nt: usize) {
@@ -188,7 +188,7 @@ where
 }
 
 #[test_matrix([Regular, Enumerated], [0, 1, N], [1, 2, 4])]
-fn abc_skip_to_end<E: Enumeration>(_: E, n: usize, nt: usize) {
+fn skip_to_end<E: Enumeration>(_: E, n: usize, nt: usize) {
     let vec = new_vec(n, |x| (x + 10).to_string());
     let iter = ConIterOfIter::<_, String, E>::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
     let until = n / 2;
@@ -241,7 +241,7 @@ fn abc_skip_to_end<E: Enumeration>(_: E, n: usize, nt: usize) {
 }
 
 #[test_matrix([Regular, Enumerated], [0, 1, N], [1, 2, 4], [0, N / 2, N])]
-fn abc_into_seq_iter<E: Enumeration>(_: E, n: usize, nt: usize, until: usize) {
+fn into_seq_iter<E: Enumeration>(_: E, n: usize, nt: usize, until: usize) {
     let vec = new_vec(n, |x| (x + 10).to_string());
     let iter = ConIterOfIter::<_, String, E>::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
 
