@@ -8,7 +8,7 @@ use crate::{
     concurrent_iter::ConcurrentIter,
     enumeration::{Element, Enumeration, Regular},
 };
-use core::marker::PhantomData;
+use core::{marker::PhantomData, sync::atomic::Ordering};
 
 pub struct ConIterOfIter<I, T, E = Regular>
 where
@@ -95,7 +95,7 @@ where
     }
 
     fn skip_to_end(&self) {
-        todo!()
+        self.state.store(COMPLETED, Ordering::SeqCst);
     }
 
     fn next(&self) -> Option<<<E as Enumeration>::Element as Element>::ElemOf<Self::Item>> {
