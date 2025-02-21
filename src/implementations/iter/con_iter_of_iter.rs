@@ -1,7 +1,6 @@
 use super::{
     super::mut_handle::{AtomicState, MutHandle, COMPLETED},
     iter_cell::IterCell,
-    num_taken::NumTaken,
 };
 use crate::{
     chunk_puller::DoNothingChunkPuller,
@@ -17,7 +16,6 @@ where
     E: Enumeration,
 {
     iter: IterCell<T, I>,
-    num_taken: NumTaken,
     initial_len: Option<usize>,
     state: AtomicState,
     phantom: PhantomData<E>,
@@ -53,7 +51,6 @@ where
         Self {
             iter: iter.into(),
             initial_len,
-            num_taken: 0.into(),
             state: 0.into(),
             phantom: PhantomData,
         }
