@@ -1,4 +1,7 @@
-use super::super::mut_handle::{AtomicState, MutHandle, COMPLETED};
+use super::{
+    super::mut_handle::{AtomicState, MutHandle, COMPLETED},
+    chunk_puller_of_iter::ChunkPullerOfIter,
+};
 use crate::{
     chunk_puller::DoNothingChunkPuller,
     concurrent_iter::ConcurrentIter,
@@ -65,7 +68,7 @@ where
     type SeqIter = I;
 
     type ChunkPuller<'i>
-        = DoNothingChunkPuller<Regular, T>
+        = ChunkPullerOfIter<'i, I, T>
     where
         Self: 'i;
 
