@@ -57,8 +57,21 @@ where
         }
     }
 
-    pub(super) fn get_handle(&self) -> Option<MutHandle<'_>> {
+    fn get_handle(&self) -> Option<MutHandle<'_>> {
         MutHandle::get_handle(&self.state)
+    }
+
+    /// Pulls and writes chunk-size (`buffer.len()`) elements from the iterator into the given `buffer` starting from position 0.
+    ///
+    /// Returns the pair of (begin_idx, num_taken):
+    ///
+    /// * begin_idx: index of the first taken item.
+    /// * num_taken: number of items pulled from the iterator; the method tries to pull `buffer.len()` items, however, might stop
+    ///   early if the iterator is completely consumed.
+    pub(super) fn next_chunk_to_buffer(&self, buffer: &mut [Option<T>]) -> (usize, usize) {
+        self.get_handle()
+            .map(|handle| self.iter.next_chunk_to_buffer(handle, buffer))
+            .unwrap_or((0, 0))
     }
 }
 
