@@ -1,33 +1,30 @@
-use core::sync::atomic::{AtomicIsize, Ordering};
+use core::sync::atomic::{AtomicU8, Ordering};
 
-pub(super) type AtomicState = AtomicIsize;
-pub(super) const COMPLETED: isize = isize::MIN;
+pub(super) type AtomicState = AtomicU8;
+
+pub(super) const AVAILABLE: u8 = 0;
+pub(super) const IS_MUTATING: u8 = 1;
+pub(super) const COMPLETED: u8 = 2;
 
 pub(super) struct MutHandle<'a> {
     state: &'a AtomicState,
-    neg_count_before: isize,
-    count_after: usize,
+    final_state: u8,
 }
 
 impl<'a> MutHandle<'a> {
-    pub(super) fn get_handle(state: &'a AtomicState, num_to_pull: usize) -> Option<Self> {
+    pub(super) fn get_handle(state: &'a AtomicState) -> Option<Self> {
         loop {
-            let update = state.fetch_update(Ordering::Acquire, Ordering::Relaxed, |count_before| {
-                match count_before >= 0 {
-                    true => {
-                        let neg_count_before = -count_before;
-                        Some(neg_count_before)
-                    }
-                    false => None,
-                }
-            });
-            match update {
-                Ok(count_before) => {
+            match state.compare_exchange(
+                AVAILABLE,
+                IS_MUTATING,
+                Ordering::Acquire,
+                Ordering::Relaxed,
+            ) {
+                Ok(_) => {
                     return Some(Self {
                         state,
-                        neg_count_before: -count_before,
-                        count_after: count_before as usize + num_to_pull,
-                    });
+                        final_state: AVAILABLE,
+                    })
                 }
                 Err(COMPLETED) => return None,
                 _ => {}
@@ -35,16 +32,16 @@ impl<'a> MutHandle<'a> {
         }
     }
 
-    pub(super) fn set_count_after(&mut self, num_actually_pulled: usize) {
-        self.count_after = (-self.neg_count_before) as usize + num_actually_pulled
+    pub(super) fn set_target_to_completed(&mut self) {
+        self.final_state = COMPLETED;
     }
 }
 
 impl<'a> Drop for MutHandle<'a> {
     fn drop(&mut self) {
         match self.state.compare_exchange(
-            self.neg_count_before,
-            self.count_after as isize,
+            IS_MUTATING,
+            self.final_state,
             Ordering::Release,
             Ordering::Relaxed,
         ) {

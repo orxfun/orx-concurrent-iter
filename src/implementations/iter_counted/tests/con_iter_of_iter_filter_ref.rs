@@ -1,6 +1,6 @@
 use crate::{
     chunk_puller::ChunkPuller, concurrent_iter::ConcurrentIter,
-    implementations::iter::con_iter_of_iter::ConIterOfIter,
+    implementations::iter_counted::con_iter_of_iter::ConIterOfIter,
 };
 use orx_concurrent_bag::ConcurrentBag;
 use test_case::test_matrix;
