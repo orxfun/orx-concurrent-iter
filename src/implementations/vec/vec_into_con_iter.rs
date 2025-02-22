@@ -1,7 +1,5 @@
 use super::con_iter_vec::ConIterVec;
-use crate::{
-    implementations::slice::con_iter_slice::ConIterSlice, into_concurrent_iter::IntoConcurrentIter,
-};
+use crate::{implementations::slice::ConIterSlice, into_concurrent_iter::IntoConcurrentIter};
 use alloc::vec::Vec;
 
 impl<T> IntoConcurrentIter for Vec<T>
