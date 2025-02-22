@@ -57,6 +57,38 @@ fn enumeration() {
     assert_eq!(enumerated.next(), None);
 }
 
+#[test_matrix([Regular, Enumerated])]
+fn size_hint<E: Enumeration>(_: E) {
+    let mut n = 25;
+    let vec = new_vec(n, |x| (x + 10).to_string());
+    let iter = ConIterOfIter::<_, E>::new(vec.into_iter().map(|x| format!("{}!", x)));
+
+    for _ in 0..10 {
+        assert_eq!(iter.size_hint(), (n, Some(n)));
+        let _ = iter.next();
+        n -= 1;
+    }
+
+    let mut chunks_iter = iter.chunks_iter(7);
+
+    assert_eq!(iter.size_hint(), (n, Some(n)));
+    let _ = chunks_iter.pull();
+    n -= 7;
+
+    assert_eq!(iter.size_hint(), (n, Some(n)));
+    let _ = chunks_iter.pull();
+    assert_eq!(iter.size_hint(), (1, Some(1)));
+
+    let _ = chunks_iter.pull();
+    assert_eq!(iter.size_hint(), (0, Some(0)));
+
+    let _ = chunks_iter.pull();
+    assert_eq!(iter.size_hint(), (0, Some(0)));
+
+    let _ = iter.next();
+    assert_eq!(iter.size_hint(), (0, Some(0)));
+}
+
 #[test_matrix([Regular, Enumerated], [1, 2, 4])]
 fn empty_vec<E: Enumeration>(_: E, nt: usize) {
     let vec = Vec::<String>::new();
