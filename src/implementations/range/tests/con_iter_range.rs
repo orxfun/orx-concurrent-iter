@@ -49,6 +49,37 @@ fn enumeration() {
     assert_eq!(enumerated.next(), None);
 }
 
+#[test_matrix([Regular, Enumerated])]
+fn size_hint<E: Enumeration>(_: E) {
+    let mut n = 25;
+    let iter = ConIterRange::<usize, E>::new(10..(10 + n));
+
+    for _ in 0..10 {
+        assert_eq!(iter.size_hint(), (n, Some(n)));
+        let _ = iter.next();
+        n -= 1;
+    }
+
+    let mut chunks_iter = iter.chunks_iter(7);
+
+    assert_eq!(iter.size_hint(), (n, Some(n)));
+    let _ = chunks_iter.pull();
+    n -= 7;
+
+    assert_eq!(iter.size_hint(), (n, Some(n)));
+    let _ = chunks_iter.pull();
+    assert_eq!(iter.size_hint(), (1, Some(1)));
+
+    let _ = chunks_iter.pull();
+    assert_eq!(iter.size_hint(), (0, Some(0)));
+
+    let _ = chunks_iter.pull();
+    assert_eq!(iter.size_hint(), (0, Some(0)));
+
+    let _ = iter.next();
+    assert_eq!(iter.size_hint(), (0, Some(0)));
+}
+
 #[test_matrix([Regular, Enumerated], [1, 2, 4])]
 fn empty_range<E: Enumeration>(_: E, nt: usize) {
     let iter = ConIterRange::<usize, E>::new(10..10);
