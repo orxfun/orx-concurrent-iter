@@ -3,7 +3,6 @@ use crate::{
     concurrent_iter::ConcurrentIter,
     enumeration::{Element, Enumerated, Enumeration, Regular},
     implementations::iter::con_iter_of_iter::ConIterOfIter,
-    IntoConcurrentIter,
 };
 use core::fmt::Debug;
 use orx_concurrent_bag::ConcurrentBag;
@@ -89,6 +88,42 @@ fn size_hint<E: Enumeration>(_: E) {
     assert_eq!(iter.size_hint(), (0, Some(0)));
 }
 
+#[test_matrix([Regular, Enumerated])]
+fn size_hint_skip_to_end<E: Enumeration>(_: E) {
+    let n = 25;
+    let vec = new_vec(n, |x| (x + 10).to_string());
+    let iter = ConIterOfIter::<_, E>::new(vec.into_iter().map(|x| format!("{}!", x)));
+
+    for _ in 0..10 {
+        let _ = iter.next();
+    }
+    let mut chunks_iter = iter.chunks_iter(7);
+    let _ = chunks_iter.pull();
+
+    assert_eq!(iter.size_hint(), (8, Some(8)));
+
+    iter.skip_to_end();
+    assert_eq!(iter.size_hint(), (0, Some(0)));
+}
+
+#[test_matrix([Regular, Enumerated])]
+fn size_hint_into_seq_iter<E: Enumeration>(_: E) {
+    let n = 25;
+    let vec = new_vec(n, |x| (x + 10).to_string());
+    let iter = ConIterOfIter::<_, E>::new(vec.into_iter().map(|x| format!("{}!", x)));
+
+    for _ in 0..10 {
+        let _ = iter.next();
+    }
+    let mut chunks_iter = iter.chunks_iter(7);
+    let _ = chunks_iter.pull();
+
+    assert_eq!(iter.size_hint(), (8, Some(8)));
+
+    let seq_iter = iter.into_seq_iter();
+    assert_eq!(seq_iter.size_hint(), (8, Some(8)));
+}
+
 #[test_matrix([Regular, Enumerated], [1, 2, 4])]
 fn empty_vec<E: Enumeration>(_: E, nt: usize) {
     let vec = Vec::<String>::new();
@@ -128,6 +163,7 @@ where
                 num_spawned.push(true);
                 while num_spawned.len() < nt {} // allow all threads to be spawned
                 while let Some(x) = iter.next() {
+                    _ = iter.size_hint();
                     bag.push(x);
                 }
             });
@@ -164,6 +200,7 @@ where
                 while let Some((begin_idx, chunk)) = chunks_iter.pull().map(E::destruct_chunk) {
                     assert!(chunk.len() <= 7);
                     for x in chunk {
+                        _ = iter.size_hint();
                         let value = E::new_element_from_begin_idx(begin_idx, x);
                         bag.push(value);
                     }
@@ -203,6 +240,7 @@ where
                 let chunks_iter = iter.chunks_iter(7).flattened();
 
                 for x in chunks_iter {
+                    _ = iter.size_hint();
                     bag.push(x);
                 }
             });

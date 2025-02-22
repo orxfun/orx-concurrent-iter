@@ -80,6 +80,23 @@ fn size_hint<E: Enumeration>(_: E) {
     assert_eq!(iter.size_hint(), (0, Some(0)));
 }
 
+#[test_matrix([Regular, Enumerated])]
+fn size_hint_skip_to_end<E: Enumeration>(_: E) {
+    let n = 25;
+    let iter = ConIterRange::<usize, E>::new(10..(10 + n));
+
+    for _ in 0..10 {
+        let _ = iter.next();
+    }
+    let mut chunks_iter = iter.chunks_iter(7);
+    let _ = chunks_iter.pull();
+
+    assert_eq!(iter.size_hint(), (8, Some(8)));
+
+    iter.skip_to_end();
+    assert_eq!(iter.size_hint(), (0, Some(0)));
+}
+
 #[test_matrix([Regular, Enumerated], [1, 2, 4])]
 fn empty_range<E: Enumeration>(_: E, nt: usize) {
     let iter = ConIterRange::<usize, E>::new(10..10);
@@ -118,6 +135,7 @@ where
                 while num_spawned.len() < nt {} // allow all threads to be spawned
 
                 while let Some(x) = iter.next() {
+                    _ = iter.size_hint();
                     bag.push(x);
                 }
             });
@@ -152,6 +170,7 @@ where
                 while let Some((begin_idx, chunk)) = chunks_iter.pull().map(K::destruct_chunk) {
                     assert!(chunk.len() <= 7);
                     for x in chunk {
+                        _ = iter.size_hint();
                         let value = K::new_element_from_begin_idx(begin_idx, x);
                         bag.push(value);
                     }
@@ -189,6 +208,7 @@ where
 
                 let chunks_iter = iter.chunks_iter(7).flattened();
                 for x in chunks_iter {
+                    _ = iter.size_hint();
                     bag.push(x);
                 }
             });
