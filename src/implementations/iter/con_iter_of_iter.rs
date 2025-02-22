@@ -138,4 +138,11 @@ where
     fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
         Self::ChunkPuller::new(self, chunk_size)
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        match self.get_handle() {
+            Some(handle) => self.iter.size_hint(handle),
+            None => (0, Some(0)),
+        }
+    }
 }

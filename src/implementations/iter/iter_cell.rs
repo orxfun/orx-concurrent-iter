@@ -108,4 +108,9 @@ where
 
         (begin_idx, num_taken_now)
     }
+
+    pub fn size_hint(&self, _handle: MutHandle) -> (usize, Option<usize>) {
+        let iter = unsafe { &mut *self.iter.get() };
+        iter.size_hint()
+    }
 }
