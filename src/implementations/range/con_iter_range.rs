@@ -125,4 +125,10 @@ where
     fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
         Self::ChunkPuller::new(self, chunk_size)
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let num_taken = self.counter.load(Ordering::Acquire);
+        let remaining = self.len.saturating_sub(num_taken);
+        (remaining, Some(remaining))
+    }
 }
