@@ -1,4 +1,4 @@
-use super::ChunksIter;
+use super::ChunkIter;
 use crate::enumeration::{Element, Enumeration, Regular};
 use core::marker::PhantomData;
 
@@ -11,8 +11,8 @@ pub trait ChunkPuller<E: Enumeration = Regular>: Sized {
 
     fn chunk_size(&self) -> usize;
 
-    fn flattened<'c>(self) -> ChunksIter<'c, Self, E> {
-        ChunksIter::new(self)
+    fn flattened<'c>(self) -> ChunkIter<'c, Self, E> {
+        ChunkIter::new(self)
     }
 
     fn pull(&mut self) -> Option<<E::Element as Element>::IterOf<Self::Iter<'_>>>;
