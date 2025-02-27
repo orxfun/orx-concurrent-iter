@@ -6,16 +6,29 @@ use core::marker::PhantomData;
 
 pub struct SingleIter<'a, I, E = Regular>
 where
-    I: ConcurrentIter<E> + 'a,
+    I: ConcurrentIter<E>,
     E: Enumeration,
 {
     con_iter: &'a I,
     phantom: PhantomData<E>,
 }
 
+impl<'a, I, E> SingleIter<'a, I, E>
+where
+    I: ConcurrentIter<E>,
+    E: Enumeration,
+{
+    pub fn new(con_iter: &'a I) -> Self {
+        Self {
+            con_iter,
+            phantom: PhantomData,
+        }
+    }
+}
+
 impl<'a, I, E> Iterator for SingleIter<'a, I, E>
 where
-    I: ConcurrentIter<E> + 'a,
+    I: ConcurrentIter<E>,
     E: Enumeration,
 {
     type Item = <E::Element as Element>::ElemOf<I::Item>;
