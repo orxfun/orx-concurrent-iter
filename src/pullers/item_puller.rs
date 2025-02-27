@@ -4,7 +4,7 @@ use crate::{
 };
 use core::marker::PhantomData;
 
-pub struct SingleIter<'a, I, E = Regular>
+pub struct ItemPuller<'a, I, E = Regular>
 where
     I: ConcurrentIter<E>,
     E: Enumeration,
@@ -13,7 +13,7 @@ where
     phantom: PhantomData<E>,
 }
 
-impl<'a, I, E> SingleIter<'a, I, E>
+impl<'a, I, E> ItemPuller<'a, I, E>
 where
     I: ConcurrentIter<E>,
     E: Enumeration,
@@ -26,7 +26,7 @@ where
     }
 }
 
-impl<'a, I, E> Iterator for SingleIter<'a, I, E>
+impl<'a, I, E> Iterator for ItemPuller<'a, I, E>
 where
     I: ConcurrentIter<E>,
     E: Enumeration,
