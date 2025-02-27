@@ -26,10 +26,6 @@ where
     where
         Self: 'i;
 
-    fn concurrent_iter(&self) -> <Self::Iterable<'_> as ConcurrentIterable>::Iter {
-        <&X as IntoConcurrentIter>::into_concurrent_iter(self)
-    }
-
     fn as_concurrent_iterable(&self) -> Self::Iterable<'_> {
         self
     }
