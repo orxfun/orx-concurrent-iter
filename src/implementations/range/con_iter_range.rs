@@ -122,7 +122,7 @@ where
             .map(|idx| E::new_element(idx, T::from(self.begin + idx)))
     }
 
-    fn chunks_iter(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+    fn chunks_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
         Self::ChunkPuller::new(self, chunk_size)
     }
 

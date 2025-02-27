@@ -1,8 +1,8 @@
 use crate::{
-    pullers::ChunkPuller,
     concurrent_iter::ConcurrentIter,
     enumeration::{Element, Enumerated, Enumeration, Regular},
     implementations::vec::con_iter_vec::ConIterVec,
+    pullers::ChunkPuller,
     IntoConcurrentIter,
 };
 use core::fmt::Debug;
@@ -69,7 +69,7 @@ fn size_hint<E: Enumeration>(_: E) {
         n -= 1;
     }
 
-    let mut chunks_iter = iter.chunks_iter(7);
+    let mut chunks_iter = iter.chunks_puller(7);
 
     assert_eq!(iter.size_hint(), (n, Some(n)));
     let _ = chunks_iter.pull();
@@ -98,7 +98,7 @@ fn size_hint_skip_to_end<E: Enumeration>(_: E) {
     for _ in 0..10 {
         let _ = iter.next();
     }
-    let mut chunks_iter = iter.chunks_iter(7);
+    let mut chunks_iter = iter.chunks_puller(7);
     let _ = chunks_iter.pull();
 
     assert_eq!(iter.size_hint(), (8, Some(8)));
@@ -118,11 +118,11 @@ fn empty_vec<E: Enumeration>(_: E, nt: usize) {
                 assert!(iter.next().is_none());
                 assert!(iter.next().is_none());
 
-                let mut puller = iter.chunks_iter(5);
+                let mut puller = iter.chunks_puller(5);
                 assert!(puller.pull().is_none());
                 assert!(puller.pull().is_none());
 
-                let mut iter = iter.chunks_iter(5).flattened();
+                let mut iter = iter.chunks_puller(5).flattened();
                 assert!(iter.next().is_none());
                 assert!(iter.next().is_none());
             });
@@ -179,7 +179,7 @@ where
                 num_spawned.push(true);
                 while num_spawned.len() < nt {} // allow all threads to be spawned
 
-                let mut chunks_iter = iter.chunks_iter(7);
+                let mut chunks_iter = iter.chunks_puller(7);
                 while let Some((begin_idx, chunk)) = chunks_iter.pull().map(K::destruct_chunk) {
                     assert!(chunk.len() <= 7);
                     for x in chunk {
@@ -220,7 +220,7 @@ where
                 num_spawned.push(true);
                 while num_spawned.len() < nt {} // allow all threads to be spawned
 
-                let chunks_iter = iter.chunks_iter(7).flattened();
+                let chunks_iter = iter.chunks_puller(7).flattened();
 
                 for x in chunks_iter {
                     _ = iter.size_hint();
@@ -269,7 +269,7 @@ fn skip_to_end<K: Enumeration>(_: K, n: usize, nt: usize) {
                     }
                     _ => {
                         for x in con_iter
-                            .chunks_iter(7)
+                            .chunks_puller(7)
                             .flattened()
                             .map(K::Element::item_from_element)
                         {
@@ -321,7 +321,7 @@ fn into_seq_iter<K: Enumeration>(_: K, n: usize, nt: usize, until: usize) {
                             }
                         }
                         _ => {
-                            let mut iter = con_iter.chunks_iter(7);
+                            let mut iter = con_iter.chunks_puller(7);
                             while let Some((_, chunk)) = iter.pull().map(K::destruct_chunk) {
                                 let mut do_break = false;
                                 for x in chunk {
