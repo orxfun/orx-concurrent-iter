@@ -26,6 +26,7 @@ pub mod wrappers;
 pub use concurrent_collection::ConcurrentCollection;
 pub use concurrent_iter::ConcurrentIter;
 pub use concurrent_iterable::ConcurrentIterable;
+pub use enumeration::{Enumerated, Enumeration, Regular};
 pub use implementations::IterIntoConcurrentIter;
 pub use into_concurrent_iter::IntoConcurrentIter;
 pub use pullers::ChunkPuller;
