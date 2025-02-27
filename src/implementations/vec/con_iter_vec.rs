@@ -171,7 +171,7 @@ where
             .map(|idx| E::new_element(idx, unsafe { take(self.ptr.add(idx) as *mut T) }))
     }
 
-    fn chunks_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
         Self::ChunkPuller::new(self, chunk_size)
     }
 

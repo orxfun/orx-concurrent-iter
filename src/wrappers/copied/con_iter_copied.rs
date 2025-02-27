@@ -88,7 +88,7 @@ where
             .map(<<E as Enumeration>::Element as Element>::cloned_elem)
     }
 
-    fn chunks_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
-        Self::ChunkPuller::new(self.con_iter.chunks_puller(chunk_size))
+    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+        Self::ChunkPuller::new(self.con_iter.chunk_puller(chunk_size))
     }
 }

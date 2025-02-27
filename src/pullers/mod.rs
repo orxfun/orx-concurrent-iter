@@ -4,3 +4,4 @@ mod item_puller;
 
 pub use chunk_puller::ChunkPuller;
 pub use flattened_chunk_puller::FlattenedChunkPuller;
+pub use item_puller::ItemPuller;

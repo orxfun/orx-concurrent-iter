@@ -1,6 +1,6 @@
 use crate::{
     enumeration::{Element, Enumerated, Enumeration, IsEnumerated, IsNotEnumerated, Regular},
-    pullers::ChunkPuller,
+    pullers::{ChunkPuller, ItemPuller},
 };
 
 pub trait ConcurrentIterEnum<E: Enumeration, T> {
@@ -50,7 +50,11 @@ pub trait ConcurrentIter<E: Enumeration = Regular>:
 
     fn next(&self) -> Option<<E::Element as Element>::ElemOf<Self::Item>>;
 
-    fn chunks_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_>;
+    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_>;
+
+    fn item_puller(&self) -> ItemPuller<Self, E> {
+        ItemPuller::new(self)
+    }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         (0, None)

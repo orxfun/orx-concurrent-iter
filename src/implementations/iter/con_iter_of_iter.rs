@@ -135,7 +135,7 @@ where
             .and_then(|handle| self.iter.next::<E>(handle))
     }
 
-    fn chunks_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
         Self::ChunkPuller::new(self, chunk_size)
     }
 
