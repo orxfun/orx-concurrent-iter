@@ -1,8 +1,8 @@
 use crate::{
-    pullers::ChunkPuller,
     concurrent_iter::ConcurrentIter,
     enumeration::{Element, Enumerated, Enumeration, Regular},
     implementations::slice::con_iter_slice::ConIterSlice,
+    pullers::ChunkPuller,
     IntoConcurrentIter,
 };
 use core::fmt::Debug;
@@ -121,13 +121,13 @@ fn empty_slice<E: Enumeration>(_: E, nt: usize) {
 }
 
 #[test_matrix([Regular, Enumerated], [0, 1, N], [1, 2, 4])]
-fn next<K: Enumeration>(_: K, n: usize, nt: usize)
+fn next<E: Enumeration>(_: E, n: usize, nt: usize)
 where
-    for<'a> <K::Element as Element>::ElemOf<&'a String>: PartialEq + Ord + Debug,
+    for<'a> <E::Element as Element>::ElemOf<&'a String>: PartialEq + Ord + Debug,
 {
     let vec: Vec<_> = (0..n).map(|x| (x + 10).to_string()).collect();
     let slice = vec.as_slice();
-    let iter = ConIterSlice::<String, K>::new(slice);
+    let iter = ConIterSlice::<String, E>::new(slice);
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -145,7 +145,7 @@ where
         }
     });
 
-    let mut expected: Vec<_> = (0..n).map(|i| K::new_element(i, &slice[i])).collect();
+    let mut expected: Vec<_> = (0..n).map(|i| E::new_element(i, &slice[i])).collect();
     expected.sort();
     let mut collected = bag.into_inner().to_vec();
     collected.sort();
@@ -154,13 +154,13 @@ where
 }
 
 #[test_matrix([Regular, Enumerated], [0, 1, N], [1, 2, 4])]
-fn chunks_iter<K: Enumeration>(_: K, n: usize, nt: usize)
+fn item_puller<E: Enumeration>(_: E, n: usize, nt: usize)
 where
-    for<'a> <K::Element as Element>::ElemOf<&'a String>: PartialEq + Ord + Debug,
+    for<'a> <E::Element as Element>::ElemOf<&'a String>: PartialEq + Ord + Debug,
 {
     let vec: Vec<_> = (0..n).map(|x| (x + 10).to_string()).collect();
     let slice = vec.as_slice();
-    let iter = ConIterSlice::<String, K>::new(slice);
+    let iter = ConIterSlice::<String, E>::new(slice);
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -170,13 +170,45 @@ where
                 num_spawned.push(true);
                 while num_spawned.len() < nt {} // allow all threads to be spawned
 
-                let mut chunks_iter = iter.chunk_puller(7);
+                for x in iter.item_puller() {
+                    _ = iter.size_hint();
+                    bag.push(x);
+                }
+            });
+        }
+    });
 
-                while let Some((begin_idx, chunk)) = chunks_iter.pull().map(K::destruct_chunk) {
+    let mut expected: Vec<_> = (0..n).map(|i| E::new_element(i, &slice[i])).collect();
+    expected.sort();
+    let mut collected = bag.into_inner().to_vec();
+    collected.sort();
+
+    assert_eq!(expected, collected);
+}
+
+#[test_matrix([Regular, Enumerated], [0, 1, N], [1, 2, 4])]
+fn chunk_puller<E: Enumeration>(_: E, n: usize, nt: usize)
+where
+    for<'a> <E::Element as Element>::ElemOf<&'a String>: PartialEq + Ord + Debug,
+{
+    let vec: Vec<_> = (0..n).map(|x| (x + 10).to_string()).collect();
+    let slice = vec.as_slice();
+    let iter = ConIterSlice::<String, E>::new(slice);
+
+    let bag = ConcurrentBag::new();
+    let num_spawned = ConcurrentBag::new();
+    std::thread::scope(|s| {
+        for _ in 0..nt {
+            s.spawn(|| {
+                num_spawned.push(true);
+                while num_spawned.len() < nt {} // allow all threads to be spawned
+
+                let mut puller = iter.chunk_puller(7);
+                while let Some((begin_idx, chunk)) = puller.pull().map(E::destruct_chunk) {
                     assert!(chunk.len() <= 7);
                     for x in chunk {
                         _ = iter.size_hint();
-                        let value = K::new_element_from_begin_idx(begin_idx, x);
+                        let value = E::new_element_from_begin_idx(begin_idx, x);
                         bag.push(value);
                     }
                 }
@@ -187,7 +219,7 @@ where
     let mut expected = vec![];
     for i in 0..n {
         let c = (i / 7) * 7;
-        expected.push(K::new_element(c, &slice[i]));
+        expected.push(E::new_element(c, &slice[i]));
     }
     expected.sort();
     let mut collected = bag.into_inner().to_vec();

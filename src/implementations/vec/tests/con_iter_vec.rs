@@ -198,7 +198,7 @@ where
 }
 
 #[test_matrix([Regular, Enumerated], [0, 1, N], [1, 2, 4])]
-fn chunks_puller<E: Enumeration>(_: E, n: usize, nt: usize)
+fn chunk_puller<E: Enumeration>(_: E, n: usize, nt: usize)
 where
     for<'a> <E::Element as Element>::ElemOf<String>: PartialEq + Ord + Debug,
 {

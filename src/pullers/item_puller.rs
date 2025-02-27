@@ -18,11 +18,16 @@ where
     I: ConcurrentIter<E>,
     E: Enumeration,
 {
-    pub fn new(con_iter: &'a I) -> Self {
+    pub(crate) fn new(con_iter: &'a I) -> Self {
         Self {
             con_iter,
             phantom: PhantomData,
         }
+    }
+
+    #[inline(always)]
+    pub fn pull(&mut self) -> Option<<E::Element as Element>::ElemOf<I::Item>> {
+        self.next()
     }
 }
 
