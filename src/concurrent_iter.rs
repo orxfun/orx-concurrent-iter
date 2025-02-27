@@ -57,4 +57,11 @@ pub trait ConcurrentIter<E: Enumeration = Regular>:
     }
 
     fn size_hint(&self) -> (usize, Option<usize>);
+
+    fn try_get_len(&self) -> Option<usize> {
+        match self.size_hint() {
+            (_, None) => None,
+            (_, Some(upper)) => Some(upper),
+        }
+    }
 }
