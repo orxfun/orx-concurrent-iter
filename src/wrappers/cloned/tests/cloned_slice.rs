@@ -1,5 +1,5 @@
 use crate::{
-    chunk_puller::ChunkPuller,
+    pullers::ChunkPuller,
     concurrent_iter::{ConcurrentIter, ConcurrentIterEnum},
     enumeration::{Element, Enumerated, Enumeration, Regular},
     ConcurrentIterable, IntoClonedConcurrentIter, IntoConcurrentIter,

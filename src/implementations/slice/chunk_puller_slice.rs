@@ -1,5 +1,5 @@
 use super::con_iter_slice::ConIterSlice;
-use crate::chunk_puller::ChunkPuller;
+use crate::pullers::ChunkPuller;
 use crate::enumeration::{Element, Enumeration};
 
 pub struct ChunkPullerSlice<'i, 'a, T, E>

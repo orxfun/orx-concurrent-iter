@@ -1,6 +1,6 @@
 use super::con_iter_vec::ConIterVec;
 use super::seq_chunk_iter_vec::SeqChunksIterVec;
-use crate::chunk_puller::ChunkPuller;
+use crate::pullers::ChunkPuller;
 use crate::enumeration::{Element, Enumeration};
 
 pub struct ChunkPullerVec<'i, T, E>

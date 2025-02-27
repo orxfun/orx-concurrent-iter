@@ -1,7 +1,5 @@
-use crate::{
-    chunk_puller::ChunkPuller,
-    enumeration::{Element, Enumeration, Regular},
-};
+use super::ChunkPuller;
+use crate::enumeration::{Element, Enumeration, Regular};
 use core::marker::PhantomData;
 
 pub struct ChunksIter<'c, P, K = Regular>

@@ -1,6 +1,6 @@
 use crate::{
-    chunk_puller::ChunkPuller,
     enumeration::{Element, Enumerated, Enumeration, IsEnumerated, IsNotEnumerated, Regular},
+    pullers::ChunkPuller,
 };
 
 pub trait ConcurrentIterEnum<E: Enumeration, T> {

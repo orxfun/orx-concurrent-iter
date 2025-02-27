@@ -1,7 +1,5 @@
-use crate::{
-    chunks_iter::ChunksIter,
-    enumeration::{Element, Enumeration, Regular},
-};
+use super::ChunksIter;
+use crate::enumeration::{Element, Enumeration, Regular};
 use core::marker::PhantomData;
 
 pub trait ChunkPuller<E: Enumeration = Regular>: Sized {
