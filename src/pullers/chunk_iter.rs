@@ -2,21 +2,21 @@ use super::ChunkPuller;
 use crate::enumeration::{Element, Enumeration, Regular};
 use core::marker::PhantomData;
 
-pub struct ChunkIter<'c, P, K = Regular>
+pub struct ChunkIter<'c, P, E = Regular>
 where
-    P: ChunkPuller<K> + 'c,
-    K: Enumeration,
+    P: ChunkPuller<E> + 'c,
+    E: Enumeration,
 {
     puller: P,
-    begin_idx: K::BeginIdx,
-    current_chunk: K::SeqChunkIter<P::Iter<'c>>,
-    phantom: PhantomData<K>,
+    begin_idx: E::BeginIdx,
+    current_chunk: E::SeqChunkIter<P::Iter<'c>>,
+    phantom: PhantomData<E>,
 }
 
-impl<'c, P, K> ChunkIter<'c, P, K>
+impl<'c, P, E> ChunkIter<'c, P, E>
 where
-    P: ChunkPuller<K> + 'c,
-    K: Enumeration,
+    P: ChunkPuller<E> + 'c,
+    E: Enumeration,
 {
     pub(crate) fn new(puller: P) -> Self {
         Self {
@@ -27,12 +27,12 @@ where
         }
     }
 
-    fn next_chunk(&mut self) -> Option<<K::Element as Element>::ElemOf<P::ChunkItem>> {
+    fn next_chunk(&mut self) -> Option<<E::Element as Element>::ElemOf<P::ChunkItem>> {
         let puller = unsafe { &mut *(&mut self.puller as *mut P) };
-        match puller.pull().map(K::destruct_chunk) {
+        match puller.pull().map(E::destruct_chunk) {
             Some((begin_idx, chunk)) => {
                 self.begin_idx = begin_idx;
-                self.current_chunk = K::into_seq_chunk_iter(chunk);
+                self.current_chunk = E::into_seq_chunk_iter(chunk);
                 self.next()
             }
             None => None,
@@ -40,15 +40,15 @@ where
     }
 }
 
-impl<'c, P, K> Iterator for ChunkIter<'c, P, K>
+impl<'c, P, E> Iterator for ChunkIter<'c, P, E>
 where
-    P: ChunkPuller<K> + 'c,
-    K: Enumeration,
+    P: ChunkPuller<E> + 'c,
+    E: Enumeration,
 {
-    type Item = <K::Element as Element>::ElemOf<P::ChunkItem>;
+    type Item = <E::Element as Element>::ElemOf<P::ChunkItem>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let next = K::seq_chunk_iter_next(self.begin_idx, &mut self.current_chunk);
+        let next = E::seq_chunk_iter_next(self.begin_idx, &mut self.current_chunk);
         match next.is_some() {
             true => next,
             false => self.next_chunk(),

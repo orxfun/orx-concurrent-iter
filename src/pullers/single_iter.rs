@@ -1,13 +1,27 @@
-use crate::enumeration::{Element, Enumeration, Regular};
+use crate::{
+    enumeration::{Element, Enumeration, Regular},
+    ConcurrentIter,
+};
+use core::marker::PhantomData;
 
-pub trait SinglePuller<E: Enumeration = Regular>: Sized {
-    type ChunkItem: Send + Sync;
+pub struct SingleIter<'a, I, E = Regular>
+where
+    I: ConcurrentIter<E> + 'a,
+    E: Enumeration,
+{
+    con_iter: &'a I,
+    phantom: PhantomData<E>,
+}
 
-    type Iter<'c>: ExactSizeIterator<Item = Self::ChunkItem> + Default
-    where
-        Self: 'c;
+impl<'a, I, E> Iterator for SingleIter<'a, I, E>
+where
+    I: ConcurrentIter<E> + 'a,
+    E: Enumeration,
+{
+    type Item = <E::Element as Element>::ElemOf<I::Item>;
 
-    fn chunk_size(&self) -> usize;
-
-    fn pull(&mut self) -> Option<<E::Element as Element>::IterOf<Self::Iter<'_>>>;
+    #[inline(always)]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.con_iter.next()
+    }
 }
