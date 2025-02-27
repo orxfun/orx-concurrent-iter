@@ -182,7 +182,7 @@ where
 }
 
 #[test_matrix([Regular, Enumerated], [0, 1, N], [1, 2, 4])]
-fn chunk_iter<E: Enumeration>(_: E, n: usize, nt: usize)
+fn chunk_puller<E: Enumeration>(_: E, n: usize, nt: usize)
 where
     for<'a> <E::Element as Element>::ElemOf<usize>: PartialEq + Ord + Debug,
 {
@@ -196,9 +196,9 @@ where
                 num_spawned.push(true);
                 while num_spawned.len() < nt {} // allow all threads to be spawned
 
-                let mut chunks_iter = iter.chunk_puller(7);
+                let mut puller = iter.chunk_puller(7);
 
-                while let Some((begin_idx, chunk)) = chunks_iter.pull().map(E::destruct_chunk) {
+                while let Some((begin_idx, chunk)) = puller.pull().map(E::destruct_chunk) {
                     assert!(chunk.len() <= 7);
                     for x in chunk {
                         _ = iter.size_hint();
