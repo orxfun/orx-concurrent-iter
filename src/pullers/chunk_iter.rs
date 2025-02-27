@@ -2,7 +2,7 @@ use super::ChunkPuller;
 use crate::enumeration::{Element, Enumeration, Regular};
 use core::marker::PhantomData;
 
-pub struct ChunkIter<'c, P, E = Regular>
+pub struct FlattenedChunkPuller<'c, P, E = Regular>
 where
     P: ChunkPuller<E> + 'c,
     E: Enumeration,
@@ -13,7 +13,7 @@ where
     phantom: PhantomData<E>,
 }
 
-impl<'c, P, E> ChunkIter<'c, P, E>
+impl<'c, P, E> FlattenedChunkPuller<'c, P, E>
 where
     P: ChunkPuller<E> + 'c,
     E: Enumeration,
@@ -40,7 +40,7 @@ where
     }
 }
 
-impl<'c, P, E> Iterator for ChunkIter<'c, P, E>
+impl<'c, P, E> Iterator for FlattenedChunkPuller<'c, P, E>
 where
     P: ChunkPuller<E> + 'c,
     E: Enumeration,
