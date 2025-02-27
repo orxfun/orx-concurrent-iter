@@ -56,7 +56,5 @@ pub trait ConcurrentIter<E: Enumeration = Regular>:
         ItemPuller::new(self)
     }
 
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (0, None)
-    }
+    fn size_hint(&self) -> (usize, Option<usize>);
 }
