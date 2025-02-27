@@ -50,7 +50,7 @@ where
     I: ConcurrentIter<E, Item = &'a T> + ConcurrentIterEnum<E, &'a T>,
 {
     type EnumerationOf<E2>
-        = ConIterCopied<'a, I::EnumerationOf<E2>, T, E2>
+        = ConIterCopied<'a, <I as ConcurrentIterEnum<E, &'a T>>::EnumerationOf<E2>, T, E2>
     where
         E2: Enumeration;
 

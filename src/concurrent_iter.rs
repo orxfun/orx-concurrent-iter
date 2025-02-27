@@ -11,7 +11,9 @@ pub trait ConcurrentIterEnum<E: Enumeration, T> {
     fn into_enumeration_of<E2: Enumeration>(self) -> Self::EnumerationOf<E2>;
 }
 
-pub trait ConcurrentIter<E: Enumeration = Regular>: Sized {
+pub trait ConcurrentIter<E: Enumeration = Regular>:
+    Sized + ConcurrentIterEnum<E, Self::Item>
+{
     /// Type of the items that the iterator yields.
     type Item: Send + Sync;
 
