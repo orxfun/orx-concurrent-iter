@@ -12,7 +12,7 @@ pub trait ConcurrentIterEnum<E: Enumeration, T> {
 }
 
 pub trait ConcurrentIter<E: Enumeration = Regular>:
-    Sized + ConcurrentIterEnum<E, Self::Item>
+    Send + Sync + Sized + ConcurrentIterEnum<E, Self::Item>
 {
     /// Type of the items that the iterator yields.
     type Item: Send + Sync;
