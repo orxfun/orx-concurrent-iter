@@ -60,7 +60,7 @@ impl EnumerationCore for Regular {
 
     fn new_seq_chunk_item<T>(
         _: Self::BeginIdx,
-        _: Self::BeginIdx,
+        _: usize,
         item: T,
     ) -> <Self::ElemKindCore as Element>::ElemOf<T>
     where

@@ -60,7 +60,7 @@ impl EnumerationCore for Enumerated {
 
     fn new_seq_chunk_item<T>(
         begin_idx: Self::BeginIdx,
-        within_chunk_idx: Self::BeginIdx,
+        within_chunk_idx: usize,
         item: T,
     ) -> <Self::ElemKindCore as Element>::ElemOf<T>
     where
