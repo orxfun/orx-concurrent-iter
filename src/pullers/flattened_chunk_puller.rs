@@ -27,6 +27,10 @@ where
         }
     }
 
+    pub fn into_chunk_puller(self) -> P {
+        self.puller
+    }
+
     fn next_chunk(&mut self) -> Option<<E::Element as Element>::ElemOf<P::ChunkItem>> {
         let puller = unsafe { &mut *(&mut self.puller as *mut P) };
         match puller.pull().map(E::destruct_chunk) {
