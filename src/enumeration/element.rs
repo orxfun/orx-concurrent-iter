@@ -5,7 +5,9 @@ pub trait Element {
     where
         T: Send + Sync;
 
-    type IterOf<I>;
+    type IterOf<I>
+    where
+        I: Iterator;
 
     fn item_from_element<T: Send + Sync>(element: Self::ElemOf<T>) -> T;
 
@@ -28,7 +30,10 @@ impl Element for Value {
     where
         T: Send + Sync;
 
-    type IterOf<I> = I;
+    type IterOf<I>
+        = I
+    where
+        I: Iterator;
 
     fn item_from_element<T: Send + Sync>(element: Self::ElemOf<T>) -> T {
         element
@@ -59,7 +64,10 @@ impl Element for IdxValue {
     where
         T: Send + Sync;
 
-    type IterOf<I> = (usize, I);
+    type IterOf<I>
+        = (usize, I)
+    where
+        I: Iterator;
 
     fn item_from_element<T: Send + Sync>(element: Self::ElemOf<T>) -> T {
         element.1
