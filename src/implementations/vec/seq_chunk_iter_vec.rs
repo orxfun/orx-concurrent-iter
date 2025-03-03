@@ -9,7 +9,7 @@ where
     phantom: PhantomData<&'i ()>,
 }
 
-impl<'i, T> SeqChunksIterVec<'i, T>
+impl<T> SeqChunksIterVec<'_, T>
 where
     T: Send + Sync,
 {
@@ -21,7 +21,7 @@ where
     }
 }
 
-impl<'i, T> Default for SeqChunksIterVec<'i, T>
+impl<T> Default for SeqChunksIterVec<'_, T>
 where
     T: Send + Sync,
 {
@@ -31,7 +31,7 @@ where
     }
 }
 
-impl<'i, T> Iterator for SeqChunksIterVec<'i, T>
+impl<T> Iterator for SeqChunksIterVec<'_, T>
 where
     T: Send + Sync,
 {
@@ -47,7 +47,7 @@ where
     }
 }
 
-impl<'i, T> ExactSizeIterator for SeqChunksIterVec<'i, T>
+impl<T> ExactSizeIterator for SeqChunksIterVec<'_, T>
 where
     T: Send + Sync,
 {
@@ -56,4 +56,4 @@ where
     }
 }
 
-impl<'i, T> FusedIterator for SeqChunksIterVec<'i, T> where T: Send + Sync {}
+impl<T> FusedIterator for SeqChunksIterVec<'_, T> where T: Send + Sync {}
