@@ -1,6 +1,6 @@
 use super::con_iter_of_iter::ConIterOfIter;
 use crate::enumeration::{Element, Enumeration, Regular};
-use crate::pullers::ChunkPuller;
+use crate::pullers::{ChunkPuller, PulledChunkIter};
 use alloc::vec::Vec;
 use core::iter::FusedIterator;
 use core::marker::PhantomData;
@@ -35,7 +35,7 @@ where
     }
 }
 
-impl<'i, I, E> ChunkPuller<E> for ChunkPullerOfIter<'i, I, E>
+impl<I, E> ChunkPuller<E> for ChunkPullerOfIter<'_, I, E>
 where
     I: Iterator,
     I::Item: Send + Sync,
@@ -59,6 +59,18 @@ where
                 let buffer = &mut self.buffer[0..slice_len];
                 let chunk_iter = ChunksIterOfIter { buffer, current: 0 };
                 Some(E::new_chunk(begin_idx, chunk_iter))
+            }
+        }
+    }
+
+    fn pulli(&mut self) -> Option<PulledChunkIter<Self::Iter<'_>, E>> {
+        match self.con_iter.next_chunk_to_buffer(&mut self.buffer) {
+            (_, 0) => None,
+            (begin_idx, slice_len) => {
+                let buffer = &mut self.buffer[0..slice_len];
+                let chunk = ChunksIterOfIter { buffer, current: 0 };
+                let begin_idx = E::into_begin_idx(begin_idx);
+                Some(E::new_pulled_chunk_iter(begin_idx, chunk))
             }
         }
     }
