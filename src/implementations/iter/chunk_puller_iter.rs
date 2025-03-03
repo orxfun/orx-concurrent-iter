@@ -1,6 +1,6 @@
 use super::con_iter_of_iter::ConIterOfIter;
-use crate::pullers::ChunkPuller;
 use crate::enumeration::{Element, Enumeration, Regular};
+use crate::pullers::ChunkPuller;
 use alloc::vec::Vec;
 use core::iter::FusedIterator;
 use core::marker::PhantomData;

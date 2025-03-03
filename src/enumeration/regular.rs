@@ -61,7 +61,7 @@ impl EnumerationCore for Regular {
     // test
 
     #[cfg(test)]
-    fn new_element_from_begin_idx<T>(
+    fn new_element_using_idx<T>(
         _: Self::BeginIdx,
         item: T,
     ) -> <Self::ElemKindCore as Element>::ElemOf<T>

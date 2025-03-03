@@ -1,7 +1,7 @@
 use crate::{
-    pullers::ChunkPuller,
     concurrent_iter::{ConcurrentIter, ConcurrentIterEnum},
     enumeration::{Element, Enumerated, Enumeration, Regular},
+    pullers::ChunkPuller,
     ConcurrentCollection, IntoClonedConcurrentIter, IntoConcurrentIter, IntoCopiedConcurrentIter,
 };
 use core::fmt::Debug;
@@ -120,7 +120,7 @@ where
                 while let Some((begin_idx, chunk)) = chunks_iter.pull().map(K::destruct_chunk) {
                     assert!(chunk.len() <= 7);
                     for x in chunk {
-                        let value = K::new_element_from_begin_idx(begin_idx, x);
+                        let value = K::new_element_using_idx(begin_idx, x);
                         bag.push(value);
                     }
                 }

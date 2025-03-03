@@ -218,7 +218,7 @@ where
                     assert!(chunk.len() <= 7);
                     for x in chunk {
                         _ = iter.size_hint();
-                        let value = E::new_element_from_begin_idx(begin_idx, x);
+                        let value = E::new_element_using_idx(begin_idx, x);
                         bag.push(value);
                     }
                 }

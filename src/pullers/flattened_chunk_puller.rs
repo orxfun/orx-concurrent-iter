@@ -1,6 +1,5 @@
 use super::ChunkPuller;
 use crate::enumeration::{Element, Enumeration, Regular};
-use core::marker::PhantomData;
 
 pub struct FlattenedChunkPuller<'c, P, E = Regular>
 where
@@ -10,7 +9,6 @@ where
     puller: P,
     begin_idx: E::BeginIdx,
     current_chunk: E::SeqChunkIter<P::Iter<'c>>,
-    phantom: PhantomData<E>,
 }
 
 impl<'c, P, E> FlattenedChunkPuller<'c, P, E>
@@ -23,7 +21,6 @@ where
             puller,
             begin_idx: Default::default(),
             current_chunk: Default::default(),
-            phantom: PhantomData,
         }
     }
 
