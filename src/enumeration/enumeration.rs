@@ -1,4 +1,5 @@
 use super::element::Element;
+use crate::pullers::PulledChunkIter;
 use core::fmt::Debug;
 
 pub trait EnumerationCore: Send + Sync + 'static {
@@ -6,9 +7,12 @@ pub trait EnumerationCore: Send + Sync + 'static {
 
     type BeginIdx: Default + Copy + PartialEq + Debug;
 
-    type SeqChunkIter<I>: Default
+    type SeqChunkIter<I>: Default + Iterator
     where
-        I: Iterator + Default;
+        I: Iterator + Default,
+        I::Item: Send + Sync;
+
+    fn into_begin_idx(begin_idx: usize) -> Self::BeginIdx;
 
     fn new_element<T>(idx: usize, item: T) -> <Self::ElemKindCore as Element>::ElemOf<T>
     where
@@ -18,6 +22,12 @@ pub trait EnumerationCore: Send + Sync + 'static {
     where
         T: Send + Sync,
         I: ExactSizeIterator<Item = T>;
+
+    fn new_pulled_chunk_iter<I>(begin_idx: Self::BeginIdx, chunk: I) -> PulledChunkIter<I, Self>
+    where
+        Self: Sized,
+        I: ExactSizeIterator + Default,
+        I::Item: Send + Sync;
 
     fn destruct_chunk<T, I>(
         chunk: <Self::ElemKindCore as Element>::IterOf<I>,
@@ -34,7 +44,10 @@ pub trait EnumerationCore: Send + Sync + 'static {
         I: Iterator + Default,
         I::Item: Send + Sync;
 
-    fn into_seq_chunk_iter<I: Iterator + Default>(iter: I) -> Self::SeqChunkIter<I>;
+    fn into_seq_chunk_iter<I>(iter: I) -> Self::SeqChunkIter<I>
+    where
+        I: Iterator + Default,
+        I::Item: Send + Sync;
 
     fn new_seq_chunk_item<T>(
         begin_idx: Self::BeginIdx,

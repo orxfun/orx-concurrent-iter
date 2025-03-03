@@ -79,8 +79,8 @@ where
         self.progress_and_get_begin_idx(chunk_size)
             .map(|begin_idx| {
                 let end_idx = (begin_idx + chunk_size).min(self.vec_len).max(begin_idx);
-                let first = unsafe { self.ptr.add(begin_idx) } as *const T; // ptr + begin_idx is in bounds
-                let last = unsafe { self.ptr.add(end_idx - 1) } as *const T; // ptr + end_idx - 1 is in bounds
+                let first = unsafe { self.ptr.add(begin_idx) }; // ptr + begin_idx is in bounds
+                let last = unsafe { self.ptr.add(end_idx - 1) }; // ptr + end_idx - 1 is in bounds
                 (begin_idx, first, last)
             })
     }

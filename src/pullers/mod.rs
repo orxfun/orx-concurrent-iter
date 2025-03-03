@@ -6,3 +6,4 @@ mod pulled_chunk_iter;
 pub use chunk_puller::ChunkPuller;
 pub use flattened_chunk_puller::FlattenedChunkPuller;
 pub use item_puller::ItemPuller;
+pub use pulled_chunk_iter::PulledChunkIter;

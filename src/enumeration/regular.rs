@@ -1,3 +1,5 @@
+use crate::pullers::PulledChunkIter;
+
 use super::{
     element::{Element, Value},
     enumeration::{Enumeration, EnumerationCore},
@@ -16,7 +18,10 @@ impl EnumerationCore for Regular {
     type SeqChunkIter<I>
         = I
     where
-        I: Iterator + Default;
+        I: Iterator + Default,
+        I::Item: Send + Sync;
+
+    fn into_begin_idx(_: usize) -> Self::BeginIdx {}
 
     fn new_element<T>(_: usize, item: T) -> <Self::ElemKindCore as Element>::ElemOf<T>
     where
@@ -31,6 +36,15 @@ impl EnumerationCore for Regular {
         I: ExactSizeIterator<Item = T>,
     {
         chunk
+    }
+
+    fn new_pulled_chunk_iter<I>(_: Self::BeginIdx, chunk: I) -> PulledChunkIter<I, Self>
+    where
+        Self: Sized,
+        I: ExactSizeIterator + Default,
+        I::Item: Send + Sync,
+    {
+        PulledChunkIter::new((), chunk)
     }
 
     fn destruct_chunk<T, I>(
@@ -54,7 +68,11 @@ impl EnumerationCore for Regular {
         seq_iter.next()
     }
 
-    fn into_seq_chunk_iter<I: Iterator + Default>(iter: I) -> Self::SeqChunkIter<I> {
+    fn into_seq_chunk_iter<I>(iter: I) -> Self::SeqChunkIter<I>
+    where
+        I: Iterator + Default,
+        I::Item: Send + Sync,
+    {
         iter
     }
 

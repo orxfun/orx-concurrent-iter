@@ -1,7 +1,7 @@
 use super::con_iter_vec::ConIterVec;
 use super::seq_chunk_iter_vec::SeqChunksIterVec;
 use crate::enumeration::{Element, Enumeration};
-use crate::pullers::ChunkPuller;
+use crate::pullers::{ChunkPuller, PulledChunkIter};
 
 pub struct ChunkPullerVec<'i, T, E>
 where
@@ -46,6 +46,16 @@ where
             .progress_and_get_chunk_pointers(self.chunk_size)
             .map(|(begin_idx, first, last)| {
                 E::new_chunk(begin_idx, SeqChunksIterVec::new(false, first, last))
+            })
+    }
+
+    fn pulli(&mut self) -> Option<PulledChunkIter<Self::Iter<'_>, E>> {
+        self.con_iter
+            .progress_and_get_chunk_pointers(self.chunk_size)
+            .map(|(begin_idx, first, last)| {
+                let begin_idx = E::into_begin_idx(begin_idx);
+                let chunk = SeqChunksIterVec::new(false, first, last);
+                E::new_pulled_chunk_iter(begin_idx, chunk)
             })
     }
 }
