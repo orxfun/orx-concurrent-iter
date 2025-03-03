@@ -31,7 +31,7 @@ where
     }
 }
 
-impl<'a, I, E> Iterator for ItemPuller<'a, I, E>
+impl<I, E> Iterator for ItemPuller<'_, I, E>
 where
     I: ConcurrentIter<E>,
     E: Enumeration,
