@@ -1,5 +1,5 @@
-use crate::pullers::ChunkPuller;
 use crate::enumeration::{Element, Enumeration};
+use crate::pullers::ChunkPuller;
 use core::iter::Copied;
 use core::marker::PhantomData;
 

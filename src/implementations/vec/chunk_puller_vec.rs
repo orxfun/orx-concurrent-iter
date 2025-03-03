@@ -1,7 +1,7 @@
 use super::con_iter_vec::ConIterVec;
 use super::seq_chunk_iter_vec::SeqChunksIterVec;
-use crate::pullers::ChunkPuller;
 use crate::enumeration::{Element, Enumeration};
+use crate::pullers::ChunkPuller;
 
 pub struct ChunkPullerVec<'i, T, E>
 where
