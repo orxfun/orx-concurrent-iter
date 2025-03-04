@@ -55,7 +55,7 @@ where
 
 pub struct EnumeratedChunk<I>
 where
-    I: Iterator,
+    I: Iterator + Default,
 {
     chunk: core::iter::Enumerate<I>,
     begin_idx: usize,
@@ -63,16 +63,19 @@ where
 
 impl<I> Default for EnumeratedChunk<I>
 where
-    I: Iterator,
+    I: Iterator + Default,
 {
     fn default() -> Self {
-        todo!()
+        Self {
+            chunk: Default::default(),
+            begin_idx: 0,
+        }
     }
 }
 
 impl<I> Iterator for EnumeratedChunk<I>
 where
-    I: Iterator,
+    I: Iterator + Default,
 {
     type Item = (usize, I::Item);
 
@@ -83,7 +86,7 @@ where
 
 impl<I> ExactSizeIterator for EnumeratedChunk<I>
 where
-    I: ExactSizeIterator,
+    I: ExactSizeIterator + Default,
 {
     fn len(&self) -> usize {
         self.chunk.len()
