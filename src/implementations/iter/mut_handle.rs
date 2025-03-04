@@ -37,7 +37,7 @@ impl<'a> MutHandle<'a> {
     }
 }
 
-impl<'a> Drop for MutHandle<'a> {
+impl Drop for MutHandle<'_> {
     fn drop(&mut self) {
         match self.state.compare_exchange(
             IS_MUTATING,
