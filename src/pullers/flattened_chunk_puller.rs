@@ -1,4 +1,4 @@
-use crate::chunk_puller::ChunkPuller;
+use super::ChunkPuller;
 
 pub struct FlattenedChunkPuller<P>
 where

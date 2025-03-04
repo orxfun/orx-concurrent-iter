@@ -1,5 +1,4 @@
-use crate::chunk_puller::ChunkPuller;
-use crate::pullers::{EnumeratedItemPuller, ItemPuller};
+use crate::pullers::{ChunkPuller, EnumeratedItemPuller, ItemPuller};
 
 pub trait ConcurrentIter {
     type Item: Send + Sync;

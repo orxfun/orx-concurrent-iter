@@ -1,5 +1,5 @@
 use super::con_iter::ConIterRange;
-use crate::chunk_puller::ChunkPuller;
+use crate::pullers::ChunkPuller;
 use core::ops::Range;
 
 pub struct ChunkPullerRange<'i, T> {

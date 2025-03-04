@@ -1,4 +1,4 @@
-use crate::chunk_puller::ChunkPuller;
+use super::ChunkPuller;
 use core::iter::Enumerate;
 
 pub struct FlattenedEnumeratedChunkPuller<P>
