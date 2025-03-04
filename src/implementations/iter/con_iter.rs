@@ -12,7 +12,6 @@ where
     I::Item: Send + Sync,
 {
     iter: IterCell<I::Item, I>,
-    initial_len: Option<usize>,
     state: AtomicState,
 }
 
@@ -46,14 +45,8 @@ where
     I::Item: Send + Sync,
 {
     pub(super) fn new(iter: I) -> Self {
-        let initial_len = match iter.size_hint() {
-            (lower, Some(upper)) if lower == upper => Some(lower),
-            _ => None,
-        };
-
         Self {
             iter: iter.into(),
-            initial_len,
             state: 0.into(),
         }
     }
