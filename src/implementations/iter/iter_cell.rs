@@ -131,4 +131,12 @@ where
         let iter = unsafe { &mut *self.iter.get() };
         iter.size_hint()
     }
+
+    pub fn len(&self, _handle: MutHandle) -> usize
+    where
+        I: ExactSizeIterator,
+    {
+        let iter = unsafe { &mut *self.iter.get() };
+        iter.len()
+    }
 }

@@ -3,7 +3,7 @@ use super::{
     iter_cell::IterCell,
     mut_handle::{AtomicState, MutHandle, COMPLETED},
 };
-use crate::concurrent_iter::ConcurrentIter;
+use crate::{concurrent_iter::ConcurrentIter, exact_size_concurrent_iter::ExactSizeConcurrentIter};
 use core::sync::atomic::Ordering;
 
 pub struct ConIterOfIter<I>
@@ -108,12 +108,25 @@ where
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         match self.get_handle() {
-            Some(handle) => self.iter.size_hint(handle),
+            Some(h) => self.iter.size_hint(h),
             None => (0, Some(0)),
         }
     }
 
     fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
         Self::ChunkPuller::new(self, chunk_size)
+    }
+}
+
+impl<I> ExactSizeConcurrentIter for ConIterOfIter<I>
+where
+    I: ExactSizeIterator,
+    I::Item: Send + Sync,
+{
+    fn len(&self) -> usize {
+        match self.get_handle() {
+            Some(h) => self.iter.len(h),
+            None => 0,
+        }
     }
 }
