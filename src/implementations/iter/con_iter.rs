@@ -44,7 +44,7 @@ where
     I: Iterator,
     I::Item: Send + Sync,
 {
-    pub(super) fn new(iter: I) -> Self {
+    pub(crate) fn new(iter: I) -> Self {
         Self {
             iter: iter.into(),
             state: 0.into(),

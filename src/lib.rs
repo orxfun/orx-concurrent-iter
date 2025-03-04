@@ -33,4 +33,5 @@ pub mod enumerate;
 
 pub use concurrent_iter::ConcurrentIter;
 pub use into_concurrent_iter::IntoConcurrentIter;
+pub use iter_into_concurrent_iter::IterIntoConcurrentIter;
 pub use pullers::ChunkPuller;
