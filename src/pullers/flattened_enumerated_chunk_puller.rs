@@ -50,10 +50,9 @@ where
     type Item = (usize, P::ChunkItem);
 
     fn next(&mut self) -> Option<Self::Item> {
-        let next = self.current_chunk.next();
-        match next.is_some() {
-            true => next,
-            false => self.next_chunk(),
+        match self.current_chunk.next() {
+            Some((i, x)) => Some((self.current_begin_idx + i, x)),
+            None => self.next_chunk(),
         }
     }
 }
