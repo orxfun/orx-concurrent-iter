@@ -1,4 +1,5 @@
 use super::{
+    chunk_puller::ChunkPullerOfIter,
     iter_cell::IterCell,
     mut_handle::{AtomicState, MutHandle, COMPLETED},
 };
@@ -75,41 +76,44 @@ where
     }
 }
 
-// impl<I> ConcurrentIter for ConIterOfIter<I>
-// where
-//     I: Iterator,
-//     I::Item: Send + Sync,
-// {
-//     type Item = I::Item;
+impl<I> ConcurrentIter for ConIterOfIter<I>
+where
+    I: Iterator,
+    I::Item: Send + Sync,
+{
+    type Item = I::Item;
 
-//     type SeqIter = I;
+    type SequentialIter = I;
 
-//     type ChunkPuller<'i>
-//         = ChunkPullerOfIter<'i, I, E>
-//     where
-//         Self: 'i;
+    type ChunkPuller<'i>
+        = ChunkPullerOfIter<'i, I>
+    where
+        Self: 'i;
 
-//     fn into_seq_iter(self) -> Self::SeqIter {
-//         self.iter.into_inner()
-//     }
+    fn into_seq_iter(self) -> Self::SequentialIter {
+        self.iter.into_inner()
+    }
 
-//     fn skip_to_end(&self) {
-//         self.state.store(COMPLETED, Ordering::SeqCst);
-//     }
+    fn skip_to_end(&self) {
+        self.state.store(COMPLETED, Ordering::SeqCst);
+    }
 
-//     fn next(&self) -> Option<<<E as Enumeration>::Element as Element>::ElemOf<Self::Item>> {
-//         self.get_handle()
-//             .and_then(|handle| self.iter.next::<E>(handle))
-//     }
+    fn next(&self) -> Option<Self::Item> {
+        self.get_handle().and_then(|h| self.iter.next(h))
+    }
 
-//     fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
-//         Self::ChunkPuller::new(self, chunk_size)
-//     }
+    fn next_with_idx(&self) -> Option<(usize, Self::Item)> {
+        self.get_handle().and_then(|h| self.iter.next_with_idx(h))
+    }
 
-//     fn size_hint(&self) -> (usize, Option<usize>) {
-//         match self.get_handle() {
-//             Some(handle) => self.iter.size_hint(handle),
-//             None => (0, Some(0)),
-//         }
-//     }
-// }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        match self.get_handle() {
+            Some(handle) => self.iter.size_hint(handle),
+            None => (0, Some(0)),
+        }
+    }
+
+    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+        Self::ChunkPuller::new(self, chunk_size)
+    }
+}

@@ -26,7 +26,7 @@ where
     }
 }
 
-impl<'i, I> ChunkPuller for ChunkPullerOfIter<'i, I>
+impl<I> ChunkPuller for ChunkPullerOfIter<'_, I>
 where
     I: Iterator,
     I::Item: Send + Sync,
@@ -43,15 +43,14 @@ where
     }
 
     fn pull(&mut self) -> Option<Self::Chunk<'_>> {
-        // match self.con_iter.next_chunk_to_buffer(&mut self.buffer) {
-        //     (_, 0) => None,
-        //     (begin_idx, slice_len) => {
-        //         let buffer = &mut self.buffer[0..slice_len];
-        //         let chunk_iter = ChunksIterOfIter { buffer, current: 0 };
-        //         Some(E::new_chunk(begin_idx, chunk_iter))
-        //     }
-        // }
-        None
+        match self.con_iter.next_chunk_to_buffer(&mut self.buffer) {
+            (_, 0) => None,
+            (_, slice_len) => {
+                let buffer = &mut self.buffer[0..slice_len];
+                let chunk = ChunksIterOfIter { buffer, current: 0 };
+                Some(chunk)
+            }
+        }
     }
 
     fn pull_with_idx(&mut self) -> Option<(usize, Self::Chunk<'_>)> {
@@ -66,46 +65,6 @@ where
     }
 }
 
-// impl<I> ChunkPuller for ChunkPullerOfIter<'_, I>
-// where
-//     I: Iterator,
-//     I::Item: Send + Sync,
-// {
-//     type ChunkItem = I::Item;
-
-//     type Iter<'c>
-//         = ChunksIterOfIter<'c, I::Item>
-//     where
-//         Self: 'c;
-
-//     fn chunk_size(&self) -> usize {
-//         self.buffer.len()
-//     }
-
-//     fn pull(&mut self) -> Option<<<E as Enumeration>::Element as Element>::IterOf<Self::Iter<'_>>> {
-//         match self.con_iter.next_chunk_to_buffer(&mut self.buffer) {
-//             (_, 0) => None,
-//             (begin_idx, slice_len) => {
-//                 let buffer = &mut self.buffer[0..slice_len];
-//                 let chunk_iter = ChunksIterOfIter { buffer, current: 0 };
-//                 Some(E::new_chunk(begin_idx, chunk_iter))
-//             }
-//         }
-//     }
-
-//     fn pulli(&mut self) -> Option<PulledChunkIter<Self::Iter<'_>, E>> {
-//         match self.con_iter.next_chunk_to_buffer(&mut self.buffer) {
-//             (_, 0) => None,
-//             (begin_idx, slice_len) => {
-//                 let buffer = &mut self.buffer[0..slice_len];
-//                 let chunk = ChunksIterOfIter { buffer, current: 0 };
-//                 let begin_idx = E::into_begin_idx(begin_idx);
-//                 Some(E::new_pulled_chunk_iter(begin_idx, chunk))
-//             }
-//         }
-//     }
-// }
-
 // iter
 
 pub struct ChunksIterOfIter<'i, T>
@@ -116,7 +75,7 @@ where
     current: usize,
 }
 
-impl<'i, T> Default for ChunksIterOfIter<'i, T>
+impl<T> Default for ChunksIterOfIter<'_, T>
 where
     T: Send + Sync,
 {
@@ -128,7 +87,7 @@ where
     }
 }
 
-impl<'i, T> Iterator for ChunksIterOfIter<'i, T>
+impl<T> Iterator for ChunksIterOfIter<'_, T>
 where
     T: Send + Sync,
 {
@@ -147,7 +106,7 @@ where
     }
 }
 
-impl<'i, T> ExactSizeIterator for ChunksIterOfIter<'i, T>
+impl<T> ExactSizeIterator for ChunksIterOfIter<'_, T>
 where
     T: Send + Sync,
 {
@@ -156,4 +115,4 @@ where
     }
 }
 
-impl<'i, T> FusedIterator for ChunksIterOfIter<'i, T> where T: Send + Sync {}
+impl<T> FusedIterator for ChunksIterOfIter<'_, T> where T: Send + Sync {}
