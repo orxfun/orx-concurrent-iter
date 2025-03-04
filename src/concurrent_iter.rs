@@ -1,4 +1,5 @@
 use crate::{
+    cloned::ConIterCloned,
     copied::ConIterCopied,
     pullers::{ChunkPuller, EnumeratedItemPuller, ItemPuller},
 };
@@ -61,5 +62,13 @@ pub trait ConcurrentIter {
         Self: ConcurrentIter<Item = &'a T> + Sized,
     {
         ConIterCopied::new(self)
+    }
+
+    fn cloned<'a, T>(self) -> ConIterCloned<'a, Self, T>
+    where
+        T: Send + Sync + Clone,
+        Self: ConcurrentIter<Item = &'a T> + Sized,
+    {
+        ConIterCloned::new(self)
     }
 }
