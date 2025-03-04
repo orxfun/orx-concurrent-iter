@@ -1,5 +1,5 @@
 use crate::enumeration::{Element, Enumeration};
-use crate::pullers::ChunkPuller;
+use crate::pullers::{ChunkPuller, PulledChunkIter};
 use core::iter::Copied;
 use core::marker::PhantomData;
 
@@ -48,5 +48,12 @@ where
         self.chunks_puller
             .pull()
             .map(<<E as Enumeration>::Element as Element>::copied_iter)
+    }
+
+    fn pulli(&mut self) -> Option<PulledChunkIter<Self::Iter<'_>, E>> {
+        let a: PulledChunkIter<<P as ChunkPuller<E>>::Iter<'_>, E> = self.chunks_puller.pulli()?;
+        // let b = a.copied();
+        // self.chunks_puller.pulli().map(|x| x.copied())
+        None
     }
 }
