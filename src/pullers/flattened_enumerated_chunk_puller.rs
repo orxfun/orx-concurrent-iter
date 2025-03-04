@@ -10,18 +10,23 @@ where
     current_chunk: Enumerate<P::Chunk>,
 }
 
-impl<P> FlattenedEnumeratedChunkPuller<P>
+impl<P> From<P> for FlattenedEnumeratedChunkPuller<P>
 where
     P: ChunkPuller,
 {
-    pub(crate) fn new(puller: P) -> Self {
+    fn from(puller: P) -> Self {
         Self {
             puller,
             current_begin_idx: 0,
             current_chunk: Default::default(),
         }
     }
+}
 
+impl<P> FlattenedEnumeratedChunkPuller<P>
+where
+    P: ChunkPuller,
+{
     pub fn into_chunk_puller(self) -> P {
         self.puller
     }

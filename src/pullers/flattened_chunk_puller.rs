@@ -8,17 +8,22 @@ where
     current_chunk: P::Chunk,
 }
 
-impl<P> FlattenedChunkPuller<P>
+impl<P> From<P> for FlattenedChunkPuller<P>
 where
     P: ChunkPuller,
 {
-    pub(crate) fn new(puller: P) -> Self {
+    fn from(puller: P) -> Self {
         Self {
             puller,
             current_chunk: Default::default(),
         }
     }
+}
 
+impl<P> FlattenedChunkPuller<P>
+where
+    P: ChunkPuller,
+{
     pub fn into_chunk_puller(self) -> P {
         self.puller
     }
