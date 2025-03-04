@@ -1,5 +1,5 @@
 use super::chunk_puller::ChunkPullerSlice;
-use crate::concurrent_iter::ConcurrentIter;
+use crate::{concurrent_iter::ConcurrentIter, exact_size_concurrent_iter::ExactSizeConcurrentIter};
 use core::{
     iter::Skip,
     sync::atomic::{AtomicUsize, Ordering},
@@ -92,5 +92,15 @@ where
 
     fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
         Self::ChunkPuller::new(self, chunk_size)
+    }
+}
+
+impl<T> ExactSizeConcurrentIter for ConIterSlice<'_, T>
+where
+    T: Send + Sync,
+{
+    fn len(&self) -> usize {
+        let num_taken = self.counter.load(Ordering::Acquire);
+        self.slice.len().saturating_sub(num_taken)
     }
 }
