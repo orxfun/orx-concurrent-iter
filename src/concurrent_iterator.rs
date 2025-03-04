@@ -1,9 +1,15 @@
+use crate::{chunk_puller::ChunkPuller, item_puller::ItemPuller};
+
 pub trait ConcurrentIterator {
     type Item: Send + Sync;
 
-    type SeqIter: Iterator<Item = Self::Item>;
+    type SequentialIter: Iterator<Item = Self::Item>;
 
-    fn into_seq_iter(self) -> Self::SeqIter;
+    type ChunkPuller<'i>: ChunkPuller<ChunkItem = Self::Item> + From<(&'i Self, usize)>
+    where
+        Self: 'i;
+
+    fn into_seq_iter(self) -> Self::SequentialIter;
 
     // iterate
 
@@ -22,5 +28,18 @@ pub trait ConcurrentIterator {
             (_, None) => None,
             (_, Some(upper)) => Some(upper),
         }
+    }
+
+    // pullers
+
+    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+        (self, chunk_size).into()
+    }
+
+    fn item_puller(&self) -> ItemPuller<'_, Self>
+    where
+        Self: Sized,
+    {
+        self.into()
     }
 }
