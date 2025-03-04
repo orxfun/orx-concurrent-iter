@@ -1,6 +1,7 @@
 use crate::{
     cloned::ConIterCloned,
     copied::ConIterCopied,
+    enumerate::Enumerate,
     pullers::{ChunkPuller, EnumeratedItemPuller, ItemPuller},
 };
 
@@ -70,5 +71,12 @@ pub trait ConcurrentIter: Send + Sync {
         Self: ConcurrentIter<Item = &'a T> + Sized,
     {
         ConIterCloned::new(self)
+    }
+
+    fn enumerate(self) -> Enumerate<Self>
+    where
+        Self: Sized,
+    {
+        Enumerate::new(self)
     }
 }

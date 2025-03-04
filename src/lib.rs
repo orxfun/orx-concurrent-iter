@@ -22,9 +22,14 @@ mod implementations;
 mod into_concurrent_iter;
 mod pullers;
 
-// transformations
+// exported modules: transformations
+
 pub mod cloned;
 pub mod copied;
+pub mod enumerate;
+
+// exported types
 
 pub use concurrent_iter::ConcurrentIter;
+pub use into_concurrent_iter::IntoConcurrentIter;
 pub use pullers::ChunkPuller;
