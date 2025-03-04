@@ -1,8 +1,10 @@
 use super::{chunk_puller::ChunkPullerVec, vec_into_seq_iter::VecIntoSeqIter};
-use crate::{concurrent_iter::ConcurrentIter, implementations::ptr_utils::take};
+use crate::{
+    concurrent_iter::ConcurrentIter, exact_size_concurrent_iter::ExactSizeConcurrentIter,
+    implementations::ptr_utils::take,
+};
 use alloc::vec::Vec;
 use core::{
-    marker::PhantomData,
     mem::ManuallyDrop,
     sync::atomic::{AtomicUsize, Ordering},
 };
@@ -122,60 +124,43 @@ where
     where
         Self: 'i;
 
-    fn into_seq_iter(self) -> Self::SequentialIter {
-        todo!()
+    fn into_seq_iter(mut self) -> Self::SequentialIter {
+        self.remaining_into_seq_iter()
     }
 
     fn skip_to_end(&self) {
-        todo!()
+        let current = self.counter.fetch_max(self.vec_len, Ordering::Acquire);
+        let num_taken_before = current.min(self.vec_len);
+        let _iter = self.slice_into_seq_iter(num_taken_before, false);
     }
 
     fn next(&self) -> Option<Self::Item> {
-        todo!()
+        self.progress_and_get_begin_idx(1) // ptr + idx is in-bounds
+            .map(|idx| unsafe { take(self.ptr.add(idx) as *mut T) })
     }
 
     fn next_with_idx(&self) -> Option<(usize, Self::Item)> {
-        todo!()
+        self.progress_and_get_begin_idx(1) // ptr + idx is in-bounds
+            .map(|idx| (idx, unsafe { take(self.ptr.add(idx) as *mut T) }))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        todo!()
+        let num_taken = self.counter.load(Ordering::Acquire);
+        let remaining = self.vec_len.saturating_sub(num_taken);
+        (remaining, Some(remaining))
     }
 
     fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
-        todo!()
+        Self::ChunkPuller::new(self, chunk_size)
     }
-    // type Item = T;
+}
 
-    // type SeqIter = VecIntoSeqIter<T>;
-
-    // type ChunkPuller<'i>
-    //     = ChunkPullerVec<'i, T, E>
-    // where
-    //     Self: 'i;
-
-    // fn into_seq_iter(mut self) -> Self::SeqIter {
-    //     self.remaining_into_seq_iter()
-    // }
-
-    // fn skip_to_end(&self) {
-    //     let current = self.counter.fetch_max(self.vec_len, Ordering::Acquire);
-    //     let num_taken_before = current.min(self.vec_len);
-    //     let _iter = self.slice_into_seq_iter(num_taken_before, false);
-    // }
-
-    // fn next(&self) -> Option<<<E as Enumeration>::Element as Element>::ElemOf<Self::Item>> {
-    //     self.progress_and_get_begin_idx(1) // ptr + idx is in-bounds
-    //         .map(|idx| E::new_element(idx, unsafe { take(self.ptr.add(idx) as *mut T) }))
-    // }
-
-    // fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
-    //     Self::ChunkPuller::new(self, chunk_size)
-    // }
-
-    // fn size_hint(&self) -> (usize, Option<usize>) {
-    //     let num_taken = self.counter.load(Ordering::Acquire);
-    //     let remaining = self.vec_len.saturating_sub(num_taken);
-    //     (remaining, Some(remaining))
-    // }
+impl<T> ExactSizeConcurrentIter for ConIterVec<T>
+where
+    T: Send + Sync,
+{
+    fn len(&self) -> usize {
+        let num_taken = self.counter.load(Ordering::Acquire);
+        self.vec_len.saturating_sub(num_taken)
+    }
 }
