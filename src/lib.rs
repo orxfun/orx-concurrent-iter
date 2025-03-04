@@ -17,5 +17,5 @@ extern crate alloc;
 mod chunk_puller;
 mod concurrent_iterator;
 mod implementations;
-mod item_puller;
+mod pullers;
 mod wrappers;

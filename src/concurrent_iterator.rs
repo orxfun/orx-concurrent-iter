@@ -1,4 +1,5 @@
-use crate::{chunk_puller::ChunkPuller, item_puller::ItemPuller};
+use crate::chunk_puller::ChunkPuller;
+use crate::pullers::{EnumeratedItemPuller, ItemPuller};
 
 pub trait ConcurrentIterator {
     type Item: Send + Sync;
@@ -37,6 +38,13 @@ pub trait ConcurrentIterator {
     }
 
     fn item_puller(&self) -> ItemPuller<'_, Self>
+    where
+        Self: Sized,
+    {
+        self.into()
+    }
+
+    fn enumerated_item_puller(&self) -> EnumeratedItemPuller<'_, Self>
     where
         Self: Sized,
     {
