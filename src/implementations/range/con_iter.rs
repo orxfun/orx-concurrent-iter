@@ -27,7 +27,7 @@ impl<T> Default for ConIterRange<T> {
 impl<T> ConIterRange<T>
 where
     T: Send + Sync + From<usize> + Into<usize>,
-    Range<T>: Default + ExactSizeIterator<Item = T>,
+    Range<T>: Default + Clone + ExactSizeIterator<Item = T>,
 {
     pub(super) fn new(range: Range<T>) -> Self {
         let begin: usize = range.start.into();
@@ -63,7 +63,7 @@ where
 impl<T> ConcurrentIter for ConIterRange<T>
 where
     T: Send + Sync + From<usize> + Into<usize>,
-    Range<T>: Default + ExactSizeIterator<Item = T>,
+    Range<T>: Default + Clone + ExactSizeIterator<Item = T>,
 {
     type Item = T;
 
@@ -109,7 +109,7 @@ where
 impl<T> ExactSizeConcurrentIter for ConIterRange<T>
 where
     T: Send + Sync + From<usize> + Into<usize>,
-    Range<T>: Default + ExactSizeIterator<Item = T>,
+    Range<T>: Default + Clone + ExactSizeIterator<Item = T>,
 {
     fn len(&self) -> usize {
         let num_taken = self.counter.load(Ordering::Acquire);
