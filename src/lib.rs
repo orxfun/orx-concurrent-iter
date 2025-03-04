@@ -20,6 +20,7 @@ mod concurrent_iterable;
 mod exact_size_concurrent_iter;
 mod implementations;
 mod into_concurrent_iter;
+mod iter_into_concurrent_iter;
 mod pullers;
 
 // exported modules: transformations

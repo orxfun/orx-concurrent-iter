@@ -22,13 +22,16 @@ where
 {
     type ChunkItem = (usize, P::ChunkItem);
 
-    type Chunk = EnumeratedChunk<P::Chunk>;
+    type Chunk<'c>
+        = EnumeratedChunk<P::Chunk<'c>>
+    where
+        Self: 'c;
 
     fn chunk_size(&self) -> usize {
         self.puller.chunk_size()
     }
 
-    fn pull(&mut self) -> Option<Self::Chunk> {
+    fn pull(&mut self) -> Option<Self::Chunk<'_>> {
         self.puller
             .pull_with_idx()
             .map(|(begin_idx, x)| EnumeratedChunk {
@@ -37,7 +40,7 @@ where
             })
     }
 
-    fn pull_with_idx(&mut self) -> Option<(usize, Self::Chunk)> {
+    fn pull_with_idx(&mut self) -> Option<(usize, Self::Chunk<'_>)> {
         self.puller.pull_with_idx().map(|(begin_idx, x)| {
             (
                 begin_idx,

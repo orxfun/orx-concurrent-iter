@@ -26,17 +26,20 @@ where
 {
     type ChunkItem = T;
 
-    type Chunk = Cloned<P::Chunk>;
+    type Chunk<'c>
+        = Cloned<P::Chunk<'c>>
+    where
+        Self: 'c;
 
     fn chunk_size(&self) -> usize {
         self.puller.chunk_size()
     }
 
-    fn pull(&mut self) -> Option<Self::Chunk> {
+    fn pull(&mut self) -> Option<Self::Chunk<'_>> {
         self.puller.pull().map(|x| x.cloned())
     }
 
-    fn pull_with_idx(&mut self) -> Option<(usize, Self::Chunk)> {
+    fn pull_with_idx(&mut self) -> Option<(usize, Self::Chunk<'_>)> {
         self.puller
             .pull_with_idx()
             .map(|(begin_idx, x)| (begin_idx, x.cloned()))

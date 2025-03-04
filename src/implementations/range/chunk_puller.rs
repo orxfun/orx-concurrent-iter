@@ -27,19 +27,22 @@ where
 {
     type ChunkItem = T;
 
-    type Chunk = Range<T>;
+    type Chunk<'c>
+        = Range<T>
+    where
+        Self: 'c;
 
     fn chunk_size(&self) -> usize {
         self.chunk_size
     }
 
-    fn pull(&mut self) -> Option<Self::Chunk> {
+    fn pull(&mut self) -> Option<Self::Chunk<'_>> {
         self.con_iter
             .progress_and_get_range(self.chunk_size)
             .map(|(_, a, b)| a..b)
     }
 
-    fn pull_with_idx(&mut self) -> Option<(usize, Self::Chunk)> {
+    fn pull_with_idx(&mut self) -> Option<(usize, Self::Chunk<'_>)> {
         self.con_iter
             .progress_and_get_range(self.chunk_size)
             .map(|(begin_idx, a, b)| (begin_idx, a..b))

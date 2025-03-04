@@ -1,14 +1,14 @@
 use super::ChunkPuller;
 
-pub struct FlattenedChunkPuller<P>
+pub struct FlattenedChunkPuller<'c, P>
 where
-    P: ChunkPuller,
+    P: ChunkPuller + 'c,
 {
     puller: P,
-    current_chunk: P::Chunk,
+    current_chunk: P::Chunk<'c>,
 }
 
-impl<P> From<P> for FlattenedChunkPuller<P>
+impl<'c, P> From<P> for FlattenedChunkPuller<'c, P>
 where
     P: ChunkPuller,
 {
@@ -20,7 +20,7 @@ where
     }
 }
 
-impl<P> FlattenedChunkPuller<P>
+impl<'c, P> FlattenedChunkPuller<'c, P>
 where
     P: ChunkPuller,
 {
@@ -29,7 +29,8 @@ where
     }
 
     fn next_chunk(&mut self) -> Option<P::ChunkItem> {
-        match self.puller.pull() {
+        let puller = unsafe { &mut *(&mut self.puller as *mut P) };
+        match puller.pull() {
             Some(chunk) => {
                 self.current_chunk = chunk;
                 self.next()
@@ -39,7 +40,7 @@ where
     }
 }
 
-impl<P> Iterator for FlattenedChunkPuller<P>
+impl<'c, P> Iterator for FlattenedChunkPuller<'c, P>
 where
     P: ChunkPuller,
 {

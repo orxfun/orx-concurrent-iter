@@ -1,18 +1,18 @@
 use super::ChunkPuller;
 use core::iter::Enumerate;
 
-pub struct FlattenedEnumeratedChunkPuller<P>
+pub struct FlattenedEnumeratedChunkPuller<'c, P>
 where
-    P: ChunkPuller,
+    P: ChunkPuller + 'c,
 {
     puller: P,
     current_begin_idx: usize,
-    current_chunk: Enumerate<P::Chunk>,
+    current_chunk: Enumerate<P::Chunk<'c>>,
 }
 
-impl<P> From<P> for FlattenedEnumeratedChunkPuller<P>
+impl<'c, P> From<P> for FlattenedEnumeratedChunkPuller<'c, P>
 where
-    P: ChunkPuller,
+    P: ChunkPuller + 'c,
 {
     fn from(puller: P) -> Self {
         Self {
@@ -23,16 +23,17 @@ where
     }
 }
 
-impl<P> FlattenedEnumeratedChunkPuller<P>
+impl<'c, P> FlattenedEnumeratedChunkPuller<'c, P>
 where
-    P: ChunkPuller,
+    P: ChunkPuller + 'c,
 {
     pub fn into_chunk_puller(self) -> P {
         self.puller
     }
 
     fn next_chunk(&mut self) -> Option<(usize, P::ChunkItem)> {
-        match self.puller.pull_with_idx() {
+        let puller = unsafe { &mut *(&mut self.puller as *mut P) };
+        match puller.pull_with_idx() {
             Some((begin_idx, chunk)) => {
                 self.current_begin_idx = begin_idx;
                 self.current_chunk = chunk.enumerate();
@@ -43,9 +44,9 @@ where
     }
 }
 
-impl<P> Iterator for FlattenedEnumeratedChunkPuller<P>
+impl<'c, P> Iterator for FlattenedEnumeratedChunkPuller<'c, P>
 where
-    P: ChunkPuller,
+    P: ChunkPuller + 'c,
 {
     type Item = (usize, P::ChunkItem);
 
