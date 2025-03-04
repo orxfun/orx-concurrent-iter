@@ -1,6 +1,5 @@
-use crate::pullers::ChunkPuller;
-
 use super::con_iter::ConIterSlice;
+use crate::pullers::ChunkPuller;
 
 pub struct ChunkPullerSlice<'i, 'a, T>
 where
@@ -29,51 +28,23 @@ where
     type ChunkItem = &'a T;
 
     type Chunk<'c>
+        = core::slice::Iter<'a, T>
     where
         Self: 'c;
 
     fn chunk_size(&self) -> usize {
-        todo!()
+        self.chunk_size
     }
 
     fn pull(&mut self) -> Option<Self::Chunk<'_>> {
-        todo!()
+        self.con_iter
+            .progress_and_get_slice(self.chunk_size)
+            .map(|(_, slice)| slice.iter())
     }
 
     fn pull_with_idx(&mut self) -> Option<(usize, Self::Chunk<'_>)> {
-        todo!()
+        self.con_iter
+            .progress_and_get_slice(self.chunk_size)
+            .map(|(begin_idx, slice)| (begin_idx, slice.iter()))
     }
 }
-
-// impl<'a, T, E> ChunkPuller<E> for ChunkPullerSlice<'_, 'a, T, E>
-// where
-//     T: Send + Sync,
-// {
-//     type ChunkItem = &'a T;
-
-//     type Iter<'c>
-//         = core::slice::Iter<'a, T>
-//     where
-//         Self: 'c;
-
-//     #[inline(always)]
-//     fn chunk_size(&self) -> usize {
-//         self.chunk_size
-//     }
-
-//     fn pull(&mut self) -> Option<<<E as Enumeration>::Element as Element>::IterOf<Self::Iter<'_>>> {
-//         self.con_iter
-//             .progress_and_get_slice(self.chunk_size)
-//             .map(|(begin_idx, slice)| E::new_chunk(begin_idx, slice.iter()))
-//     }
-
-//     fn pulli(&mut self) -> Option<PulledChunkIter<Self::Iter<'_>, E>> {
-//         self.con_iter
-//             .progress_and_get_slice(self.chunk_size)
-//             .map(|(begin_idx, slice)| {
-//                 let begin_idx = E::into_begin_idx(begin_idx);
-//                 let chunk = slice.iter();
-//                 E::new_pulled_chunk_iter(begin_idx, chunk)
-//             })
-//     }
-// }
