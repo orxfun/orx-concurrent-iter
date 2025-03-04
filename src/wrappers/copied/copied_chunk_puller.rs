@@ -1,28 +1,28 @@
 use crate::pullers::ChunkPuller;
 use core::iter::Copied;
 
-pub struct CopiedChunkPuller<'a, T, P>
+pub struct CopiedChunkPuller<'i, T, P>
 where
-    T: Copy + 'a,
-    P: ChunkPuller<ChunkItem = &'a T>,
+    T: Copy + 'i,
+    P: ChunkPuller<ChunkItem = &'i T>,
 {
     puller: P,
 }
 
-impl<'a, T, P> From<P> for CopiedChunkPuller<'a, T, P>
+impl<'i, T, P> From<P> for CopiedChunkPuller<'i, T, P>
 where
-    T: Copy + 'a,
-    P: ChunkPuller<ChunkItem = &'a T>,
+    T: Copy + 'i,
+    P: ChunkPuller<ChunkItem = &'i T>,
 {
     fn from(puller: P) -> Self {
         Self { puller }
     }
 }
 
-impl<'a, T, P> ChunkPuller for CopiedChunkPuller<'a, T, P>
+impl<'i, T, P> ChunkPuller for CopiedChunkPuller<'i, T, P>
 where
-    T: Copy + 'a,
-    P: ChunkPuller<ChunkItem = &'a T>,
+    T: Copy + 'i,
+    P: ChunkPuller<ChunkItem = &'i T>,
 {
     type ChunkItem = T;
 

@@ -100,6 +100,10 @@ where
         let remaining = self.len.saturating_sub(num_taken);
         (remaining, Some(remaining))
     }
+
+    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+        (self, chunk_size).into()
+    }
 }
 
 impl<T> ExactSizeConcurrentIter for ConIterRange<T>

@@ -5,7 +5,7 @@ pub trait ConcurrentIter {
 
     type SequentialIter: Iterator<Item = Self::Item>;
 
-    type ChunkPuller<'i>: ChunkPuller<ChunkItem = Self::Item> + From<(&'i Self, usize)>
+    type ChunkPuller<'i>: ChunkPuller<ChunkItem = Self::Item>
     where
         Self: 'i;
 
@@ -32,9 +32,7 @@ pub trait ConcurrentIter {
 
     // pullers
 
-    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
-        (self, chunk_size).into()
-    }
+    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_>;
 
     fn item_puller(&self) -> ItemPuller<'_, Self>
     where
