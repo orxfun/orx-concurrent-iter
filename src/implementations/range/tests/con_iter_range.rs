@@ -319,7 +319,7 @@ fn flattened_chunk_puller_with_idx(n: usize, nt: usize) {
                 num_spawned.push(true);
                 while num_spawned.len() < nt {} // allow all threads to be spawned
 
-                for x in iter.chunk_puller(7).flattened_enumerated() {
+                for x in iter.chunk_puller(7).flattened_with_idx() {
                     bag.push(x);
                 }
             });

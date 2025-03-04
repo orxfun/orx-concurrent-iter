@@ -5,6 +5,8 @@ pub trait ChunkPuller {
 
     type Chunk: ExactSizeIterator<Item = Self::ChunkItem> + Default;
 
+    fn chunk_size(&self) -> usize;
+
     fn pull(&mut self) -> Option<Self::Chunk>;
 
     fn pull_with_idx(&mut self) -> Option<(usize, Self::Chunk)>;
@@ -16,7 +18,7 @@ pub trait ChunkPuller {
         self.into()
     }
 
-    fn flattened_enumerated(self) -> FlattenedEnumeratedChunkPuller<Self>
+    fn flattened_with_idx(self) -> FlattenedEnumeratedChunkPuller<Self>
     where
         Self: Sized,
     {

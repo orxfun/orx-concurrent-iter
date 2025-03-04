@@ -29,6 +29,10 @@ where
 
     type Chunk = Range<T>;
 
+    fn chunk_size(&self) -> usize {
+        self.chunk_size
+    }
+
     fn pull(&mut self) -> Option<Self::Chunk> {
         self.con_iter
             .progress_and_get_range(self.chunk_size)

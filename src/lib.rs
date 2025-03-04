@@ -25,3 +25,6 @@ mod pullers;
 // transformations
 pub mod cloned;
 pub mod copied;
+
+pub use concurrent_iter::ConcurrentIter;
+pub use pullers::ChunkPuller;

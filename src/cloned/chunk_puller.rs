@@ -28,6 +28,10 @@ where
 
     type Chunk = Cloned<P::Chunk>;
 
+    fn chunk_size(&self) -> usize {
+        self.puller.chunk_size()
+    }
+
     fn pull(&mut self) -> Option<Self::Chunk> {
         self.puller.pull().map(|x| x.cloned())
     }
