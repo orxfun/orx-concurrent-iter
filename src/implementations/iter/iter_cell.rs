@@ -108,17 +108,15 @@ where
         let begin_idx = *num_taken;
 
         let iter = unsafe { &mut *self.iter.get() };
-        let mut num_taken_now = buffer.len();
+        let mut num_taken_now = 0;
 
-        for (i, x) in buffer.iter_mut().enumerate() {
+        for x in buffer.iter_mut() {
             match iter.next() {
                 Some(item) => {
                     *x = Some(item);
+                    num_taken_now += 1;
                 }
-                None => {
-                    num_taken_now = i;
-                    handle.set_target_to_completed();
-                }
+                None => handle.set_target_to_completed(),
             }
         }
 
