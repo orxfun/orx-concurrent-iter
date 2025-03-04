@@ -1,5 +1,5 @@
 use super::chunk_puller_range::ChunkPullerRange;
-use crate::concurrent_iterator::ConcurrentIterator;
+use crate::concurrent_iter::ConcurrentIter;
 use core::{
     marker::PhantomData,
     ops::Range,
@@ -57,7 +57,7 @@ where
     }
 }
 
-impl<T> ConcurrentIterator for ConIterRange<T>
+impl<T> ConcurrentIter for ConIterRange<T>
 where
     T: Send + Sync + From<usize>,
     Range<T>: Default + ExactSizeIterator<Item = T>,

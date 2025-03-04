@@ -1,7 +1,7 @@
 use crate::chunk_puller::ChunkPuller;
 use crate::pullers::{EnumeratedItemPuller, ItemPuller};
 
-pub trait ConcurrentIterator {
+pub trait ConcurrentIter {
     type Item: Send + Sync;
 
     type SequentialIter: Iterator<Item = Self::Item>;
