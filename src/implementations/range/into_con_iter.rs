@@ -11,7 +11,7 @@ where
 
     type IntoIter = ConIterRange<T>;
 
-    fn into_concurrent_iter(self) -> Self::IntoIter {
+    fn into_con_iter(self) -> Self::IntoIter {
         Self::IntoIter::new(self)
     }
 }

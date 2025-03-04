@@ -14,7 +14,9 @@
 
 extern crate alloc;
 
+mod concurrent_collection;
 mod concurrent_iter;
+mod concurrent_iterable;
 mod exact_size_concurrent_iter;
 mod implementations;
 mod into_concurrent_iter;

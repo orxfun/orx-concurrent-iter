@@ -5,5 +5,5 @@ pub trait IntoConcurrentIter {
 
     type IntoIter: ConcurrentIter<Item = Self::Item>;
 
-    fn into_concurrent_iter(self) -> Self::IntoIter;
+    fn into_con_iter(self) -> Self::IntoIter;
 }
