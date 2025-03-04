@@ -82,8 +82,8 @@ fn size_hint_skip_to_end() {
     assert_eq!(iter.len(), 0);
 }
 
-#[test_matrix( [1, 2, 4])]
-fn empty_range(nt: usize) {
+#[test_matrix([1, 2, 4])]
+fn empty(nt: usize) {
     let iter = ConIterRange::new(10..10);
 
     std::thread::scope(|s| {
