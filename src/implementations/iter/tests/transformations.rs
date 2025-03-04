@@ -1,4 +1,3 @@
-use crate::concurrent_iterable::ConcurrentIterable;
 use crate::{ChunkPuller, ConcurrentIter, IterIntoConcurrentIter};
 use core::ops::Range;
 
@@ -58,4 +57,22 @@ fn enumerate_chunk_puller() {
             j += 1;
         }
     }
+}
+
+#[test]
+fn copied() {
+    let vec = vec![2, 3, 4, 5];
+    let seq_iter = vec.iter().filter(|x| **x < 3333);
+    let iter = seq_iter.iter_into_con_iter().copied();
+    let values: Vec<_> = iter.item_puller().collect();
+    assert_eq!(values, vec);
+}
+
+#[test]
+fn cloned() {
+    let vec = vec![2, 3, 4, 5];
+    let seq_iter = vec.iter().filter(|x| **x < 3333);
+    let iter = seq_iter.iter_into_con_iter().cloned();
+    let values: Vec<_> = iter.item_puller().collect();
+    assert_eq!(values, vec);
 }
