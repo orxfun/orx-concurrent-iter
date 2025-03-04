@@ -19,4 +19,7 @@ mod exact_size_concurrent_iter;
 mod implementations;
 mod into_concurrent_iter;
 mod pullers;
-mod wrappers;
+
+// transformations
+pub mod cloned;
+pub mod copied;

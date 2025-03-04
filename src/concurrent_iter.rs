@@ -1,6 +1,6 @@
 use crate::{
+    copied::ConIterCopied,
     pullers::{ChunkPuller, EnumeratedItemPuller, ItemPuller},
-    wrappers::copied::ConIterCopied,
 };
 
 pub trait ConcurrentIter {
