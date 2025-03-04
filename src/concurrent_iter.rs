@@ -32,8 +32,8 @@ pub trait ConcurrentIter: Send + Sync {
 
     fn try_get_len(&self) -> Option<usize> {
         match self.size_hint() {
-            (_, None) => None,
-            (_, Some(upper)) => Some(upper),
+            (x, Some(y)) if x == y => Some(x),
+            _ => None,
         }
     }
 
