@@ -4,7 +4,7 @@ use crate::{
     pullers::{ChunkPuller, EnumeratedItemPuller, ItemPuller},
 };
 
-pub trait ConcurrentIter {
+pub trait ConcurrentIter: Send + Sync {
     type Item: Send + Sync;
 
     type SequentialIter: Iterator<Item = Self::Item>;
@@ -47,7 +47,7 @@ pub trait ConcurrentIter {
         self.into()
     }
 
-    fn enumerated_item_puller(&self) -> EnumeratedItemPuller<'_, Self>
+    fn item_puller_with_idx(&self) -> EnumeratedItemPuller<'_, Self>
     where
         Self: Sized,
     {

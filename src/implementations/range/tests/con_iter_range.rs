@@ -200,7 +200,7 @@ fn item_puller_with_idx(n: usize, nt: usize) {
                 num_spawned.push(true);
                 while num_spawned.len() < nt {} // allow all threads to be spawned
 
-                for x in iter.enumerated_item_puller() {
+                for x in iter.item_puller_with_idx() {
                     _ = iter.size_hint();
                     bag.push(x);
                 }
