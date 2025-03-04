@@ -16,6 +16,7 @@ extern crate alloc;
 
 mod chunk_puller;
 mod concurrent_iter;
+mod exact_size_concurrent_iter;
 mod implementations;
 mod into_concurrent_iter;
 mod pullers;

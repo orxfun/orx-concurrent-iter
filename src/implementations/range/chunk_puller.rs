@@ -1,4 +1,4 @@
-use super::con_iter_range::ConIterRange;
+use super::con_iter::ConIterRange;
 use crate::chunk_puller::ChunkPuller;
 use core::ops::Range;
 
@@ -22,7 +22,7 @@ where
 
 impl<T> ChunkPuller for ChunkPullerRange<'_, T>
 where
-    T: Send + Sync + From<usize>,
+    T: Send + Sync + From<usize> + Into<usize>,
     Range<T>: Default + ExactSizeIterator<Item = T>,
 {
     type ChunkItem = T;

@@ -1,5 +1,5 @@
-use super::chunk_puller_range::ChunkPullerRange;
-use crate::concurrent_iter::ConcurrentIter;
+use super::chunk_puller::ChunkPullerRange;
+use crate::{concurrent_iter::ConcurrentIter, exact_size_concurrent_iter::ExactSizeConcurrentIter};
 use core::{
     marker::PhantomData,
     ops::Range,
@@ -26,13 +26,16 @@ impl<T> Default for ConIterRange<T> {
 
 impl<T> ConIterRange<T>
 where
-    T: Send + Sync + From<usize>,
+    T: Send + Sync + From<usize> + Into<usize>,
     Range<T>: Default + ExactSizeIterator<Item = T>,
 {
-    pub(super) fn new(range: Range<usize>) -> Self {
+    pub(super) fn new(range: Range<T>) -> Self {
+        let begin: usize = range.start.into();
+        let end: usize = range.end.into();
+        let len = end - begin;
         Self {
-            begin: range.start,
-            len: range.end - range.start,
+            begin,
+            len,
             counter: 0.into(),
             phantom: PhantomData,
         }
@@ -59,7 +62,7 @@ where
 
 impl<T> ConcurrentIter for ConIterRange<T>
 where
-    T: Send + Sync + From<usize>,
+    T: Send + Sync + From<usize> + Into<usize>,
     Range<T>: Default + ExactSizeIterator<Item = T>,
 {
     type Item = T;
@@ -96,5 +99,16 @@ where
         let num_taken = self.counter.load(Ordering::Acquire);
         let remaining = self.len.saturating_sub(num_taken);
         (remaining, Some(remaining))
+    }
+}
+
+impl<T> ExactSizeConcurrentIter for ConIterRange<T>
+where
+    T: Send + Sync + From<usize> + Into<usize>,
+    Range<T>: Default + ExactSizeIterator<Item = T>,
+{
+    fn len(&self) -> usize {
+        let num_taken = self.counter.load(Ordering::Acquire);
+        self.len.saturating_sub(num_taken)
     }
 }
