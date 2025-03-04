@@ -34,7 +34,8 @@ where
     }
 
     fn remaining(&self) -> usize {
-        unsafe { self.last.offset_from(self.first) as usize }
+        // SAFETY: the iterator is never empty
+        unsafe { self.last.offset_from(self.first) as usize + 1 }
     }
 }
 

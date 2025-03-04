@@ -1,7 +1,4 @@
-use crate::{
-    concurrent_iterable::ConcurrentIterable, ChunkPuller, ConcurrentIter, IterIntoConcurrentIter,
-};
-use core::ops::Range;
+use crate::{concurrent_iterable::ConcurrentIterable, ChunkPuller, ConcurrentIter};
 
 #[test]
 fn enumerate_item() {
@@ -54,7 +51,6 @@ fn enumerate_chunk_puller() {
     while let Some(chunk) = puller.pull() {
         assert_eq!(chunk.len(), 2);
         for (i, x) in chunk {
-            dbg!(i, x);
             assert_eq!((i, x), (j, &(j + 2)));
             j += 1;
         }
