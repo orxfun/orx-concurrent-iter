@@ -1,10 +1,9 @@
+use super::copied_chunk_puller::CopiedChunkPuller;
 use crate::concurrent_iter::ConcurrentIter;
 use core::{
     iter::{Cloned, Copied},
     marker::PhantomData,
 };
-
-use super::copied_chunk_puller::CopiedChunkPuller;
 
 pub struct ConIterCopied<'a, I, T>
 where
@@ -20,7 +19,7 @@ where
     T: Send + Sync + Copy,
     I: ConcurrentIter<Item = &'a T>,
 {
-    pub(super) fn new(con_iter: I) -> Self {
+    pub(crate) fn new(con_iter: I) -> Self {
         Self {
             con_iter,
             phantom: PhantomData,

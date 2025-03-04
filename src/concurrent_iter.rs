@@ -1,4 +1,7 @@
-use crate::pullers::{ChunkPuller, EnumeratedItemPuller, ItemPuller};
+use crate::{
+    pullers::{ChunkPuller, EnumeratedItemPuller, ItemPuller},
+    wrappers::copied::ConIterCopied,
+};
 
 pub trait ConcurrentIter {
     type Item: Send + Sync;
@@ -8,6 +11,8 @@ pub trait ConcurrentIter {
     type ChunkPuller<'i>: ChunkPuller<ChunkItem = Self::Item>
     where
         Self: 'i;
+
+    // transform
 
     fn into_seq_iter(self) -> Self::SequentialIter;
 
@@ -46,5 +51,15 @@ pub trait ConcurrentIter {
         Self: Sized,
     {
         self.into()
+    }
+
+    // provided transformations
+
+    fn copied<'a, T>(self) -> ConIterCopied<'a, Self, T>
+    where
+        T: Send + Sync + Copy,
+        Self: ConcurrentIter<Item = &'a T> + Sized,
+    {
+        ConIterCopied::new(self)
     }
 }

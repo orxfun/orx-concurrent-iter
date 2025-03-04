@@ -1,1 +1,1 @@
-mod copied;
+pub mod copied;
