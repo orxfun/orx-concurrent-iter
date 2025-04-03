@@ -21,6 +21,8 @@ mod exact_size_concurrent_iter;
 /// Implementations of concurrent iterators.
 pub mod implementations;
 mod into_concurrent_iter;
+/// Module for creating special iterators.
+pub mod iter;
 mod iter_into_concurrent_iter;
 mod pullers;
 
