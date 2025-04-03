@@ -1,11 +1,11 @@
-use super::con_iter::ConEmpty;
+use super::con_iter::ConIterEmpty;
 use crate::pullers::ChunkPuller;
 
 pub struct ChunkPullerEmpty<'i, T>
 where
     T: Send + Sync,
 {
-    con_iter: &'i ConEmpty<T>,
+    con_iter: &'i ConIterEmpty<T>,
     chunk_size: usize,
 }
 
@@ -13,7 +13,7 @@ impl<'i, T> ChunkPullerEmpty<'i, T>
 where
     T: Send + Sync,
 {
-    pub(super) fn new(con_iter: &'i ConEmpty<T>, chunk_size: usize) -> Self {
+    pub(super) fn new(con_iter: &'i ConIterEmpty<T>, chunk_size: usize) -> Self {
         Self {
             con_iter,
             chunk_size,

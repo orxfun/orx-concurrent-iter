@@ -5,7 +5,7 @@ mod range;
 mod slice;
 mod vec;
 
-pub use empty::ConEmpty;
+pub use empty::ConIterEmpty;
 pub use iter::ConIterOfIter;
 pub use range::ConIterRange;
 pub use slice::ConIterSlice;

@@ -2,26 +2,35 @@ use super::chunk_puller::ChunkPullerEmpty;
 use crate::{exact_size_concurrent_iter::ExactSizeConcurrentIter, ConcurrentIter};
 use core::marker::PhantomData;
 
-pub struct ConEmpty<T: Send + Sync> {
+pub struct ConIterEmpty<T: Send + Sync> {
     phantom: PhantomData<T>,
 }
 
-unsafe impl<T: Send + Sync> Sync for ConEmpty<T> {}
+unsafe impl<T: Send + Sync> Sync for ConIterEmpty<T> {}
 
-unsafe impl<T: Send + Sync> Send for ConEmpty<T> {}
+unsafe impl<T: Send + Sync> Send for ConIterEmpty<T> {}
 
-impl<T> Default for ConEmpty<T>
+impl<T> Default for ConIterEmpty<T>
 where
     T: Send + Sync,
 {
     fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<T> ConIterEmpty<T>
+where
+    T: Send + Sync,
+{
+    pub fn new() -> Self {
         Self {
             phantom: PhantomData,
         }
     }
 }
 
-impl<T> ConcurrentIter for ConEmpty<T>
+impl<T> ConcurrentIter for ConIterEmpty<T>
 where
     T: Send + Sync,
 {
@@ -57,7 +66,7 @@ where
     }
 }
 
-impl<T> ExactSizeConcurrentIter for ConEmpty<T>
+impl<T> ExactSizeConcurrentIter for ConIterEmpty<T>
 where
     T: Send + Sync,
 {
