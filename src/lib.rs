@@ -37,6 +37,7 @@ pub mod enumerate;
 pub use concurrent_collection::ConcurrentCollection;
 pub use concurrent_iter::ConcurrentIter;
 pub use concurrent_iterable::ConcurrentIterable;
+pub use exact_size_concurrent_iter::ExactSizeConcurrentIter;
 pub use into_concurrent_iter::IntoConcurrentIter;
 pub use iter_into_concurrent_iter::IterIntoConcurrentIter;
 pub use pullers::ChunkPuller;
