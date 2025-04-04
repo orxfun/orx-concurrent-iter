@@ -90,7 +90,6 @@ fn size_hint_unknown() {
     assert_eq!(iter.size_hint(), (0, Some(n)));
     assert_eq!(iter.try_get_len(), None);
     let _ = chunks_iter.pull();
-    n -= 7;
 
     assert_eq!(iter.size_hint(), (0, Some(0)));
     assert_eq!(iter.try_get_len(), Some(0));
