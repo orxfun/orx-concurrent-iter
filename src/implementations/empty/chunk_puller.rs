@@ -22,7 +22,7 @@ where
     }
 }
 
-impl<'i, T> ChunkPuller for ChunkPullerEmpty<'i, T>
+impl<T> ChunkPuller for ChunkPullerEmpty<'_, T>
 where
     T: Send + Sync,
 {

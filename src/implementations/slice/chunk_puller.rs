@@ -21,7 +21,7 @@ where
     }
 }
 
-impl<'i, 'a, T> ChunkPuller for ChunkPullerSlice<'i, 'a, T>
+impl<'a, T> ChunkPuller for ChunkPullerSlice<'_, 'a, T>
 where
     T: Send + Sync,
 {

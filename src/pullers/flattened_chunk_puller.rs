@@ -8,7 +8,7 @@ where
     current_chunk: P::Chunk<'c>,
 }
 
-impl<'c, P> From<P> for FlattenedChunkPuller<'c, P>
+impl<P> From<P> for FlattenedChunkPuller<'_, P>
 where
     P: ChunkPuller,
 {
@@ -20,7 +20,7 @@ where
     }
 }
 
-impl<'c, P> FlattenedChunkPuller<'c, P>
+impl<P> FlattenedChunkPuller<'_, P>
 where
     P: ChunkPuller,
 {
@@ -40,7 +40,7 @@ where
     }
 }
 
-impl<'c, P> Iterator for FlattenedChunkPuller<'c, P>
+impl<P> Iterator for FlattenedChunkPuller<'_, P>
 where
     P: ChunkPuller,
 {

@@ -13,7 +13,7 @@ where
     counter: AtomicUsize,
 }
 
-impl<'a, T> Default for ConIterSlice<'a, T>
+impl<T> Default for ConIterSlice<'_, T>
 where
     T: Send + Sync,
 {
