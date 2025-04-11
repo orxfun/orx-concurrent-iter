@@ -1,7 +1,7 @@
 use crate::implementations::ConIterOfIter;
 
 /// Any regular iterator implements [`IterIntoConcurrentIter`] trait allowing them to be used
-/// as a concurrent iterator by calling [`iter_into_con_iter`].
+/// as a concurrent iterator; i.e., [`ConcurrentIter`], by calling [`iter_into_con_iter`].
 ///
 /// Pulling of elements from the iterator are synchronized and safely shared to threads.
 ///
@@ -47,7 +47,7 @@ where
     Self::Item: Send + Sync,
 {
     /// Any regular iterator implements [`IterIntoConcurrentIter`] trait allowing them to be used
-    /// as a concurrent iterator by calling [`iter_into_con_iter`].
+    /// as a concurrent iterator; i.e., [`ConcurrentIter`], by calling [`iter_into_con_iter`].
     ///
     /// Pulling of elements from the iterator are synchronized and safely shared to threads.
     ///
