@@ -10,15 +10,15 @@ keywords = ["concurrency", "iterator", "iteration", "atomic", "parallelism"]
 categories = ["data-structures", "concurrency", "rust-patterns", "no-std"]
 
 [dependencies]
-orx-iterable = "1.2.0"
+orx-iterable = { version = "1.3.0", default-features = false }
 
 [dev-dependencies]
-orx-pseudo-default = { version = "2.0.0", default-features = false }
-orx-pinned-vec = { path = "../orx-pinned-vec" }
-orx-fixed-vec = { path = "../orx-fixed-vec" }
-orx-split-vec = { path = "../orx-split-vec" }
-orx-pinned-concurrent-col = { path = "../orx-pinned-concurrent-col" }
-orx-concurrent-bag = { path = "../orx-concurrent-bag" }
+orx-pseudo-default = { version = "2.1.0", default-features = false }
+orx-pinned-vec = "3.16.0"
+orx-fixed-vec = "3.16.0"
+orx-split-vec = "3.16.0"
+orx-pinned-concurrent-col = "2.13.0"
+orx-concurrent-bag = "2.12.0"
 test-case = "3.3.1"
 criterion = "0.5.1"
 rand = "0.9"
