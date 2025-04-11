@@ -10,6 +10,7 @@ use crate::implementations::ConIterOfIter;
 /// underlying collection or generator.
 ///
 /// [`iter_into_con_iter`]: crate::IterIntoConcurrentIter::iter_into_con_iter
+/// [`ConcurrentIter`]: crate::ConcurrentIter
 ///
 /// # Examples
 ///
@@ -56,6 +57,7 @@ where
     /// underlying collection or generator.
     ///
     /// [`iter_into_con_iter`]: crate::IterIntoConcurrentIter::iter_into_con_iter
+    /// [`ConcurrentIter`]: crate::ConcurrentIter
     ///
     /// # Examples
     ///
