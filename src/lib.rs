@@ -1,6 +1,7 @@
-#![doc = include_str!("../README.md")]
+// #![doc = include_str!("../README.md")]
+//! # orx-concurrent iter
 #![warn(
-    // missing_docs,
+    missing_docs,
     clippy::unwrap_in_result,
     clippy::unwrap_used,
     clippy::panic,
@@ -28,8 +29,11 @@ mod pullers;
 
 // exported modules: transformations
 
+/// Cloned transformation of concurrent iterators.
 pub mod cloned;
+/// Copied transformation of concurrent iterators.
 pub mod copied;
+/// Enumerated transformation of concurrent iterators.
 pub mod enumerate;
 
 // exported types
