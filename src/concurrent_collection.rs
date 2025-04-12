@@ -14,7 +14,7 @@ use crate::{concurrent_iterable::ConcurrentIterable, into_concurrent_iter::IntoC
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```
 /// use orx_concurrent_iter::*;
 ///
 /// let data = vec![1, 2];
@@ -50,7 +50,7 @@ pub trait ConcurrentCollection {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use orx_concurrent_iter::*;
     ///
     /// let data = vec![1, 2];

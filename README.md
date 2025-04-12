@@ -12,7 +12,7 @@ A thread-safe and ergonomic concurrent iterator trait and efficient lock-free im
 
 A [`ConcurrentIter`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ConcurrentIter.html) can be safely shared among threads and iterated over concurrently. As expected, it will yield each element only once and in order. The yielded elements will be shared among the threads which concurrently iterates based on first come first serve. In other words, threads concurrently pull remaining elements from the iterator.
 
-```rust
+```
 use orx_concurrent_iter::*;
 use std::fmt::Debug;
 
@@ -86,7 +86,7 @@ A **ConcurrentIter** implements the [`next`](https://docs.rs/orx-concurrent-iter
 
 Therefore, the usage of a concurrent iterator is almost equivalent to that of a regular **Iterator**. Slight differences are explained in the following example.
 
-```rust
+```
 use orx_concurrent_iter::*;
 
 fn process_one_by_one<T, I, F>(process: &F, num_threads: usize, iter: &I)
@@ -176,7 +176,7 @@ process_in_chunks(&process, 8, &vec.into_con_iter(), 64);
 
 Considering the elements of the iteration as inputs of a process, **ConcurrentIter** conveniently allows distribution of tasks to multiple threads. See below a parallel fold implementation using the concurrent iterator.
 
-```rust
+```
 use orx_concurrent_iter::*;
 
 fn compute(input: u64) -> u64 {
@@ -216,7 +216,7 @@ Notes on the implementation:
 
 Parallel map can also be implemented by merging returned transformed collections, such as vectors. Especially for larger data types, a more efficient approach could be to pair **ConcurrentIter** with a concurrent collection such as [`ConcurrentBag`](https://crates.io/crates/orx-concurrent-bag) which allows to efficiently collect results concurrently without copies.
 
-```rust
+```
 use orx_concurrent_iter::*;
 use orx_concurrent_bag::*;
 
@@ -254,7 +254,7 @@ As illustrated above, efficient parallel implementations of different methods ar
 
 You may see a parallel implementation of the find method below.
 
-```rust
+```
 use orx_concurrent_iter::*;
 
 fn par_find<I, P>(iter: I, predicate: P, n_threads: usize) -> Option<(usize, I::Item)>

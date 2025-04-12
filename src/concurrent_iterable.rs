@@ -10,7 +10,7 @@ use crate::{concurrent_iter::ConcurrentIter, into_concurrent_iter::IntoConcurren
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```
 /// use orx_concurrent_iter::*;
 ///
 /// let vec = vec![1, 2]; // Vec<T>: ConcurrentIterable<Item = &T>
@@ -54,7 +54,7 @@ pub trait ConcurrentIterable {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use orx_concurrent_iter::*;
     ///
     /// let vec = vec![1, 2]; // Vec<T>: ConcurrentIterable<Item = &T>

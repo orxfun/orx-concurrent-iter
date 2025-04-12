@@ -3,13 +3,13 @@ use crate::concurrent_iter::ConcurrentIter;
 /// Trait to convert a source (collection or generator) into a concurrent iterator; i.e., [`ConcurrentIter`],
 /// using its [`into_con_iter`] method.
 ///
-/// It can be considered as the *concurrent counterpart* of the `IntoIterator` trait.
+/// It can be considered as the *concurrent counterpart* of the [`IntoIterator`] trait.
 ///
 /// [`into_con_iter`]: crate::IntoConcurrentIter::into_con_iter
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```
 /// use orx_concurrent_iter::*;
 ///
 /// let vec = vec![1, 2];
@@ -34,13 +34,13 @@ pub trait IntoConcurrentIter {
     /// Trait to convert a source (collection or generator) into a concurrent iterator; i.e., [`ConcurrentIter`],
     /// using its [`into_con_iter`] method.
     ///
-    /// It can be considered as the *concurrent counterpart* of the `IntoIterator` trait.
+    /// It can be considered as the *concurrent counterpart* of the [`IntoIterator`] trait.
     ///
     /// [`into_con_iter`]: crate::IntoConcurrentIter::into_con_iter
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use orx_concurrent_iter::*;
     ///
     /// let vec = vec![1, 2];
