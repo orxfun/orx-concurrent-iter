@@ -461,6 +461,11 @@ pub trait ConcurrentIter: Send + Sync {
     /// Returns the next element of the iterator together its index.
     /// It returns None if there are no more elements left.
     ///
+    /// See also [`enumerate`] to convert the concurrent iterator into its enumerated
+    /// counterpart.
+    ///
+    /// [`enumerate`]: crate::ConcurrentIter::enumerate
+    ///
     /// # Examples
     ///
     /// ```
@@ -758,7 +763,11 @@ pub trait ConcurrentIter: Send + Sync {
     /// as we do with regular iterators, while under the hood it will concurrently iterate
     /// over the elements of the concurrent iterator.
     ///
+    /// See also [`enumerate`] to convert the concurrent iterator into its enumerated
+    /// counterpart.
+    ///
     /// [`EnumeratedItemPuller`]: crate::EnumeratedItemPuller
+    /// [`enumerate`]: crate::ConcurrentIter::enumerate
     ///
     /// # Examples
     ///
@@ -849,27 +858,42 @@ pub trait ConcurrentIter: Send + Sync {
         ConIterCloned::new(self)
     }
 
+    /// Creates an iterator which gives the current iteration count as well as the next value.
+    ///
+    /// The iterator returned yields pairs `(i, val)`, where `i` is the current index of iteration
+    /// and `val` is the value returned by the iterator.
+    ///
+    /// Note that concurrent iterators are already capable of returning hte element index by methods
+    /// such as:
+    ///
+    /// * [`next_with_idx`]
+    /// * [`item_puller_with_idx`]
+    /// * or [`pull_with_idx`] method of the chunk puller created by [`chunk_puller`]
+    ///
+    /// However, when we want always need the index, it is convenient to convert the concurrent iterator
+    /// into its enumerated counterpart with this method.
+    ///
+    /// [`next_with_idx`]: crate::ConcurrentIter::next_with_idx
+    /// [`item_puller_with_idx`]: crate::ConcurrentIter::item_puller_with_idx
+    /// [`chunk_puller`]: crate::ConcurrentIter::chunk_puller
+    /// [`pull_with_idx`]: crate::ChunkPuller::pull_with_idx
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use orx_concurrent_iter::*;
+    ///
+    /// let vec = vec!['x', 'y'];
+    ///
+    /// let con_iter = vec.con_iter().enumerate();
+    /// assert_eq!(con_iter.next(), Some((0, &'x')));
+    /// assert_eq!(con_iter.next(), Some((1, &'y')));
+    /// assert_eq!(con_iter.next(), None);
+    /// ```
     fn enumerate(self) -> Enumerate<Self>
     where
         Self: Sized,
     {
         Enumerate::new(self)
     }
-}
-
-#[test]
-fn abc() {
-    use crate::*;
-
-    let vec = vec!['x', 'y'];
-
-    let con_iter = vec.con_iter();
-    assert_eq!(con_iter.next(), Some(&'x'));
-    assert_eq!(con_iter.next(), Some(&'y'));
-    assert_eq!(con_iter.next(), None);
-
-    let con_iter = vec.con_iter().copied();
-    assert_eq!(con_iter.next(), Some('x'));
-    assert_eq!(con_iter.next(), Some('y'));
-    assert_eq!(con_iter.next(), None);
 }
