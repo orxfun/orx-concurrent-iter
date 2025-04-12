@@ -791,6 +791,27 @@ pub trait ConcurrentIter: Send + Sync {
 
     // provided transformations
 
+    /// Creates an iterator which copies all of its elements.
+    ///
+    /// This is useful when you have an iterator over `&T`, but you need an iterator over `T`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use orx_concurrent_iter::*;
+    ///
+    /// let vec = vec!['x', 'y'];
+    ///
+    /// let con_iter = vec.con_iter();
+    /// assert_eq!(con_iter.next(), Some(&'x'));
+    /// assert_eq!(con_iter.next(), Some(&'y'));
+    /// assert_eq!(con_iter.next(), None);
+    ///
+    /// let con_iter = vec.con_iter().copied();
+    /// assert_eq!(con_iter.next(), Some('x'));
+    /// assert_eq!(con_iter.next(), Some('y'));
+    /// assert_eq!(con_iter.next(), None);
+    /// ```
     fn copied<'a, T>(self) -> ConIterCopied<'a, Self, T>
     where
         T: Send + Sync + Copy,
@@ -799,6 +820,27 @@ pub trait ConcurrentIter: Send + Sync {
         ConIterCopied::new(self)
     }
 
+    /// Creates an iterator which clones all of its elements.
+    ///
+    /// This is useful when you have an iterator over `&T`, but you need an iterator over `T`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use orx_concurrent_iter::*;
+    ///
+    /// let vec = vec![String::from("x"), String::from("y")];
+    ///
+    /// let con_iter = vec.con_iter();
+    /// assert_eq!(con_iter.next(), Some(&String::from("x")));
+    /// assert_eq!(con_iter.next(), Some(&String::from("y")));
+    /// assert_eq!(con_iter.next(), None);
+    ///
+    /// let con_iter = vec.con_iter().cloned();
+    /// assert_eq!(con_iter.next(), Some(String::from("x")));
+    /// assert_eq!(con_iter.next(), Some(String::from("y")));
+    /// assert_eq!(con_iter.next(), None);
+    /// ```
     fn cloned<'a, T>(self) -> ConIterCloned<'a, Self, T>
     where
         T: Send + Sync + Clone,
@@ -819,20 +861,15 @@ pub trait ConcurrentIter: Send + Sync {
 fn abc() {
     use crate::*;
 
-    let num_threads = 4;
-    let data: Vec<_> = (0..100).map(|x| x.to_string()).collect();
-    let con_iter = data.con_iter();
+    let vec = vec!['x', 'y'];
 
-    let process = |_idx: usize, _x: &String| { /* assume actual work */ };
+    let con_iter = vec.con_iter();
+    assert_eq!(con_iter.next(), Some(&'x'));
+    assert_eq!(con_iter.next(), Some(&'y'));
+    assert_eq!(con_iter.next(), None);
 
-    std::thread::scope(|s| {
-        for _ in 0..num_threads {
-            s.spawn(|| {
-                // concurrently iterate over values in a `for` loop
-                for (idx, value) in con_iter.item_puller_with_idx() {
-                    process(idx, value);
-                }
-            });
-        }
-    });
+    let con_iter = vec.con_iter().copied();
+    assert_eq!(con_iter.next(), Some('x'));
+    assert_eq!(con_iter.next(), Some('y'));
+    assert_eq!(con_iter.next(), None);
 }
