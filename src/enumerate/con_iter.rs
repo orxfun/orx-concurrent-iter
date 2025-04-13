@@ -1,6 +1,25 @@
 use super::chunk_puller::EnumeratedChunkPuller;
 use crate::ConcurrentIter;
 
+/// An enumerated version of a concurrent iterator which additionally yields
+/// the index of elements in the source collection.
+///
+/// It can be created by calling [`enumerate`] on a concurrent iterator.
+///
+/// [`enumerate`]: crate::ConcurrentIter::enumerate
+///
+/// # Examples
+///
+/// ```
+/// use orx_concurrent_iter::*;
+///
+/// let vec = vec!['x', 'y'];
+///
+/// let con_iter = vec.con_iter().enumerate();
+/// assert_eq!(con_iter.next(), Some((0, &'x')));
+/// assert_eq!(con_iter.next(), Some((1, &'y')));
+/// assert_eq!(con_iter.next(), None);
+/// ```
 pub struct Enumerate<I>
 where
     I: ConcurrentIter,
