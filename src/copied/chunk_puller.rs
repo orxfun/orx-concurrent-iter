@@ -1,6 +1,9 @@
 use crate::pullers::ChunkPuller;
 use core::iter::Copied;
 
+/// Chunk puller of a copied concurrent iterator; i.e., [`ConIterCopied`]
+///
+/// [`ConIterCopied`]: crate::copied::ConIterCopied
 pub struct CopiedChunkPuller<'i, T, P>
 where
     T: Copy + 'i,

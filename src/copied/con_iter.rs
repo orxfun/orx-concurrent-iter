@@ -2,6 +2,13 @@ use super::chunk_puller::CopiedChunkPuller;
 use crate::concurrent_iter::ConcurrentIter;
 use core::{iter::Copied, marker::PhantomData};
 
+/// A concurrent iterator which copies all elements.
+///
+/// This is useful when you have an iterator over `&T`, but you need an iterator over `T`.
+///
+/// Copied concurrent iterator can be created by calling [`copied`] on a concurrent iterator.
+///
+/// [`copied`]: crate::ConcurrentIter::copied
 pub struct ConIterCopied<'a, I, T>
 where
     T: Send + Sync + Copy,
