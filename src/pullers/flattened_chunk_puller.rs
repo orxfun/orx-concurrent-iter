@@ -41,7 +41,7 @@ use super::ChunkPuller;
 ///         (0..num_threads)
 ///             .map(|_| s.spawn(|| con_iter.chunk_puller(chunk).flattened().reduce(&reduce))) // reduce inside each thread
 ///             .filter_map(|x| x.join().unwrap()) // join threads
-///             .reduce(&reduce) // reduce thread results to get the global result
+///             .reduce(&reduce) // reduce thread results to final result
 ///     })
 /// }
 ///

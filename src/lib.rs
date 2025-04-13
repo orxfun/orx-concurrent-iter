@@ -1,5 +1,4 @@
-// #![doc = include_str!("../README.md")]
-//! # orx-concurrent iter
+#![doc = include_str!("../README.md")]
 #![warn(
     missing_docs,
     clippy::unwrap_in_result,

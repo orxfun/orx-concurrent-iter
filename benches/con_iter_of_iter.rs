@@ -159,7 +159,7 @@ fn con_iter_of_iter(c: &mut Criterion) {
                 )
             };
 
-            group.bench_with_input(BenchmarkId::new("con_iter", param()), n, |b, _| {
+            group.bench_with_input(BenchmarkId::new("ConcurrentIter", param()), n, |b, _| {
                 validate(&expected, con_iter(&input, num_threads, chunk_size));
                 b.iter(|| con_iter(&input, num_threads, chunk_size))
             });
