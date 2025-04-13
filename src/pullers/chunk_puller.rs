@@ -3,6 +3,11 @@ use crate::pullers::{FlattenedChunkPuller, FlattenedEnumeratedChunkPuller};
 /// A chunk puller which is created from and linked to and pulls its elements
 /// from a [`ConcurrentIter`].
 ///
+/// It can be created using the [`chunk_puller`] method of a concurrent iterator
+/// by providing a desired chunk size.
+///
+/// [`chunk_puller`]: crate::ConcurrentIter::chunk_puller
+///
 /// Unlike the [`ItemPuller`], a chunk puller pulls many items at once:
 ///
 /// * Its [`pull`] method pulls a chunk from the concurrent iterator, where:

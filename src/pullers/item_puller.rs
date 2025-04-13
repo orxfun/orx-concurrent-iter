@@ -3,6 +3,10 @@ use crate::concurrent_iter::ConcurrentIter;
 /// A regular [`Iterator`] which is created from and linked to and
 /// pulls its elements from a [`ConcurrentIter`].
 ///
+/// It can be created using the [`item_puller`] method of a concurrent iterator.
+///
+/// [`item_puller`]: crate::ConcurrentIter::item_puller
+///
 /// # Examples
 ///
 /// The definition might sound a bit confusing.
