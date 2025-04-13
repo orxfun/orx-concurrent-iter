@@ -1,7 +1,22 @@
 use super::chunk_puller::ChunkPullerEmpty;
-use crate::{exact_size_concurrent_iter::ExactSizeConcurrentIter, ConcurrentIter};
+use crate::{ConcurrentIter, exact_size_concurrent_iter::ExactSizeConcurrentIter};
 use core::marker::PhantomData;
 
+/// An empty concurrent iterator which does not yield any elements.
+///
+/// # Examples
+///
+/// ```
+/// use orx_concurrent_iter::*;
+///
+/// let con_iter = iter::empty::<String>();
+/// assert_eq!(con_iter.next(), None);
+///
+/// // or
+///
+/// let con_iter = implementations::ConIterEmpty::<String>::new();
+/// assert_eq!(con_iter.next(), None);
+/// ```
 pub struct ConIterEmpty<T: Send + Sync> {
     phantom: PhantomData<T>,
 }
@@ -23,6 +38,7 @@ impl<T> ConIterEmpty<T>
 where
     T: Send + Sync,
 {
+    /// Creates a new empty concurrent iterator with no elements.
     pub fn new() -> Self {
         Self {
             phantom: PhantomData,
