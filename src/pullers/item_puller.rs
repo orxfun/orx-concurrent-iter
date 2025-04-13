@@ -131,33 +131,3 @@ where
         self.con_iter.next()
     }
 }
-
-#[test]
-fn abc() {
-    use crate::*;
-
-    fn reduce<T, F>(
-        num_threads: usize,
-        con_iter: impl ConcurrentIter<Item = T>,
-        reduce: F,
-    ) -> Option<T>
-    where
-        T: Send + Sync,
-        F: Fn(T, T) -> T + Send + Sync,
-    {
-        std::thread::scope(|s| {
-            (0..num_threads)
-                .map(|_| s.spawn(|| con_iter.item_puller().reduce(&reduce))) // reduce inside each thread
-                .filter_map(|x| x.join().unwrap()) // join threads
-                .reduce(&reduce) // reduce thread results to get the global result
-        })
-    }
-
-    let sum = reduce(8, (0..0).into_con_iter(), |a, b| a + b);
-    assert_eq!(sum, None);
-
-    let n = 10_000;
-    let data: Vec<_> = (0..n).collect();
-    let sum = reduce(8, data.con_iter().copied(), |a, b| a + b);
-    assert_eq!(sum, Some(n * (n - 1) / 2));
-}

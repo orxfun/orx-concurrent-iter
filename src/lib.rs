@@ -44,4 +44,7 @@ pub use concurrent_iterable::ConcurrentIterable;
 pub use exact_size_concurrent_iter::ExactSizeConcurrentIter;
 pub use into_concurrent_iter::IntoConcurrentIter;
 pub use iter_into_concurrent_iter::IterIntoConcurrentIter;
-pub use pullers::{ChunkPuller, EnumeratedItemPuller, ItemPuller};
+pub use pullers::{
+    ChunkPuller, EnumeratedItemPuller, FlattenedChunkPuller, FlattenedEnumeratedChunkPuller,
+    ItemPuller,
+};
