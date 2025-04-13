@@ -61,22 +61,3 @@ where
         self.con_iter.next_with_idx()
     }
 }
-
-#[test]
-fn abc() {
-    use crate::*;
-
-    let num_threads = 4;
-    let data: Vec<_> = (0..100).map(|x| x.to_string()).collect();
-    let con_iter = data.con_iter();
-
-    std::thread::scope(|s| {
-        for _ in 0..num_threads {
-            s.spawn(|| {
-                for (idx, value) in con_iter.item_puller_with_idx() {
-                    assert_eq!(value, &idx.to_string());
-                }
-            });
-        }
-    });
-}
