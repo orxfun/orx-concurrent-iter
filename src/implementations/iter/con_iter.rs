@@ -27,7 +27,7 @@ use core::sync::atomic::Ordering;
 /// * Furthermore, for programs where the task performed on each element of the iterator is
 ///   large enough, the overhead might be considered tolerable.
 ///
-/// [`iter_into_con_iter`]: crate::IntoConcurrentIter::iter_into_con_iter
+/// [`iter_into_con_iter`]: crate::IterIntoConcurrentIter::iter_into_con_iter
 ///
 /// # Examples
 ///

@@ -14,6 +14,42 @@ use crate::implementations::ConIterOfIter;
 ///
 /// # Examples
 ///
+/// In the following example, an arbitrary iterator is converted into a concurrent iterator
+/// and shared with multiple threads as a shared reference.
+///
+/// ```
+/// use orx_concurrent_iter::*;
+///
+/// let num_threads = 4;
+///
+/// let data: Vec<_> = (0..100).map(|x| x.to_string()).collect();
+///
+/// // an arbitrary iterator
+/// let iter = data
+///     .into_iter()
+///     .filter(|x| !x.starts_with('3'))
+///     .map(|x| format!("{x}!"));
+///
+/// // converted into a concurrent iterator and shared with multiple threads
+/// let con_iter = iter.iter_into_con_iter();
+///
+/// let process = |_x: String| { /* assume actual work */ };
+///
+/// std::thread::scope(|s| {
+///     for _ in 0..num_threads {
+///         s.spawn(|| {
+///             while let Some(value) = con_iter.next() {
+///                 assert!(!value.starts_with('3') && value.ends_with('!'));
+///                 process(value);
+///             }
+///         });
+///     }
+/// });
+/// ```
+///
+/// Similarly, in the following example, computation over elements of a generic
+/// iterator are distributed into multiple threads.
+///
 /// ```
 /// use orx_concurrent_iter::*;
 ///
