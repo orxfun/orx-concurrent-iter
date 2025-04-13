@@ -1,5 +1,8 @@
 use crate::ChunkPuller;
 
+/// Chunk puller of an enumerated concurrent iterator; i.e., [`Enumerate`]
+///
+/// [`Enumerate`]: crate::enumerate::Enumerate
 pub struct EnumeratedChunkPuller<P>
 where
     P: ChunkPuller,
