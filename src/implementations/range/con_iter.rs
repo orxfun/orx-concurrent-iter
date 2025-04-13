@@ -6,6 +6,24 @@ use core::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
+/// Concurrent iterator of a [`Range`].
+///
+/// It can be created by calling [`into_con_iter`] on a range.
+///
+/// [`Range`]: core::ops::Range
+/// [`into_con_iter`]: crate::IntoConcurrentIter::into_con_iter
+///
+/// # Examples
+///
+/// ```
+/// use orx_concurrent_iter::*;
+///
+/// let range = 1..3;
+/// let con_iter = range.into_con_iter();
+/// assert_eq!(con_iter.next(), Some(1));
+/// assert_eq!(con_iter.next(), Some(2));
+/// assert_eq!(con_iter.next(), None);
+/// ```
 pub struct ConIterRange<T> {
     begin: usize,
     len: usize,
