@@ -18,13 +18,13 @@ use core::{
 /// # Examples
 ///
 /// ```
-// /use orx_concurrent_iter::*;
-// /
-// /let vec = vec![1, 2];
-// /let con_iter = vec.into_con_iter();
-// /assert_eq!(con_iter.next(), Some(1));
-// /assert_eq!(con_iter.next(), Some(2));
-// /assert_eq!(con_iter.next(), None);
+/// use orx_concurrent_iter::*;
+///
+/// let vec = vec![1, 2];
+/// let con_iter = vec.into_con_iter();
+/// assert_eq!(con_iter.next(), Some(1));
+/// assert_eq!(con_iter.next(), Some(2));
+/// assert_eq!(con_iter.next(), None);
 /// ```
 pub struct ConIterVec<T>
 where

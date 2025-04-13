@@ -5,6 +5,36 @@ use core::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
+/// Concurrent iterator of a slice.
+///
+/// It can be created by calling [`into_con_iter`] on a slice.
+///
+/// Alternatively, it can be created calling [`con_iter`] on the type
+/// that owns the slice.
+///
+/// [`into_con_iter`]: crate::IntoConcurrentIter::into_con_iter
+/// [`con_iter`]: crate::ConcurrentIterable::con_iter
+///
+/// # Examples
+///
+/// ```
+/// use orx_concurrent_iter::*;
+///
+/// // &[T]: IntoConcurrentIter
+/// let vec = vec![0, 1, 2, 3];
+/// let slice = &vec[1..3];
+/// let con_iter = slice.into_con_iter();
+/// assert_eq!(con_iter.next(), Some(&1));
+/// assert_eq!(con_iter.next(), Some(&2));
+/// assert_eq!(con_iter.next(), None);
+///
+/// // Vec<T>: ConcurrentIterable
+/// let vec = vec![1, 2];
+/// let con_iter = vec.con_iter();
+/// assert_eq!(con_iter.next(), Some(&1));
+/// assert_eq!(con_iter.next(), Some(&2));
+/// assert_eq!(con_iter.next(), None);
+/// ```
 pub struct ConIterSlice<'a, T>
 where
     T: Send + Sync,
