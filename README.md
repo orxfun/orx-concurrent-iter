@@ -6,7 +6,7 @@
 
 A thread-safe and ergonomic concurrent iterator trait and efficient lock-free implementations.
 
-This crate focuses enabling **ergonomic** concurrent programs while keeping the execution as **efficient** as possible.
+This crate focuses on enabling **ergonomic** concurrent programs without sacrificing **efficiency**.
 
 ## A. Ergonomics
 
@@ -16,7 +16,7 @@ As expected, it will yield each element only once and in order.
 
 ### A.1. next and while let
 
-Just like a regular iterator, a concurrent iterator has a [`next`] method returning and `Option` of the element type.
+Just like a regular iterator, a concurrent iterator has a [`next`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ConcurrentIter.html#tymethod.next) method returning and `Option` of the element type.
 
 ```rust
 use orx_concurrent_iter::*;
@@ -38,15 +38,15 @@ std::thread::scope(|s| {
         let second = con_iter.next();
         assert_eq!(second, Some(&'b'));
 
-        let second = con_iter.next();
-        assert_eq!(second, Some(&'c'));
+        let third = con_iter.next();
+        assert_eq!(third, Some(&'c'));
 
         assert_eq!(con_iter.next(), None);
     });
 });
 ```
 
-This allows for using `while let` loops which makes writing parallel programs very straightforward. 
+This allows using `while let` loops. 
 
 The following example demonstrates a straightforward **parallel processing** implementation, where 100 elements of the input data will be processed in parallel by 4 threads.
 
@@ -75,11 +75,11 @@ std::thread::scope(|s| {
 
 ### A.2. Pullers (within-thread Iterators) and for
 
-Although rust's `while let` loops are already very convenient, we cannot use a `for` loops since a concurrent iterator is not a regular `Iterator`. 
+Although rust's `while let` loops are already very convenient, we cannot use `for` loops since a concurrent iterator is not a regular `Iterator`. 
 
 However, we can create one or more [`ItemPuller`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/struct.ItemPuller.html) from a concurrent iterator within each thread which implements `Iterator`. 
 
-It is important to note that, although we can use a puller as a regular iterator within each thread, it is created from, connected to and pulls elements from a `ConcurrentIter`.
+Although we use a puller similar to a regular iterator; it is created from, connected to and pulls elements from a `ConcurrentIter`.
 
 This trick first allows for `for` loops.
 
@@ -104,7 +104,7 @@ std::thread::scope(|s| {
 });
 ```
 
-However, the actual benefit is due to enabling the convenient and composable iterators methods in concurrent programs.
+However, the actual benefit is due to enabling the convenient and composable iterator methods in concurrent programs.
 
 Consider the following **parallel_reduce** operation, which is a simple yet efficient parallelization of the [`reduce`](https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.reduce) method.
 
@@ -156,11 +156,11 @@ The concurrent iterator trait definition and lock-free implementations are desig
 
 ### B.1. Iteration in Chunks
 
-A major difference of a concurrent iterator than a sequential iterator is the concurrent state to be maintained by atomic variables. Every time elements are pulled from the concurrent iterator, this state is updated. These updates can be considered as the overhead of the concurrency.
+A major difference of a concurrent iterator from a sequential iterator is the concurrent state to be maintained by atomic variables. Every time elements are pulled from the concurrent iterator, this state is updated. These updates can be considered as the overhead of the concurrency.
 
 Whenever the task to be performed over each element of the iterator is large enough, the overhead will be negligible. In others, however, it is important to reduce the number of state updates in order to improve performance.
 
-It is straightforward to achieve this: pulling in chunks rather than one element at a time by a [`ChunkPuller`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ChunkPuller.html).
+A straightforward way to achieve this is by pulling in chunks rather than one element at a time, using a [`ChunkPuller`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ChunkPuller.html).
 
 > Note that puling in chunks does **not** mean cloning or moving the elements; it only refers to reserving multiple elements at once for a thread that calls the pull.
 
@@ -190,9 +190,11 @@ std::thread::scope(|s| {
 });
 ```
 
-This is a simple but a very important optimization technique in performance critical programs where the `process` is considerably small. However, notice that we now have to have nested iterators. This is the explicit version and gives us the ability to operate on the `chunk` as we need. Whenever, we only need to perform on the elements, we can flatten the chunk puller. Similar to the `ItemPuller`, a [`FlattenedChunkPuller`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/struct.FlattenedChunkPuller.html) also implements Iterator, and hence, brings benefits of iterator composability to concurrent programs.
+This is a simple but a very important optimization technique in performance critical programs where the `process` is considerably small. 
 
-The following **parallel_reduce** implementation adds the iteration-by-chunks optimization to the previous version by using a chunk iterator; while keeping the implementation as simple still fitting to four lines by flattening the chunk iterator to a regular Iterator.
+However, notice that we now need to have nested iterators. This is the explicit version and gives us the ability to operate on the `chunk` whenever needed. When we only need to perform on the elements, we can flatten the chunk puller. Similar to the `ItemPuller`, a [`FlattenedChunkPuller`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/struct.FlattenedChunkPuller.html) also implements Iterator, and hence, brings benefits of iterator composability to concurrent programs.
+
+The following **parallel_reduce** implementation adds the iteration-by-chunks optimization to the previous version; while keeping the implementation as simple, still fitting to four lines by flattening the chunk iterator to a regular Iterator.
 
 ```rust
 use orx_concurrent_iter::*;
@@ -223,16 +225,16 @@ assert_eq!(sum, Some(n * (n - 1) / 2));
 
 ### B.2. Early Exit
 
-We do not always want to iterate all elements. In certain programs, we would like to abort iteration as soon as we achieve a certain goal. Sequential iterator's [`find`](https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.find) is such an example case where we stop iteration as soon as an item satisfies a predicate.
+We do not always want to iterate all elements. In certain programs, we would like to abort iteration as soon as we achieve a certain goal. Sequential iterator's [`find`](https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.find) method is such an example case where we stop iteration as soon as an item satisfies a predicate.
 
-In order to achieve this in a concurrent iteration, we can conveniently use the [`skip_to_end`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ConcurrentIter.html#tymethod.skip_to_end) method. After any of the threads calls this method, succeeding pull calls will receive None which allows the other threads to early exit.
+In order to achieve this in a concurrent iteration, we can conveniently use the [`skip_to_end`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ConcurrentIter.html#tymethod.skip_to_end) method. After any of the threads calls this method, succeeding pull calls will receive None, allowing them to early exit.
 
 This is demonstrated in the following **parallel_find** implementation:
 
 * The thread that pulls "33" will immediately send feedback to the concurrent iterator to terminate.
 * After this point, all pull or next calls from the concurrent iterator will return None. This will allow all other threads to immediately return None.
 
-> It is possible that two other thread may pull "34" and "35, while the winner thread is testing "33" against the predicate. However, once they complete testing these elements, they will not find a new item and exit early.
+> It is possible that a couple of other threads pull "34" and "35, while the winner thread is testing "33" against the predicate. However, once they complete testing these elements, they will not find a new item and exit early.
 
 ```rust
 use orx_concurrent_iter::*;
@@ -309,7 +311,7 @@ std::thread::scope(|s| {
 
 However, the provider being a generic type, pulling of elements from the iterator are synchronized and safely shared to threads. This means that:
 
-* Whenever possible, it is always more efficient to create the concurrent iterator from the concrete type which does not required the abovementioned synchronization.
+* Whenever possible, it is always more efficient to create the concurrent iterator from the concrete type which does not require the abovementioned synchronization.
 * When the `process` is large enough; i.e., when the heavy load is on processing of the items rather than pulling of the items, the impact of synchronization diminishes.
 * Finally, together with the chunk-size optimization, the implementation in this crate targets high performance concurrent iterators created from generic iterators.
 
@@ -342,7 +344,7 @@ The following are in progress:
 
 ## Relation to orx_parallel
 
-Notice that straightforward implementations of several parallel computations are provided in the documentation as examples. They demonstrate that `ConcurrentIter` establishes the input side of a parallel processing library. There are two additional required pieces:
+Notice that straightforward implementations of several parallel computations are provided in the documentation as examples. They demonstrate that `ConcurrentIter` establishes the input side of parallel computation. There are two additional required pieces:
 
 * Concurrent collections to write the results to.
   * Consider, for instance, the parallelized **map** operation followed by a **collect**. Each element of the concurrent iterator must be mapped to a value which must then safely and efficiently written to the output.
