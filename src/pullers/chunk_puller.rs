@@ -32,6 +32,7 @@ use crate::pullers::{FlattenedChunkPuller, FlattenedEnumeratedChunkPuller};
 ///
 /// [`ItemPuller`]: crate::ItemPuller
 /// [`pull`]: crate::ChunkPuller::pull
+/// [`ConcurrentIter`]: crate::ConcurrentIter
 ///
 /// # Examples
 ///
@@ -319,6 +320,7 @@ pub trait ChunkPuller {
     ///
     /// [`FlattenedEnumeratedChunkPuller`]: crate::FlattenedEnumeratedChunkPuller
     /// [`pull`]: crate::ChunkPuller::pull
+    /// [`flattened`]: crate::ChunkPuller::flattened
     fn flattened_with_idx<'c>(self) -> FlattenedEnumeratedChunkPuller<'c, Self>
     where
         Self: Sized,
