@@ -106,11 +106,42 @@ use crate::{
 ///
 /// It is important to emphasize that the [`ItemPuller`] implements a regular [`Iterator`].
 /// This not only enables the `for` loops but also makes all iterator methods available.
-/// For instance, we can use `filter`, `map` and/or `reduce` on the item puller iterator
-/// as we do with regular iterators, while under the hood it will concurrently iterate
-/// over the elements of the concurrent iterator.
+///
+/// The following simple yet efficient implementation of the parallelized version of the
+/// [`reduce`] demonstrates the convenience of the pullers. Notice that the entire
+/// implementation of the `parallel_reduce` is nothing but a chain of iterator methods.
+///
+/// ```
+/// use orx_concurrent_iter::*;
+///
+/// fn parallel_reduce<T, F>(
+///     num_threads: usize,
+///     con_iter: impl ConcurrentIter<Item = T>,
+///     reduce: F,
+/// ) -> Option<T>
+/// where
+///     T: Send + Sync,
+///     F: Fn(T, T) -> T + Send + Sync,
+/// {
+///     std::thread::scope(|s| {
+///         (0..num_threads)
+///             .map(|_| s.spawn(|| con_iter.item_puller().reduce(&reduce))) // reduce inside each thread
+///             .filter_map(|x| x.join().unwrap()) // join threads
+///             .reduce(&reduce) // reduce thread results to get the global result
+///     })
+/// }
+///
+/// let sum = parallel_reduce(8, (0..0).into_con_iter(), |a, b| a + b);
+/// assert_eq!(sum, None);
+///
+/// let n = 10_000;
+/// let data: Vec<_> = (0..n).collect();
+/// let sum = parallel_reduce(8, data.con_iter().copied(), |a, b| a + b);
+/// assert_eq!(sum, Some(n * (n - 1) / 2));
+/// ```
 ///
 /// [`ItemPuller`]: crate::ItemPuller
+/// [`reduce`]: Iterator::reduce
 ///
 /// ## C. Iteration by Chunks
 ///
@@ -713,38 +744,35 @@ pub trait ConcurrentIter: Send + Sync {
     ///
     /// As mentioned above, item puller makes all convenient Iterator methods available in a concurrent
     /// program. The following simple program demonstrate a very convenient way to implement a parallel
-    /// reduce operation:
-    ///
-    /// * Within each thread, we reduce the elements that are pulled by the thread by summing up the
-    ///   number of characters of each item.
-    /// * The sums by each thread are collected in the `thread_sums` vector.
-    /// * Finally, we sum the `threads_sums` to obtain the `global_sum`.
-    /// * The assertion verifies that the result of this parallel reduction using 4 threads is equal
-    ///   to the expected result that is computed by reduction using a single thread.
-    ///
-    /// This parallel program could have been achieved by different approaches. However, the objective
-    /// and convenience of the item pullers is using the same computation both concurrently and
-    /// sequentially; i.e., `.map(|x| x.len()).sum()`.
+    /// reduce operation.
     ///
     /// ```
     /// use orx_concurrent_iter::*;
     ///
-    /// let num_threads = 4;
-    /// let data: Vec<_> = (0..100).map(|x| x.to_string()).collect();
-    /// let con_iter = data.con_iter();
+    /// fn parallel_reduce<T, F>(
+    ///     num_threads: usize,
+    ///     con_iter: impl ConcurrentIter<Item = T>,
+    ///     reduce: F,
+    /// ) -> Option<T>
+    /// where
+    ///     T: Send + Sync,
+    ///     F: Fn(T, T) -> T + Send + Sync,
+    /// {
+    ///     std::thread::scope(|s| {
+    ///         (0..num_threads)
+    ///             .map(|_| s.spawn(|| con_iter.item_puller().reduce(&reduce))) // reduce inside each thread
+    ///             .filter_map(|x| x.join().unwrap()) // join threads
+    ///             .reduce(&reduce) // reduce thread results to get the global result
+    ///     })
+    /// }
     ///
-    /// let global_sum: usize = std::thread::scope(|s| {
-    ///     let mut thread_sums = vec![];
-    ///     for _ in 0..num_threads {
-    ///         thread_sums.push(s.spawn(|| {
-    ///             // sum of number of characters of items pulled by this thread
-    ///             con_iter.item_puller().map(|x| x.len()).sum::<usize>()
-    ///         }));
-    ///     }
-    ///     thread_sums.into_iter().map(|x| x.join().unwrap()).sum()
-    /// });
+    /// let sum = parallel_reduce(8, (0..0).into_con_iter(), |a, b| a + b);
+    /// assert_eq!(sum, None);
     ///
-    /// assert_eq!(global_sum, data.iter().map(|x| x.len()).sum());
+    /// let n = 10_000;
+    /// let data: Vec<_> = (0..n).collect();
+    /// let sum = parallel_reduce(8, data.con_iter().copied(), |a, b| a + b);
+    /// assert_eq!(sum, Some(n * (n - 1) / 2));
     /// ```
     fn item_puller(&self) -> ItemPuller<'_, Self>
     where
