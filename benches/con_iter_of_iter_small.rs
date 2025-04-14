@@ -3,20 +3,15 @@ use orx_concurrent_iter::*;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-const NUM_NUMBERS: usize = 4;
-const NUM_VECTORS: usize = 4;
-const LEN_VECTORS: usize = 4;
 const SEED: u64 = 5426;
-const FIB_UPPER_BOUND: u32 = 999;
+const FIB_UPPER_BOUND: u32 = 11;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
-struct LargeOutput {
+struct Output {
     name: String,
-    numbers: [i64; NUM_NUMBERS],
-    vectors: Vec<Vec<i64>>,
 }
 
-fn to_large_output(idx: usize) -> LargeOutput {
+fn to_large_output(idx: usize) -> Output {
     let prefix = match idx % 7 {
         0 => "zero-",
         3 => "three-",
@@ -25,28 +20,7 @@ fn to_large_output(idx: usize) -> LargeOutput {
     let fib = fibonacci(&(idx as u32));
     let name = format!("{}-fib-{}", prefix, fib);
 
-    let mut numbers = [0i64; NUM_NUMBERS];
-    for (i, x) in numbers.iter_mut().enumerate() {
-        *x = match (idx * 7 + i) % 3 {
-            0 => idx as i64 + i as i64,
-            _ => idx as i64 - i as i64,
-        };
-    }
-
-    let mut vectors = vec![];
-    for i in 0..NUM_VECTORS {
-        let mut vec = vec![];
-        for j in 0..(idx % LEN_VECTORS) {
-            vec.push(idx as i64 - i as i64 + j as i64);
-        }
-        vectors.push(vec);
-    }
-
-    LargeOutput {
-        name,
-        numbers,
-        vectors,
-    }
+    Output { name }
 }
 
 fn fibonacci(n: &u32) -> u32 {
@@ -60,7 +34,7 @@ fn fibonacci(n: &u32) -> u32 {
     a
 }
 
-fn validate(expected: &[LargeOutput], unsorted_result: Vec<LargeOutput>) {
+fn validate(expected: &[Output], unsorted_result: Vec<Output>) {
     let mut sorted_result = unsorted_result;
     sorted_result.sort();
     assert_eq!(expected.len(), sorted_result.len());
@@ -74,7 +48,7 @@ fn inputs(len: usize) -> Vec<usize> {
         .collect()
 }
 
-fn seq(inputs: &[usize]) -> Vec<LargeOutput> {
+fn seq(inputs: &[usize]) -> Vec<Output> {
     inputs
         .iter()
         .filter(|x| *x % 3 > 0)
@@ -83,7 +57,7 @@ fn seq(inputs: &[usize]) -> Vec<LargeOutput> {
         .collect()
 }
 
-fn rayon(inputs: &[usize]) -> Vec<LargeOutput> {
+fn rayon(inputs: &[usize]) -> Vec<Output> {
     use rayon::iter::{IntoParallelIterator, ParallelBridge, ParallelIterator};
     inputs
         .iter()
@@ -95,7 +69,7 @@ fn rayon(inputs: &[usize]) -> Vec<LargeOutput> {
         .collect()
 }
 
-fn con_iter(inputs: &[usize], num_threads: usize, chunk_size: usize) -> Vec<LargeOutput> {
+fn con_iter(inputs: &[usize], num_threads: usize, chunk_size: usize) -> Vec<Output> {
     let iter = inputs.iter().filter(|x| *x % 3 > 0).map(|x| x + 1);
     let con_iter = iter.iter_into_con_iter();
 
@@ -134,7 +108,7 @@ fn con_iter_of_iter(c: &mut Criterion) {
     let treatments = [4096, 65_536];
     let params = [(8, 1), (8, 64)];
 
-    let mut group = c.benchmark_group("con_iter_of_iter");
+    let mut group = c.benchmark_group("con_iter_of_iter_small");
 
     for n in &treatments {
         let input = inputs(*n);
