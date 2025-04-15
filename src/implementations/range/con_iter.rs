@@ -59,6 +59,14 @@ where
         }
     }
 
+    pub(super) fn begin(&self) -> usize {
+        self.begin
+    }
+
+    pub(super) fn initial_len(&self) -> usize {
+        self.len
+    }
+
     fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
         let begin_idx = self.counter.fetch_add(number_to_fetch, Ordering::Relaxed);
         match begin_idx < self.len {
