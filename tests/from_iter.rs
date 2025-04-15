@@ -62,11 +62,11 @@ fn len() {
 
 #[test]
 fn into_seq_iter_unused() {
-    let iter = (0..1024).map(|x| x.to_string());
+    let iter = (0..LEN).map(|x| x.to_string());
     let con_iter = iter.iter_into_con_iter();
     let seq_iter = con_iter.into_seq_iter();
 
-    assert_eq!(seq_iter.len(), 1024);
+    assert_eq!(seq_iter.len(), LEN);
     for (i, x) in seq_iter.enumerate() {
         assert_eq!(x, i.to_string());
     }
@@ -74,7 +74,7 @@ fn into_seq_iter_unused() {
 
 #[test]
 fn into_seq_iter_used_singly() {
-    let iter = (0..1024).map(|x| x.to_string());
+    let iter = (0..LEN).map(|x| x.to_string());
     let con_iter = iter.iter_into_con_iter();
 
     std::thread::scope(|s| {
@@ -87,7 +87,7 @@ fn into_seq_iter_used_singly() {
 
     let seq_iter = con_iter.into_seq_iter();
 
-    assert_eq!(seq_iter.len(), 1024 - 114);
+    assert_eq!(seq_iter.len(), LEN - 114);
     for (i, x) in seq_iter.enumerate() {
         assert_eq!(x, (114 + i).to_string());
     }
@@ -95,7 +95,7 @@ fn into_seq_iter_used_singly() {
 
 #[test]
 fn into_seq_iter_used_in_batches() {
-    let iter = (0..1024).map(|x| x.to_string());
+    let iter = (0..LEN).map(|x| x.to_string());
     let con_iter = iter.iter_into_con_iter();
 
     std::thread::scope(|s| {
@@ -112,7 +112,7 @@ fn into_seq_iter_used_in_batches() {
 
     let seq_iter = con_iter.into_seq_iter();
 
-    assert_eq!(seq_iter.len(), 1024 - 44 - 33);
+    assert_eq!(seq_iter.len(), LEN - 44 - 33);
     for (i, x) in seq_iter.enumerate() {
         assert_eq!(x, (44 + 33 + i).to_string());
     }
@@ -120,7 +120,7 @@ fn into_seq_iter_used_in_batches() {
 
 #[test]
 fn into_seq_iter_doc() {
-    let iter = (0..1024).map(|x| x.to_string());
+    let iter = (0..LEN).map(|x| x.to_string());
     let con_iter = iter.iter_into_con_iter();
 
     std::thread::scope(|s| {
@@ -139,7 +139,7 @@ fn into_seq_iter_doc() {
     // converts the remaining elements into a sequential iterator
     let seq_iter = con_iter.into_seq_iter();
 
-    assert_eq!(seq_iter.len(), 1024 - num_used);
+    assert_eq!(seq_iter.len(), LEN - num_used);
     for (i, x) in seq_iter.enumerate() {
         assert_eq!(x, (num_used + i).to_string());
     }

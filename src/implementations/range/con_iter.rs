@@ -50,7 +50,7 @@ where
     pub(super) fn new(range: Range<T>) -> Self {
         let begin: usize = range.start.into();
         let end: usize = range.end.into();
-        let len = end - begin;
+        let len = end.saturating_sub(begin);
         Self {
             begin,
             len,
