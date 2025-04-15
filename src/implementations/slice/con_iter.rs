@@ -63,6 +63,10 @@ where
         }
     }
 
+    pub(super) fn slice(&self) -> &'a [T] {
+        self.slice
+    }
+
     fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
         let begin_idx = self.counter.fetch_add(number_to_fetch, Ordering::Relaxed);
         match begin_idx < self.slice.len() {
