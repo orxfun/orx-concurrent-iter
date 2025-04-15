@@ -20,7 +20,7 @@ where
     let counter = &AtomicUsize::new(0);
 
     std::thread::scope(|s| {
-        for t in 0..num_threads {
+        for _ in 0..num_threads {
             s.spawn(move || match batch {
                 1 => {
                     while let Some((idx, value)) = iter.next_with_idx() {
