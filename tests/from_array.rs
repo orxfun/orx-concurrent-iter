@@ -4,7 +4,7 @@ use test_case::test_matrix;
 #[cfg(not(miri))]
 const LEN: usize = 1024;
 #[cfg(miri)]
-const LEN: usize = 67;
+const LEN: usize = 127;
 
 #[test]
 fn con_iter() {
