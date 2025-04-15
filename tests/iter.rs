@@ -1,24 +1,10 @@
-use orx_concurrent_iter::*;
+use orx_concurrent_iter::{implementations::ConIterOfIter, *};
 
 #[test]
 fn new() {
     let values = ['a', 'b', 'c'];
 
-    let con_iter = ConIterOfIter::new(values.iter());
-
-    let mut i = 0;
-    while let Some(x) = con_iter.next() {
-        assert_eq!(x, &values[i]);
-        i += 1;
-    }
-    assert_eq!(i, values.len());
-}
-
-#[test]
-fn from() {
-    let values = ['a', 'b', 'c'];
-
-    let con_iter: ConIterOfIter<_, _> = values.iter().into();
+    let con_iter = values.iter().iter_into_con_iter();
 
     let mut i = 0;
     while let Some(x) = con_iter.next() {
@@ -31,18 +17,18 @@ fn from() {
 #[test]
 fn debug() {
     let values = ['a', 'b', 'c'];
-    let con_iter: ConIterOfIter<_, _> = values.iter().into();
+    let con_iter: ConIterOfIter<_> = values.iter().iter_into_con_iter();
 
     assert_eq!(
         format!("{:?}", con_iter),
-        "ConIterOfIter { initial_len: 3, taken: 0, remaining: 3 }"
+        "ConIterOfIter { size_hint: (3, Some(3)) }"
     );
 
     assert_eq!(con_iter.next(), Some(&'a'));
 
     assert_eq!(
         format!("{:?}", con_iter),
-        "ConIterOfIter { initial_len: 3, taken: 1, remaining: 2 }"
+        "ConIterOfIter { size_hint: (2, Some(2)) }"
     );
 
     assert_eq!(con_iter.next(), Some(&'b'));
@@ -50,20 +36,20 @@ fn debug() {
 
     assert_eq!(
         format!("{:?}", con_iter),
-        "ConIterOfIter { initial_len: 3, taken: 3, remaining: 0 }"
+        "ConIterOfIter { size_hint: (0, Some(0)) }"
     );
 
     assert_eq!(con_iter.next(), None);
 
     assert_eq!(
         format!("{:?}", con_iter),
-        "ConIterOfIter { initial_len: 3, taken: 3, remaining: 0 }"
+        "ConIterOfIter { size_hint: (0, Some(0)) }"
     );
 
     assert_eq!(con_iter.next(), None);
 
     assert_eq!(
         format!("{:?}", con_iter),
-        "ConIterOfIter { initial_len: 3, taken: 3, remaining: 0 }"
+        "ConIterOfIter { size_hint: (0, Some(0)) }"
     );
 }

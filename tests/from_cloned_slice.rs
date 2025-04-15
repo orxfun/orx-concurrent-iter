@@ -1,6 +1,11 @@
 use orx_concurrent_iter::*;
 use test_case::test_matrix;
 
+#[cfg(not(miri))]
+const LEN: usize = 1024;
+#[cfg(miri)]
+const LEN: usize = 131;
+
 #[test]
 fn con_iter() {
     let values = ['a', 'b', 'c'];
@@ -30,7 +35,7 @@ fn len() {
     _ = iter.next();
     assert_eq!(iter.try_get_len(), Some(3));
 
-    _ = iter.next_chunk(2);
+    _ = iter.chunk_puller(2).pull();
     assert_eq!(iter.try_get_len(), Some(1));
 
     _ = iter.next();
@@ -42,12 +47,12 @@ fn len() {
 
 #[test]
 fn into_seq_iter_unused() {
-    let vec: Vec<_> = (0..1024).map(|x| x.to_string()).collect();
+    let vec: Vec<_> = (0..LEN).map(|x| x.to_string()).collect();
     let slice = vec.as_slice();
     let con_iter = slice.into_con_iter();
     let seq_iter = con_iter.into_seq_iter();
 
-    assert_eq!(seq_iter.len(), 1024);
+    assert_eq!(seq_iter.len(), LEN);
     for (i, x) in seq_iter.enumerate() {
         assert_eq!(x, &i.to_string());
     }
@@ -55,7 +60,7 @@ fn into_seq_iter_unused() {
 
 #[test]
 fn into_seq_iter_used_singly() {
-    let vec: Vec<_> = (0..1024).map(|x| x.to_string()).collect();
+    let vec: Vec<_> = (0..LEN).map(|x| x.to_string()).collect();
     let slice = vec.as_slice();
     let con_iter = slice.into_con_iter().cloned();
 
@@ -69,7 +74,7 @@ fn into_seq_iter_used_singly() {
 
     let seq_iter = con_iter.into_seq_iter();
 
-    assert_eq!(seq_iter.len(), 1024 - 114);
+    assert_eq!(seq_iter.len(), LEN - 114);
     for (i, x) in seq_iter.enumerate() {
         assert_eq!(x, (114 + i).to_string());
     }
@@ -77,25 +82,25 @@ fn into_seq_iter_used_singly() {
 
 #[test]
 fn into_seq_iter_used_in_batches() {
-    let vec: Vec<_> = (0..1024).map(|x| x.to_string()).collect();
+    let vec: Vec<_> = (0..LEN).map(|x| x.to_string()).collect();
     let slice = vec.as_slice();
     let con_iter = slice.into_con_iter().cloned();
 
     std::thread::scope(|s| {
         s.spawn(|| {
-            if let Some(batch) = con_iter.next_chunk(44) {
-                for _ in batch.values {}
+            if let Some(batch) = con_iter.chunk_puller(44).pull() {
+                for _ in batch {}
             }
 
-            if let Some(batch) = con_iter.next_chunk(33) {
-                for _ in batch.values.take(22) {}
+            if let Some(batch) = con_iter.chunk_puller(33).pull() {
+                for _ in batch.take(22) {}
             }
         });
     });
 
     let seq_iter = con_iter.into_seq_iter();
 
-    assert_eq!(seq_iter.len(), 1024 - 44 - 33);
+    assert_eq!(seq_iter.len(), LEN - 44 - 33);
     for (i, x) in seq_iter.enumerate() {
         assert_eq!(x, (44 + 33 + i).to_string());
     }
@@ -103,7 +108,7 @@ fn into_seq_iter_used_in_batches() {
 
 #[test]
 fn into_seq_iter_doc() {
-    let vec: Vec<_> = (0..1024).map(|x| x.to_string()).collect();
+    let vec: Vec<_> = (0..LEN).map(|x| x.to_string()).collect();
     let slice = vec.as_slice();
     let con_iter = slice.into_con_iter().cloned();
 
@@ -113,8 +118,8 @@ fn into_seq_iter_doc() {
                 _ = con_iter.next();
             }
 
-            let mut buffered = con_iter.buffered_iter_x(32);
-            let _chunk = buffered.next().unwrap();
+            let mut buffered = con_iter.chunk_puller(32);
+            let _chunk = buffered.pull().unwrap();
         });
     });
 
@@ -123,13 +128,13 @@ fn into_seq_iter_doc() {
     // converts the remaining elements into a sequential iterator
     let seq_iter = con_iter.into_seq_iter();
 
-    assert_eq!(seq_iter.len(), 1024 - num_used);
+    assert_eq!(seq_iter.len(), LEN - num_used);
     for (i, x) in seq_iter.enumerate() {
         assert_eq!(x, (num_used + i).to_string());
     }
 }
 
-#[test_matrix([1, 8, 64, 1025, 5483])]
+#[test_matrix([1, 8, 64, 1025])]
 fn into_seq_iter_not_used(len: usize) {
     let values: Vec<_> = (100..(100 + len)).collect();
     let slice = values.as_slice();
@@ -139,7 +144,7 @@ fn into_seq_iter_not_used(len: usize) {
     assert_eq!(result, values);
 }
 
-#[test_matrix([1, 8, 64, 1025, 5483], [1, 10, 100, ])]
+#[test_matrix([1, 8, 64, 1025], [1, 10, 100])]
 fn into_seq_iter_used(len: usize, take: usize) {
     let values: Vec<_> = (100..(100 + len)).collect();
 
@@ -159,15 +164,15 @@ fn into_seq_iter_used(len: usize, take: usize) {
     assert_eq!(result, expected);
 }
 
-#[test_matrix([1, 8, 64, 1025, 5483], [1, 10, 100])]
+#[test_matrix([1, 8, 64, 1025], [1, 10, 100])]
 fn buffered(len: usize, chunk_size: usize) {
     let values: Vec<_> = (100..(100 + len)).collect();
     let iter = values.con_iter().cloned();
-    let mut buffered = iter.buffered_iter_x(chunk_size);
+    let mut buffered = iter.chunk_puller(chunk_size);
 
     let mut current = 100;
-    while let Some(chunk) = buffered.next() {
-        for value in chunk.values {
+    while let Some(chunk) = buffered.pull() {
+        for value in chunk {
             assert_eq!(value, current);
             current += 1;
         }

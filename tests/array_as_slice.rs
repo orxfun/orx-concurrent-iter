@@ -19,66 +19,45 @@ fn concurrent_iter_stack(
 
     let sum: i64 = std::thread::scope(|s| {
         let mut handles = vec![];
-        for t in 0..num_threads {
+        for _ in 0..num_threads {
             handles.push(s.spawn(move || {
                 let mut sum = 0i64;
                 match consume_till_end {
                     true => match batch {
                         1 => {
-                            while let Some(next) = iter.next_id_and_value() {
-                                sum += next.value;
+                            while let Some(value) = iter.next() {
+                                sum += value;
                             }
                         }
-                        _ => match t % 2 == 0 {
-                            true => {
-                                while let Some(chunk) = iter.next_chunk(batch) {
-                                    for value in chunk.values {
-                                        sum += value;
-                                    }
+                        _ => {
+                            let mut puller = iter.chunk_puller(batch);
+                            while let Some(chunk) = puller.pull() {
+                                for value in chunk {
+                                    sum += value;
                                 }
                             }
-                            false => {
-                                let mut buffer = iter.buffered_iter_x(batch);
-                                while let Some(chunk) = buffer.next() {
-                                    for value in chunk.values {
-                                        sum += value;
-                                    }
-                                }
-                            }
-                        },
+                        }
                     },
                     false => match batch {
                         1 => {
                             let until = vec_len - 1;
                             for _ in 0..until {
-                                if let Some(next) = iter.next_id_and_value() {
-                                    sum += next.value;
+                                if let Some(value) = iter.next() {
+                                    sum += value;
                                 }
                             }
                         }
-                        _ => match t % 2 == 0 {
-                            true => {
-                                let until = vec_len.saturating_sub(batch);
-                                while iter.try_get_len().expect("exists") < until {
-                                    if let Some(chunk) = iter.next_chunk(batch) {
-                                        for value in chunk.values {
-                                            sum += value;
-                                        }
+                        _ => {
+                            let until = vec_len.saturating_sub(batch);
+                            let mut puller = iter.chunk_puller(batch);
+                            while iter.try_get_len().expect("exists") < until {
+                                if let Some(chunk) = puller.pull() {
+                                    for value in chunk {
+                                        sum += value;
                                     }
                                 }
                             }
-                            false => {
-                                let until = vec_len.saturating_sub(batch);
-                                let mut buffer = iter.buffered_iter_x(batch);
-                                while iter.try_get_len().expect("exists") < until {
-                                    if let Some(chunk) = buffer.next() {
-                                        for value in chunk.values {
-                                            sum += value;
-                                        }
-                                    }
-                                }
-                            }
-                        },
+                        }
                     },
                 }
 
@@ -97,7 +76,7 @@ fn concurrent_iter_stack(
     [4, 8, 16],
     [1, 4, 64, 1024]
 )]
-fn consume_vec_stack(num_threads: usize, batch: usize) {
+fn consume_array_stack(num_threads: usize, batch: usize) {
     for consume_till_end in [true, false] {
         for _ in 0..NUM_RERUNS {
             let mut source = [0i64; 1024];

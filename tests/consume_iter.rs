@@ -9,7 +9,7 @@ fn concurrent_iter<I: Iterator<Item = i64>>(
     iter: I,
     expected_sum: i64,
 ) {
-    let iter = &iter.into_con_iter();
+    let iter = &iter.iter_into_con_iter();
 
     let sum: i64 = std::thread::scope(|s| {
         let mut handles = vec![];
@@ -17,12 +17,13 @@ fn concurrent_iter<I: Iterator<Item = i64>>(
             handles.push(s.spawn(move || {
                 let mut sum = 0i64;
                 if batch == 1 {
-                    while let Some(next) = iter.next_id_and_value() {
-                        sum += next.value;
+                    while let Some(value) = iter.next() {
+                        sum += value;
                     }
                 } else {
-                    while let Some(chunk) = iter.next_chunk(batch) {
-                        sum += chunk.values.sum::<i64>();
+                    let mut puller = iter.chunk_puller(batch);
+                    while let Some(chunk) = puller.pull() {
+                        sum += chunk.sum::<i64>();
                     }
                 }
                 sum

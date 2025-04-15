@@ -1,5 +1,5 @@
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use orx_concurrent_iter::{ConcurrentIterX, IntoConcurrentIterX, IterIntoConcurrentIter};
+use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
+use orx_concurrent_iter::*;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
@@ -70,7 +70,7 @@ fn validate(expected: &[LargeOutput], unsorted_result: Vec<LargeOutput>) {
 fn inputs(len: usize) -> Vec<usize> {
     let mut rng = ChaCha8Rng::seed_from_u64(SEED);
     (0..len)
-        .map(|_| rng.gen_range(0..FIB_UPPER_BOUND) as usize)
+        .map(|_| rng.random_range(0..FIB_UPPER_BOUND) as usize)
         .collect()
 }
 
@@ -97,7 +97,7 @@ fn rayon(inputs: &[usize]) -> Vec<LargeOutput> {
 
 fn con_iter(inputs: &[usize], num_threads: usize, chunk_size: usize) -> Vec<LargeOutput> {
     let iter = inputs.iter().filter(|x| *x % 3 > 0).map(|x| x + 1);
-    let con_iter = iter.into_con_iter();
+    let con_iter = iter.iter_into_con_iter();
 
     std::thread::scope(|s| {
         let mut handles = vec![];
@@ -112,43 +112,8 @@ fn con_iter(inputs: &[usize], num_threads: usize, chunk_size: usize) -> Vec<Larg
                 }),
                 _ => s.spawn(|| {
                     let mut vec = vec![];
-                    let mut chunk_iter = con_iter.buffered_iter_x(chunk_size);
-                    while let Some(chunk) = chunk_iter.next() {
-                        vec.extend(chunk.values.map(to_large_output));
-                    }
-                    vec
-                }),
-            };
-            handles.push(thread_vec);
-        }
-
-        let mut vec = vec![];
-        for x in handles {
-            vec.extend(x.join().expect("failed to join the thread"));
-        }
-        vec
-    })
-}
-
-fn con_iter_x(inputs: &[usize], num_threads: usize, chunk_size: usize) -> Vec<LargeOutput> {
-    let iter = inputs.iter().filter(|x| *x % 3 > 0).map(|x| x + 1);
-    let con_iter = iter.into_con_iter_x();
-
-    std::thread::scope(|s| {
-        let mut handles = vec![];
-        for _ in 0..num_threads {
-            let thread_vec = match chunk_size {
-                1 => s.spawn(|| {
-                    let mut vec = vec![];
-                    while let Some(x) = con_iter.next() {
-                        vec.push(to_large_output(x));
-                    }
-                    vec
-                }),
-                _ => s.spawn(|| {
-                    let mut vec = vec![];
-                    let mut chunk_iter = con_iter.buffered_iter_x(chunk_size);
-                    while let Some(chunk) = chunk_iter.next_x() {
+                    let mut chunk_iter = con_iter.chunk_puller(chunk_size);
+                    while let Some(chunk) = chunk_iter.pull() {
                         vec.extend(chunk.map(to_large_output));
                     }
                     vec
@@ -169,7 +134,7 @@ fn con_iter_of_iter(c: &mut Criterion) {
     let treatments = [4096, 65_536];
     let params = [(8, 1), (8, 64)];
 
-    let mut group = c.benchmark_group("map_collect");
+    let mut group = c.benchmark_group("con_iter_of_iter");
 
     for n in &treatments {
         let input = inputs(*n);
@@ -194,14 +159,9 @@ fn con_iter_of_iter(c: &mut Criterion) {
                 )
             };
 
-            group.bench_with_input(BenchmarkId::new("con_iter", param()), n, |b, _| {
+            group.bench_with_input(BenchmarkId::new("ConcurrentIter", param()), n, |b, _| {
                 validate(&expected, con_iter(&input, num_threads, chunk_size));
                 b.iter(|| con_iter(&input, num_threads, chunk_size))
-            });
-
-            group.bench_with_input(BenchmarkId::new("con_iter_x", param()), n, |b, _| {
-                validate(&expected, con_iter_x(&input, num_threads, chunk_size));
-                b.iter(|| con_iter_x(&input, num_threads, chunk_size))
             });
         }
     }

@@ -1,11 +1,16 @@
 use orx_concurrent_iter::*;
 use test_case::test_matrix;
 
+#[cfg(not(miri))]
+const LEN: usize = 1024;
+#[cfg(miri)]
+const LEN: usize = 127;
+
 #[test]
 fn con_iter() {
-    let values = ['a', 'b', 'c'];
+    let array = ['a', 'b', 'c'];
 
-    let con_iter = values.con_iter();
+    let con_iter = array.into_con_iter();
     assert_eq!(con_iter.next(), Some(&'a'));
     assert_eq!(con_iter.next(), Some(&'b'));
     assert_eq!(con_iter.next(), Some(&'c'));
@@ -22,7 +27,8 @@ fn len() {
     _ = iter.next();
     assert_eq!(iter.try_get_len(), Some(3));
 
-    _ = iter.next_chunk(2);
+    let mut puller = iter.chunk_puller(2);
+    _ = puller.pull();
     assert_eq!(iter.try_get_len(), Some(1));
 
     _ = iter.next();
@@ -34,14 +40,14 @@ fn len() {
 
 #[test]
 fn into_seq_iter_unused() {
-    let mut array = [0; 1024];
+    let mut array = [0; LEN];
     for (i, x) in array.iter_mut().enumerate() {
         *x = i;
     }
-    let con_iter = array.con_iter();
+    let con_iter = array.into_con_iter();
     let seq_iter = con_iter.into_seq_iter();
 
-    assert_eq!(seq_iter.len(), 1024);
+    assert_eq!(seq_iter.len(), LEN);
     for (i, x) in seq_iter.enumerate() {
         assert_eq!(x, &i);
     }
@@ -49,11 +55,11 @@ fn into_seq_iter_unused() {
 
 #[test]
 fn into_seq_iter_used_singly() {
-    let mut array = [0; 1024];
+    let mut array = [0; LEN];
     for (i, x) in array.iter_mut().enumerate() {
         *x = i;
     }
-    let con_iter = array.con_iter();
+    let con_iter = array.into_con_iter();
 
     std::thread::scope(|s| {
         s.spawn(|| {
@@ -65,7 +71,7 @@ fn into_seq_iter_used_singly() {
 
     let seq_iter = con_iter.into_seq_iter();
 
-    assert_eq!(seq_iter.len(), 1024 - 114);
+    assert_eq!(seq_iter.len(), LEN - 114);
     for (i, x) in seq_iter.enumerate() {
         assert_eq!(x, &(114 + i));
     }
@@ -73,57 +79,59 @@ fn into_seq_iter_used_singly() {
 
 #[test]
 fn into_seq_iter_used_in_batches() {
-    let mut array = [0; 1024];
+    let mut array = [0; LEN];
     for (i, x) in array.iter_mut().enumerate() {
         *x = i;
     }
-    let con_iter = array.con_iter().cloned();
+    let con_iter = array.into_con_iter().cloned();
 
     std::thread::scope(|s| {
         s.spawn(|| {
-            if let Some(batch) = con_iter.next_chunk(44) {
-                for _ in batch.values {}
+            let mut puller = con_iter.chunk_puller(21);
+            if let Some(batch) = puller.pull() {
+                for _ in batch {}
             }
 
-            if let Some(batch) = con_iter.next_chunk(33) {
-                for _ in batch.values.take(22) {}
+            let mut puller = con_iter.chunk_puller(20);
+            if let Some(batch) = puller.pull() {
+                for _ in batch.take(12) {}
             }
         });
     });
 
     let seq_iter = con_iter.into_seq_iter();
 
-    assert_eq!(seq_iter.len(), 1024 - 44 - 33);
+    assert_eq!(seq_iter.len(), LEN - 41);
     for (i, x) in seq_iter.enumerate() {
-        assert_eq!(x, 44 + 33 + i);
+        assert_eq!(x, 41 + i);
     }
 }
 
 #[test]
 fn into_seq_iter_doc() {
-    let mut array = [0; 1024];
+    let mut array = [0; LEN];
     for (i, x) in array.iter_mut().enumerate() {
         *x = i;
     }
-    let con_iter = array.con_iter().cloned();
+    let con_iter = array.into_con_iter().cloned();
 
     std::thread::scope(|s| {
         s.spawn(|| {
-            for _ in 0..42 {
+            for _ in 0..22 {
                 _ = con_iter.next();
             }
 
-            let mut buffered = con_iter.buffered_iter_x(32);
-            let _chunk = buffered.next().unwrap();
+            let mut puller = con_iter.chunk_puller(32);
+            let _chunk = puller.pull().unwrap();
         });
     });
 
-    let num_used = 42 + 32;
+    let num_used = 22 + 32;
 
     // converts the remaining elements into a sequential iterator
     let seq_iter = con_iter.into_seq_iter();
 
-    assert_eq!(seq_iter.len(), 1024 - num_used);
+    assert_eq!(seq_iter.len(), LEN - num_used);
     for (i, x) in seq_iter.enumerate() {
         assert_eq!(x, num_used + i);
     }
@@ -131,11 +139,11 @@ fn into_seq_iter_doc() {
 
 #[test]
 fn into_seq_iter_not_used() {
-    let mut values = [0; 1024];
+    let mut values = [0; LEN];
     for (i, x) in values.iter_mut().enumerate() {
         *x = i;
     }
-    let iter = values.con_iter().cloned().into_seq_iter();
+    let iter = values.into_con_iter().cloned().into_seq_iter();
     let result: Vec<_> = iter.collect();
 
     assert_eq!(result, values);
@@ -143,12 +151,12 @@ fn into_seq_iter_not_used() {
 
 #[test_matrix([1, 10, 100])]
 fn into_seq_iter_used(take: usize) {
-    let mut values = [0; 1024];
+    let mut values = [0; LEN];
     for (i, x) in values.iter_mut().enumerate() {
         *x = i;
     }
 
-    let iter = values.con_iter().cloned();
+    let iter = values.into_con_iter().cloned();
     for _ in 0..take {
         _ = iter.next();
     }
@@ -165,20 +173,20 @@ fn into_seq_iter_used(take: usize) {
 
 #[test_matrix([1, 10, 100])]
 fn buffered(chunk_size: usize) {
-    let mut values = [0; 1024];
+    let mut values = [0; LEN];
     for (i, x) in values.iter_mut().enumerate() {
         *x = 100 + i;
     }
-    let iter = values.con_iter().cloned();
-    let mut buffered = iter.buffered_iter_x(chunk_size);
+    let iter = values.into_con_iter().cloned();
+    let mut puller = iter.chunk_puller(chunk_size);
 
     let mut current = 100;
-    while let Some(chunk) = buffered.next() {
-        for value in chunk.values {
+    while let Some(chunk) = puller.pull() {
+        for value in chunk {
             assert_eq!(value, current);
             current += 1;
         }
     }
 
-    assert_eq!(current, 100 + 1024);
+    assert_eq!(current, 100 + LEN);
 }

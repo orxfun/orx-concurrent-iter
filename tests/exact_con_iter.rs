@@ -2,28 +2,35 @@ use orx_concurrent_bag::ConcurrentBag;
 use orx_concurrent_iter::*;
 use std::{fmt::Debug, ops::Add};
 
+#[cfg(not(miri))]
+const LEN: usize = 8564;
+#[cfg(miri)]
+const LEN: usize = 77;
+
 fn validate_exact_iter<Fun, I>(get_iter: Fun, expected_len: usize)
 where
-    I: ConcurrentIter,
+    I: ExactSizeConcurrentIter,
     I::Item: Debug + Add<usize, Output = usize>,
     Fun: Fn() -> I,
 {
     let iter = get_iter();
     assert_eq!(iter.try_get_len(), Some(expected_len));
+    assert_eq!(iter.len(), expected_len);
 
-    for (idx, i) in iter.values().enumerate() {
+    for (idx, i) in iter.enumerate().item_puller() {
         assert_eq!(i + 0, idx);
     }
 
     let iter = get_iter();
-    for (idx, i) in iter.ids_and_values() {
+    for (idx, i) in iter.item_puller_with_idx() {
         assert_eq!(i + 0, idx);
     }
 
     let iter = get_iter();
-    while let Some(chunk) = iter.next_chunk(7) {
-        for (idx, i) in chunk.values.enumerate() {
-            let idx = chunk.begin_idx + idx;
+    let mut puller = iter.chunk_puller(7);
+    while let Some((begin_idx, chunk)) = puller.pull_with_idx() {
+        for (idx, i) in chunk.enumerate() {
+            let idx = begin_idx + idx;
             assert_eq!(i + 0, idx);
         }
     }
@@ -44,7 +51,7 @@ where
     std::thread::scope(|s| {
         for _ in 0..num_threads {
             s.spawn(move || {
-                for value in con_iter.values() {
+                for value in con_iter.item_puller() {
                     con_bag.push(value);
                 }
             });
@@ -61,7 +68,7 @@ where
     std::thread::scope(|s| {
         for _ in 0..num_threads {
             s.spawn(move || {
-                for (idx, value) in con_iter.ids_and_values() {
+                for (idx, value) in con_iter.item_puller_with_idx() {
                     assert_eq!(idx, value + 0);
                 }
             });
@@ -75,8 +82,9 @@ where
     std::thread::scope(|s| {
         for _ in 0..num_threads {
             s.spawn(move || {
-                while let Some(chunk) = con_iter.next_chunk(7) {
-                    for x in chunk.values {
+                let mut puller = con_iter.chunk_puller(7);
+                while let Some(chunk) = puller.pull() {
+                    for x in chunk {
                         con_bag.push(x);
                     }
                 }
@@ -94,11 +102,12 @@ where
     std::thread::scope(|s| {
         for _ in 0..num_threads {
             s.spawn(move || {
-                while let Some(chunk) = con_iter.next_chunk(7) {
-                    let len = chunk.values.len();
+                let mut puller = con_iter.chunk_puller(7);
+                while let Some((begin_idx, chunk)) = puller.pull_with_idx() {
+                    let len = chunk.len();
                     assert!(len > 0);
-                    for (i, value) in chunk.values.enumerate() {
-                        assert_eq!(chunk.begin_idx + i, value + 0);
+                    for (i, value) in chunk.enumerate() {
+                        assert_eq!(begin_idx + i, value + 0);
                     }
                 }
             });
@@ -108,21 +117,21 @@ where
 
 #[test]
 fn exact_range() {
-    let range = 0..8564;
+    let range = 0..LEN;
     validate_exact_iter(|| range.clone().con_iter(), range.len());
     validate_exact_iter_concurrently(|| range.clone().con_iter());
 }
 
 #[test]
 fn exact_vec() {
-    let vec: Vec<_> = (0..8564).collect();
+    let vec: Vec<_> = (0..LEN).collect();
     validate_exact_iter(|| vec.clone().into_con_iter(), vec.len());
     validate_exact_iter_concurrently(|| vec.clone().into_con_iter());
 }
 
 #[test]
 fn exact_slice() {
-    let vec: Vec<_> = (0..8564).collect();
+    let vec: Vec<_> = (0..LEN).collect();
     validate_exact_iter(|| vec.con_iter(), vec.len());
     validate_exact_iter(|| vec.as_slice().into_con_iter(), vec.len());
     validate_exact_iter_concurrently(|| vec.as_slice().into_con_iter());
@@ -130,11 +139,11 @@ fn exact_slice() {
 
 #[test]
 fn exact_array() {
-    let mut array = [0usize; 1587];
+    let mut array = [0usize; LEN];
     for (i, x) in array.iter_mut().enumerate() {
         *x = i;
     }
-    validate_exact_iter(|| array.con_iter(), array.len());
+    validate_exact_iter(|| array.into_con_iter(), array.len());
     validate_exact_iter(|| array.into_con_iter(), array.len());
     validate_exact_iter_concurrently(|| array.into_con_iter());
 }
