@@ -349,7 +349,9 @@ The following are in progress:
 * Implementing concurrent iterators for remaining standard collection types in this crate.
 * Implementing concurrent iterators for other collection types in the respective crates.
 
-## Relation to orx_parallel
+### Relation to orx_parallel
+
+***Any collection or generator type that can create a `ConcurrentIter` can be efficiently parallelized using [`orx_parallel`](https://crates.io/crates/orx-parallel).***
 
 Notice that straightforward implementations of several parallel computations are provided as examples throughout the documentation. They demonstrate that `ConcurrentIter` establishes the input side of parallel computation. There are two additional required pieces:
 
@@ -360,7 +362,52 @@ Notice that straightforward implementations of several parallel computations are
   * Similarly, degree of parallelization can be determined taking the input data and computation into account.
   * These decisions must be taken by a parallel runner.
 
-Building on top of concurrent iterators, these missing pieces are implemented in the [`orx_parallel`](https://crates.io/crates/orx-parallel) crate which allows for high performance and configurable parallel computations expressed as compositions of parallel iterator methods.
+Building on top of concurrent iterators, these missing pieces are implemented in the **orx_parallel** crate which allows for high performance and configurable parallel computations expressed as compositions of parallel iterator methods.
+
+## E. Creating Concurrent Iterators
+
+We can create concurrent iterators using two methods `con_iter` and `into_con_iter`. These methods belong to three traits which are explained below.
+
+> In addition, a concurrent iterator can be created from a generic iterator using `iter_into_con_iter`; however, this is explained separately above and made explicit.
+
+
+### E.1. [`IntoConcurrentIter`](https://docs.rs/orx-concurrent-iter/1.30.0/orx_concurrent_iter/trait.IntoConcurrentIter.html)
+
+This trait represents all types that can be consumed and converted into a concurrent iterator.
+
+Concurrent counterpart of the standard [`IntoIterator`] trait.
+
+For instance, `Vec<T>` implements `IntoIterator<Item = T>`; and it also implements `IntoConcurrentIter<Item = T>` method.
+
+* `vec.into_iter()` consumes `vec` and returns an iterator yielding items of `T`.
+* `vec.into_con_iter()` consumes `vec` and returns a concurrent iterator yielding items of `T`.
+
+### E.2. [`ConcurrentIterable`](https://docs.rs/orx-concurrent-iter/1.30.0/orx_concurrent_iter/trait.ConcurrentIterable.html)
+
+This trait represents all types that can repeatedly create concurrent iterators for its elements, without consuming the type.
+
+Concurrent counterpart of the [`Iterable`](https://docs.rs/orx-iterable/latest/orx_iterable/trait.Iterable.html) trait of the [orx_iterable](https://crates.io/crates/orx-iterable) create.
+
+For instance, `&Range<usize>` implements `Iterable<Item = usize>`; and it also implements `ConcurrentIterable<Item = usize>` method.
+
+* `range.iter()` returns an iterator yielding items of `usize` without consuming `range`.
+* `range.con_iter()` returns a concurrent iterator yielding items of `usize` without consuming `range`.
+
+### E.3. [`ConcurrentCollection`](https://docs.rs/orx-concurrent-iter/1.30.0/orx_concurrent_iter/trait.ConcurrentCollection.html)
+
+This trait represents all types that can both repeatedly create concurrent iterators for references of its elements, and also converted into a concurrent iterator of its elements.
+
+Concurrent counterpart of the [`Collection`](https://docs.rs/orx-iterable/latest/orx_iterable/trait.Collection.html) trait of the [orx_iterable](https://crates.io/crates/orx-iterable) create.
+
+`Vec<T>` both implements `Collection<Item = T>` and `ConcurrentCollection<Item = T>`.
+
+* Create iterators of references without consuming the `vec`.
+  * `vec.iter()` returns an iterator yielding items of `&T`.
+  * `vec.con_iter()` returns a concurrent iterator yielding items of `&T`.
+* Consume `vec` and convert it into an iterator.
+  * `vec.into_iter()` consumes `vec` and returns an iterator yielding items of `T`.
+  * `vec.into_con_iter()` consumes `vec` and returns a concurrent iterator yielding items of `T`.
+
 
 ## Contributing
 
