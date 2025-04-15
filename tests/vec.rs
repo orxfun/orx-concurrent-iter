@@ -21,14 +21,14 @@ fn debug() {
 
     assert_eq!(
         format!("{:?}", con_iter),
-        "ConIterVec { initial_len: 3, taken: 0, remaining: 3 }"
+        "ConIterVec { initial_len: 3, num_taken: 0, remaining: 3 }"
     );
 
     assert_eq!(con_iter.next(), Some('a'));
 
     assert_eq!(
         format!("{:?}", con_iter),
-        "ConIterVec { initial_len: 3, taken: 1, remaining: 2 }"
+        "ConIterVec { initial_len: 3, num_taken: 1, remaining: 2 }"
     );
 
     assert_eq!(con_iter.next(), Some('b'));
@@ -36,13 +36,13 @@ fn debug() {
 
     assert_eq!(
         format!("{:?}", con_iter),
-        "ConIterVec { initial_len: 3, taken: 3, remaining: 0 }"
+        "ConIterVec { initial_len: 3, num_taken: 3, remaining: 0 }"
     );
 
     assert_eq!(con_iter.next(), None);
 
     assert_eq!(
         format!("{:?}", con_iter),
-        "ConIterVec { initial_len: 3, taken: 3, remaining: 0 }"
+        "ConIterVec { initial_len: 3, num_taken: 3, remaining: 0 }"
     );
 }
