@@ -10,7 +10,10 @@
     clippy::missing_panics_doc,
     clippy::todo
 )]
-#![cfg_attr(not(test), no_std)]
+#![no_std]
+
+#[cfg(any(test, feature = "std"))]
+extern crate std;
 
 extern crate alloc;
 

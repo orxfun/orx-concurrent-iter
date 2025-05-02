@@ -1,4 +1,6 @@
 use crate::{ChunkPuller, ConcurrentIter, IterIntoConcurrentIter};
+use alloc::vec;
+use alloc::vec::Vec;
 use core::ops::Range;
 
 #[test]

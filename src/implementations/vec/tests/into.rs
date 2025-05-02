@@ -1,7 +1,9 @@
 use crate::{
-    concurrent_collection::ConcurrentCollection, concurrent_iter::ConcurrentIter,
-    IntoConcurrentIter,
+    IntoConcurrentIter, concurrent_collection::ConcurrentCollection,
+    concurrent_iter::ConcurrentIter,
 };
+use alloc::string::ToString;
+use alloc::vec::Vec;
 use orx_concurrent_bag::ConcurrentBag;
 
 #[test]
