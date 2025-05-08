@@ -1,11 +1,11 @@
 use super::raw_slice::RawSlice;
 use alloc::vec::Vec;
 
-pub struct RawSlices<'a, T> {
-    slices: Vec<RawSlice<'a, T>>,
+pub struct RawSlices<T> {
+    slices: Vec<RawSlice<T>>,
 }
 
-impl<'a, T, I> From<I> for RawSlices<'a, T>
+impl<'a, T, I> From<I> for RawSlices<T>
 where
     T: 'a,
     I: Iterator<Item = &'a [T]>,
