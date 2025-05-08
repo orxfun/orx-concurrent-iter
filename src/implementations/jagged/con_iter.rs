@@ -34,4 +34,14 @@ where
             false => None,
         }
     }
+
+    pub(super) fn progress_and_get_chunk_slices(&self, chunk_size: usize) -> Option<(usize, ())> {
+        self.progress_and_get_begin_idx(chunk_size)
+            .map(|begin_idx| {
+                let end_idx = (begin_idx + chunk_size).min(self.len).max(begin_idx);
+                let range = begin_idx..end_idx;
+                let iter = ();
+                (begin_idx, iter)
+            })
+    }
 }
