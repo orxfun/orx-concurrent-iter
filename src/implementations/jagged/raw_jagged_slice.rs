@@ -1,10 +1,13 @@
-use super::raw_jagged::RawJagged;
+use super::raw_slice::RawSlice;
 
-pub struct RawJaggedSlice<'a, T, X>
-where
-    X: Fn(usize) -> [usize; 2],
-{
-    jagged: &'a RawJagged<T, X>,
+pub struct RawJaggedSlice<'a, T> {
+    slices: &'a [RawSlice<T>],
     begin: [usize; 2],
     end: [usize; 2],
+}
+
+impl<'a, T> RawJaggedSlice<'a, T> {
+    pub(super) fn new(slices: &'a [RawSlice<T>], begin: [usize; 2], end: [usize; 2]) -> Self {
+        Self { slices, begin, end }
+    }
 }

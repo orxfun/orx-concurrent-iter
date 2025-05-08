@@ -5,7 +5,7 @@ pub struct RawJagged<T, X>
 where
     X: Fn(usize) -> [usize; 2],
 {
-    slices: Vec<RawSlice<T>>,
+    jagged: Vec<RawSlice<T>>,
     indexer: X,
 }
 
@@ -19,7 +19,7 @@ where
         T: 'a,
     {
         Self {
-            slices: slices.map(Into::into).collect(),
+            jagged: slices.map(Into::into).collect(),
             indexer,
         }
     }
@@ -34,7 +34,7 @@ where
     type IntoIter = core::slice::Iter<'a, RawSlice<T>>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.slices.iter()
+        self.jagged.iter()
     }
 }
 
@@ -47,7 +47,7 @@ where
     type IntoIter = alloc::vec::IntoIter<RawSlice<T>>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.slices.into_iter()
+        self.jagged.into_iter()
     }
 }
 
@@ -55,7 +55,9 @@ impl<T, X> RawJagged<T, X>
 where
     X: Fn(usize) -> [usize; 2],
 {
-    pub fn slice(&self, start: usize, end: usize) -> RawJaggedSlice<T, X> {
-        todo!()
+    pub fn slice(&self, start: usize, end: usize) -> RawJaggedSlice<T> {
+        let begin = (self.indexer)(start);
+        let end = (self.indexer)(end);
+        RawJaggedSlice::new(&self.jagged, begin, end)
     }
 }
