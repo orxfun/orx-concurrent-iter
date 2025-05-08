@@ -1,5 +1,3 @@
-use core::marker::PhantomData;
-
 pub struct RawSlice<T> {
     ptr: *const T,
     len: usize,

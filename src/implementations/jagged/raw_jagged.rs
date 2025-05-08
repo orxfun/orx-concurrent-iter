@@ -5,7 +5,8 @@ pub struct RawJagged<T, X>
 where
     X: Fn(usize) -> [usize; 2],
 {
-    jagged: Vec<RawSlice<T>>,
+    slices: Vec<RawSlice<T>>,
+    len: usize,
     indexer: X,
 }
 
@@ -13,13 +14,23 @@ impl<'a, T, X> RawJagged<T, X>
 where
     X: Fn(usize) -> [usize; 2],
 {
-    fn from<I>(slices: I, indexer: X) -> Self
+    fn from<I>(iter: I, indexer: X) -> Self
     where
         I: Iterator<Item = &'a [T]>,
         T: 'a,
     {
+        let mut len = 0;
+        let mut slices = match iter.size_hint() {
+            (lb, Some(ub)) if lb == ub => Vec::with_capacity(lb),
+            _ => Vec::new(),
+        };
+        for slice in iter {
+            len += slice.len();
+            slices.push(slice.into())
+        }
         Self {
-            jagged: slices.map(Into::into).collect(),
+            slices,
+            len,
             indexer,
         }
     }
@@ -34,7 +45,7 @@ where
     type IntoIter = core::slice::Iter<'a, RawSlice<T>>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.jagged.iter()
+        self.slices.iter()
     }
 }
 
@@ -47,7 +58,7 @@ where
     type IntoIter = alloc::vec::IntoIter<RawSlice<T>>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.jagged.into_iter()
+        self.slices.into_iter()
     }
 }
 
@@ -55,9 +66,17 @@ impl<T, X> RawJagged<T, X>
 where
     X: Fn(usize) -> [usize; 2],
 {
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    pub fn num_slices(&self) -> usize {
+        self.slices.len()
+    }
+
     pub fn slice(&self, start: usize, end: usize) -> RawJaggedSlice<T> {
         let begin = (self.indexer)(start);
         let end = (self.indexer)(end);
-        RawJaggedSlice::new(&self.jagged, begin, end)
+        RawJaggedSlice::new(&self.slices, begin, end)
     }
 }
