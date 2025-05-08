@@ -1,22 +1,22 @@
-use super::raw_slices::RawSlices;
+use super::raw_jagged::RawJagged;
 use core::sync::atomic::{AtomicUsize, Ordering};
 use orx_iterable::Collection;
 
-pub struct ConIterJagged<T>
+pub struct ConIterJagged<T, X>
 where
     T: Send + Sync,
 {
-    slices: RawSlices<T>,
+    slices: RawJagged<T, X>,
     begin: usize,
     len: usize,
     counter: AtomicUsize,
 }
 
-impl<T> ConIterJagged<T>
+impl<T, X> ConIterJagged<T, X>
 where
     T: Send + Sync,
 {
-    pub(crate) fn new(slices: RawSlices<T>, begin: usize, len: usize) -> Self {
+    pub(crate) fn new(slices: RawJagged<T, X>, begin: usize, len: usize) -> Self {
         let total_len: usize = slices.iter().map(|x| x.len()).sum();
         let len = total_len - len;
         Self {
