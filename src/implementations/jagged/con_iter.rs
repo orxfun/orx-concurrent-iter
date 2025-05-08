@@ -5,6 +5,7 @@ use orx_iterable::Collection;
 pub struct ConIterJagged<T, X>
 where
     T: Send + Sync,
+    X: Fn(usize) -> [usize; 2],
 {
     slices: RawJagged<T, X>,
     begin: usize,
@@ -15,6 +16,7 @@ where
 impl<T, X> ConIterJagged<T, X>
 where
     T: Send + Sync,
+    X: Fn(usize) -> [usize; 2],
 {
     pub(crate) fn new(slices: RawJagged<T, X>, begin: usize, len: usize) -> Self {
         let total_len: usize = slices.iter().map(|x| x.len()).sum();

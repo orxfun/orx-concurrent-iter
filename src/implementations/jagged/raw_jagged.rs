@@ -1,12 +1,18 @@
 use super::{raw_jagged_slice::RawJaggedSlice, raw_slice::RawSlice};
 use alloc::vec::Vec;
 
-pub struct RawJagged<T, X> {
+pub struct RawJagged<T, X>
+where
+    X: Fn(usize) -> [usize; 2],
+{
     slices: Vec<RawSlice<T>>,
     indexer: X,
 }
 
-impl<'a, T, X> RawJagged<T, X> {
+impl<'a, T, X> RawJagged<T, X>
+where
+    X: Fn(usize) -> [usize; 2],
+{
     fn from<I>(slices: I, indexer: X) -> Self
     where
         I: Iterator<Item = &'a [T]>,
@@ -19,7 +25,10 @@ impl<'a, T, X> RawJagged<T, X> {
     }
 }
 
-impl<'a, T, X> IntoIterator for &'a RawJagged<T, X> {
+impl<'a, T, X> IntoIterator for &'a RawJagged<T, X>
+where
+    X: Fn(usize) -> [usize; 2],
+{
     type Item = &'a RawSlice<T>;
 
     type IntoIter = core::slice::Iter<'a, RawSlice<T>>;
@@ -29,7 +38,10 @@ impl<'a, T, X> IntoIterator for &'a RawJagged<T, X> {
     }
 }
 
-impl<T, X> IntoIterator for RawJagged<T, X> {
+impl<T, X> IntoIterator for RawJagged<T, X>
+where
+    X: Fn(usize) -> [usize; 2],
+{
     type Item = RawSlice<T>;
 
     type IntoIter = alloc::vec::IntoIter<RawSlice<T>>;
@@ -39,7 +51,10 @@ impl<T, X> IntoIterator for RawJagged<T, X> {
     }
 }
 
-impl<T, X> RawJagged<T, X> {
+impl<T, X> RawJagged<T, X>
+where
+    X: Fn(usize) -> [usize; 2],
+{
     pub fn slice(&self, start: usize, end: usize) -> RawJaggedSlice<T, X> {
         todo!()
     }
