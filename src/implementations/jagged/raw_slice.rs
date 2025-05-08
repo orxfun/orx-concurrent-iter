@@ -13,3 +13,9 @@ impl<T> From<&[T]> for RawSlice<T> {
         }
     }
 }
+
+impl<T> RawSlice<T> {
+    pub fn len(&self) -> usize {
+        self.len
+    }
+}

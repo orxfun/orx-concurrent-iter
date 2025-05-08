@@ -16,3 +16,23 @@ where
         }
     }
 }
+
+impl<'a, T> IntoIterator for &'a RawSlices<T> {
+    type Item = &'a RawSlice<T>;
+
+    type IntoIter = core::slice::Iter<'a, RawSlice<T>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.slices.iter()
+    }
+}
+
+impl<T> IntoIterator for RawSlices<T> {
+    type Item = RawSlice<T>;
+
+    type IntoIter = alloc::vec::IntoIter<RawSlice<T>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.slices.into_iter()
+    }
+}
