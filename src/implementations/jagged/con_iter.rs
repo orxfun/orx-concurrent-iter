@@ -27,12 +27,11 @@ where
         }
     }
 
-    // fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
-    //     let begin_idx = self.counter.fetch_add(number_to_fetch, Ordering::Relaxed);
-    //     match begin_idx < self.vec.len {
-    //         true => Some(begin_idx),
-    //         false => None,
-    //     };
-    //     None
-    // }
+    fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
+        let begin_idx = self.counter.fetch_add(number_to_fetch, Ordering::Relaxed);
+        match begin_idx < self.len {
+            true => Some(begin_idx),
+            false => None,
+        }
+    }
 }
