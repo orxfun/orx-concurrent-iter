@@ -8,6 +8,9 @@ fn raw_slice_default() {
 
     assert_eq!(raw_slice.slice_from(0), None);
     assert_eq!(raw_slice.slice_from(1), None);
+
+    assert_eq!(raw_slice.slice(0, 0), None);
+    assert_eq!(raw_slice.slice(0, 1), None);
 }
 
 #[test]
@@ -19,8 +22,12 @@ fn raw_slice_from_slice() {
 
     for i in 0..vec.len() {
         assert_eq!(raw_slice.slice_from(i), Some(&vec[i..]));
+        assert_eq!(raw_slice.slice(i, vec.len() - i), Some(&vec[i..]));
+        assert_eq!(raw_slice.slice(i, 1), Some(&vec[i..(i + 1)]));
     }
 
     assert_eq!(raw_slice.slice_from(vec.len()), None);
     assert_eq!(raw_slice.slice_from(vec.len() + 1), None);
+    assert_eq!(raw_slice.slice(vec.len(), 1), None);
+    assert_eq!(raw_slice.slice(vec.len() + 1, 1), None);
 }
