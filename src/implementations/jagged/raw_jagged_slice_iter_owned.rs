@@ -1,6 +1,5 @@
 use super::raw_jagged_slice::RawJaggedSlice;
 use crate::implementations::ptr_utils::take;
-use std::fmt::Debug;
 
 pub struct RawJaggedSliceIterOwned<'a, T> {
     slice: RawJaggedSlice<'a, T>,

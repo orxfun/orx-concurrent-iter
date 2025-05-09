@@ -1,5 +1,6 @@
 use crate::implementations::jagged::{raw_jagged::RawJagged, raw_vec::RawVec};
-use test_case::test_matrix;
+
+// matrix
 
 fn get_matrix(n: usize) -> Vec<Vec<String>> {
     let mut matrix = Vec::new();
@@ -33,122 +34,88 @@ fn matrix_raw_jagged_drop_by_taken() {
     let len = n * n;
 
     for num_taken in 0..len {
-        let matrix = get_matrix(n);
-        let mut jagged = RawJagged::new(
-            matrix.into_iter().map(RawVec::<String>::from),
-            matrix_indexer(n),
-        );
-        jagged.set_num_taken(num_taken);
+        for num_iterated in 0..num_taken {
+            let matrix = get_matrix(n);
+            let mut jagged = RawJagged::new(
+                matrix.into_iter().map(RawVec::<String>::from),
+                matrix_indexer(n),
+            );
+            jagged.set_num_taken(num_taken);
 
-        let slice = jagged.slice(0, num_taken);
-        let mut iter = slice.into_iter_owned();
+            let slice = jagged.slice(0, num_taken);
+            let mut iter = slice.into_iter_owned();
 
-        for i in 0..num_taken {
-            assert_eq!(iter.next(), Some(i.to_string()));
+            for i in 0..num_iterated {
+                assert_eq!(iter.next(), Some(i.to_string()));
+            }
         }
-        assert_eq!(iter.next(), None);
     }
 }
 
-// #[test]
-// fn raw_jagged_indices() {
-//     let n = 4;
-//     let matrix = get_matrix(n);
+// jagged
 
-//     let iter = (0..n).map(|i| matrix[i].as_slice());
-//     let indexer = |idx| {
-//         let f = idx / n;
-//         let i = idx % n;
-//         [f, i]
-//     };
+fn get_jagged() -> Vec<Vec<String>> {
+    let jagged = vec![vec![0, 1], vec![2, 3, 4], vec![5], vec![6, 7, 8, 9]];
+    jagged
+        .into_iter()
+        .map(|x| x.into_iter().map(|x| x.to_string()).collect::<Vec<_>>())
+        .collect()
+}
 
-//     let jagged = RawJagged::new(iter, indexer);
-//     assert_eq!(jagged.len(), n * n);
+fn jagged_indexer() -> impl Fn(usize) -> [usize; 2] {
+    let lengths = vec![2, 3, 1, 4];
+    move |idx| match idx == lengths.iter().sum::<usize>() {
+        true => [lengths.len() - 1, lengths[lengths.len() - 1]],
+        false => {
+            let mut idx = idx;
+            let [mut f, mut i] = [0, 0];
+            let mut current_f = 0;
+            while idx > 0 {
+                let current_len = lengths[current_f];
+                match current_len > idx {
+                    true => {
+                        i = idx;
+                        idx = 0;
+                    }
+                    false => {
+                        f += 1;
+                        idx -= current_len;
+                    }
+                }
+                current_f += 1;
+            }
+            [f, i]
+        }
+    }
+}
 
-//     for flat_index in 0..jagged.len() {
-//         let f = flat_index / n;
-//         let i = flat_index % n;
+#[test]
+fn jagged_raw_jagged_drop_zero_taken() {
+    let jagged = get_jagged();
+    let _jagged = RawJagged::new(
+        jagged.into_iter().map(RawVec::<String>::from),
+        jagged_indexer(),
+    );
+}
 
-//         let idx = jagged.jagged_index(flat_index);
-//         assert_eq!(idx, Some(JaggedIndex::new(f, i)));
-//     }
+#[test]
+fn jagged_raw_jagged_drop_by_taken() {
+    let len = 10;
+    for num_taken in 0..len {
+        for num_iterated in 0..num_taken {
+            let jagged = get_jagged();
+            let mut jagged = RawJagged::new(
+                jagged.into_iter().map(RawVec::<String>::from),
+                jagged_indexer(),
+            );
+            jagged.set_num_taken(num_taken);
 
-//     let idx = jagged.jagged_index(jagged.len());
-//     assert_eq!(idx, Some(JaggedIndex::new(n - 1, n)));
-// }
+            let slice = jagged.slice(0, num_taken);
+            let mut iter = slice.into_iter_owned();
 
-// #[test]
-// fn raw_jagged_slices_matrix() {
-//     let n = 4;
-//     let matrix = get_matrix(n);
-
-//     let iter = (0..n).map(|i| matrix[i].as_slice());
-//     let indexer = |idx| {
-//         let f = idx / n;
-//         let i = idx % n;
-//         [f, i]
-//     };
-
-//     let jagged = RawJagged::new(iter, indexer);
-
-//     for begin in 0..jagged.len() {
-//         for end in begin..jagged.len() {
-//             let expected: Vec<_> = (begin..end).map(|x| x.to_string()).collect();
-//             let mut from_jagged = Vec::new();
-//             let jagged_slice = jagged.slice(begin, end);
-//             for s in 0..jagged_slice.num_slices() {
-//                 from_jagged.extend(jagged_slice.get_slice(s).unwrap().iter().cloned());
-//             }
-//             assert_eq!(from_jagged, expected);
-//         }
-//     }
-// }
-
-// #[test]
-// fn raw_jagged_slices_jagged() {
-//     let matrix = vec![vec![0, 1], vec![2, 3, 4], vec![5], vec![6, 7, 8, 9]];
-//     let matrix: Vec<_> = matrix
-//         .into_iter()
-//         .map(|x| x.into_iter().map(|x| x.to_string()).collect::<Vec<_>>())
-//         .collect();
-
-//     let iter = (0..matrix.len()).map(|i| matrix[i].as_slice());
-//     let lengths = vec![2, 3, 1, 4];
-//     let indexer = |idx| match idx == lengths.iter().sum() {
-//         true => [lengths.len() - 1, lengths[lengths.len() - 1]],
-//         false => {
-//             let mut idx = idx;
-//             let [mut f, mut i] = [0, 0];
-//             let mut current_f = 0;
-//             while idx > 0 {
-//                 let current_len = lengths[current_f];
-//                 match current_len > idx {
-//                     true => {
-//                         i = idx;
-//                         idx = 0;
-//                     }
-//                     false => {
-//                         f += 1;
-//                         idx -= current_len;
-//                     }
-//                 }
-//                 current_f += 1;
-//             }
-//             [f, i]
-//         }
-//     };
-
-//     let jagged = RawJagged::new(iter, indexer);
-
-//     for begin in 0..jagged.len() {
-//         for end in begin..jagged.len() {
-//             let expected: Vec<_> = (begin..end).map(|x| x.to_string()).collect();
-//             let mut from_jagged = Vec::new();
-//             let jagged_slice = jagged.slice(begin, end);
-//             for s in 0..jagged_slice.num_slices() {
-//                 from_jagged.extend(jagged_slice.get_slice(s).unwrap().iter().cloned());
-//             }
-//             assert_eq!(from_jagged, expected);
-//         }
-//     }
-// }
+            for i in 0..num_iterated {
+                assert_eq!(iter.next(), Some(i.to_string()));
+            }
+        }
+    }
+}
