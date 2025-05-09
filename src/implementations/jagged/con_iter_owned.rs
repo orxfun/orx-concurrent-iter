@@ -1,10 +1,10 @@
 use super::{raw_jagged::RawJagged, raw_jagged_slice_iter_owned::RawJaggedSliceIterOwned};
+use crate::ConcurrentIter;
 use core::sync::atomic::{AtomicUsize, Ordering};
-use std::fmt::Debug;
 
 pub struct ConIterJaggedOwned<T, X>
 where
-    T: Send + Sync + Debug,
+    T: Send + Sync,
     X: Fn(usize) -> [usize; 2],
 {
     jagged: RawJagged<T, X>,
@@ -14,7 +14,7 @@ where
 
 impl<T, X> ConIterJaggedOwned<T, X>
 where
-    T: Send + Sync + Debug,
+    T: Send + Sync,
     X: Fn(usize) -> [usize; 2],
 {
     pub(crate) fn new(jagged: RawJagged<T, X>, begin: usize) -> Self {
@@ -46,5 +46,43 @@ where
                 let iter = slice.into_iter_owned();
                 (begin_idx, iter)
             })
+    }
+}
+
+impl<T, X> ConcurrentIter for ConIterJaggedOwned<T, X>
+where
+    T: Send + Sync,
+    X: Fn(usize) -> [usize; 2],
+{
+    type Item = T;
+
+    type SequentialIter;
+
+    type ChunkPuller<'i>
+    where
+        Self: 'i;
+
+    fn into_seq_iter(self) -> Self::SequentialIter {
+        todo!()
+    }
+
+    fn skip_to_end(&self) {
+        todo!()
+    }
+
+    fn next(&self) -> Option<Self::Item> {
+        todo!()
+    }
+
+    fn next_with_idx(&self) -> Option<(usize, Self::Item)> {
+        todo!()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        todo!()
+    }
+
+    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+        todo!()
     }
 }
