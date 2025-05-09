@@ -82,7 +82,8 @@ where
             false => [end_inclusive[0] + 1, end_inclusive[1] + 1],
             true => [end_inclusive[0] + 1, end_inclusive[1]],
         };
-        RawJaggedSlice::new(&self.slices, begin, end)
+        // RawJaggedSlice::new(&self.slices, begin, end)
+        todo!()
     }
 
     pub fn jagged_index(&self, flat_index: usize) -> Option<JaggedIndex> {
