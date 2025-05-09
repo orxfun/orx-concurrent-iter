@@ -7,7 +7,7 @@ pub struct RawJaggedSlice<'a, T> {
 }
 
 impl<'a, T> RawJaggedSlice<'a, T> {
-    pub(super) fn new(slices: &'a [RawSlice<T>], begin: [usize; 2], end: [usize; 2]) -> Self {
+    pub fn new(slices: &'a [RawSlice<T>], begin: [usize; 2], end: [usize; 2]) -> Self {
         Self { slices, begin, end }
     }
 
@@ -15,7 +15,7 @@ impl<'a, T> RawJaggedSlice<'a, T> {
     ///
     /// Returns None if `f` is out of bounds, or the corresponding slice is empty.
     /// Therefore, if this method returns Some, returned slice always have at least one element.
-    pub(super) fn get_slice(&self, f: usize) -> Option<&'a [T]> {
+    pub fn get_slice(&self, f: usize) -> Option<&'a [T]> {
         match (self.begin[0]..=self.end[0]).contains(&f) {
             true => {
                 let f = self.begin[0] + f;
@@ -27,5 +27,9 @@ impl<'a, T> RawJaggedSlice<'a, T> {
             }
             false => None,
         }
+    }
+
+    pub fn num_slices(&self) -> usize {
+        self.end[0] - self.begin[0]
     }
 }

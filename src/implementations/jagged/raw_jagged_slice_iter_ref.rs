@@ -12,12 +12,27 @@ impl<'a, T> RawJaggedSliceIterRef<'a, T> {
         let current = slice.get_slice(f).unwrap_or(Default::default());
         Self { slice, f, current }
     }
+
+    fn next_slice(&mut self) -> Option<&'a T> {
+        match self.f == self.slice.num_slices() - 1 {
+            false => {
+                self.f += 1;
+                self.current = slice.get_slice(f).unwrap_or(Default::default());
+                self.next()
+            }
+            true => None,
+        }
+    }
 }
 
 impl<'a, T> Iterator for RawJaggedSliceIterRef<'a, T> {
     type Item = &'a T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        todo!()
+        let next = self.current.next();
+        match next.is_some() {
+            true => next,
+            false => self.next_slice(),
+        }
     }
 }
