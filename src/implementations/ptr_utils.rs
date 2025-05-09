@@ -5,7 +5,3 @@ pub(crate) unsafe fn take<T>(ptr: *mut T) -> T {
     unsafe { value.as_mut_ptr().swap(ptr) };
     unsafe { value.assume_init() }
 }
-
-pub(crate) unsafe fn read<T>(ptr: *mut T) -> T {
-    unsafe { core::ptr::read(ptr) }
-}
