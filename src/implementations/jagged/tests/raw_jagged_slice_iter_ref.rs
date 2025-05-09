@@ -9,7 +9,7 @@ fn get_matrix(n: usize) -> Vec<Vec<String>> {
 }
 
 #[test]
-fn raw_jagged_slice_iter_matrix() {
+fn raw_jagged_slice_iter_ref_matrix() {
     let n = 4;
     let matrix = get_matrix(n);
 
@@ -34,7 +34,7 @@ fn raw_jagged_slice_iter_matrix() {
 }
 
 #[test]
-fn raw_jagged_slice_iter_jagged() {
+fn raw_jagged_slice_iter_ref_jagged() {
     let matrix = vec![vec![0, 1], vec![2, 3, 4], vec![5], vec![6, 7, 8, 9]];
     let matrix: Vec<_> = matrix
         .into_iter()

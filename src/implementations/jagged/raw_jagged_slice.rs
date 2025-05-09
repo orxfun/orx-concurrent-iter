@@ -1,6 +1,6 @@
 use super::{
-    jagged_index::JaggedIndex, raw_jagged_slice_iter_ref::RawJaggedSliceIterRef,
-    raw_slice::RawSlice,
+    jagged_index::JaggedIndex, raw_jagged_slice_iter_owned::RawJaggedSliceIterOwned,
+    raw_jagged_slice_iter_ref::RawJaggedSliceIterRef, raw_slice::RawSlice,
 };
 
 pub struct RawJaggedSlice<'a, T> {
@@ -88,5 +88,9 @@ impl<'a, T> RawJaggedSlice<'a, T> {
 
     pub fn into_iter_ref(self) -> RawJaggedSliceIterRef<'a, T> {
         RawJaggedSliceIterRef::new(self)
+    }
+
+    pub fn into_iter_owned(self) -> RawJaggedSliceIterOwned<'a, T> {
+        RawJaggedSliceIterOwned::new(self)
     }
 }
