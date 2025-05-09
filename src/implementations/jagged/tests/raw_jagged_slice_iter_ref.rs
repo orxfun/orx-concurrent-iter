@@ -22,9 +22,21 @@ fn matrix_indexer(n: usize) -> impl Fn(usize) -> [usize; 2] {
 fn raw_jagged_slice_iter_ref_matrix() {
     let n = 4;
     let matrix = get_matrix(n);
-    let vectors: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
-    let jagged = RawJagged::new(vectors.into_iter(), matrix_indexer(n));
 
+    let slices: Vec<_> = matrix.iter().map(|x| RawVec::from(x.as_slice())).collect();
+    let jagged = RawJagged::new(slices.into_iter(), matrix_indexer(n), false);
+    for begin in 0..jagged.len() {
+        for end in begin..jagged.len() {
+            let expected: Vec<_> = (begin..end).map(|x| x.to_string()).collect();
+            let iter_ref = jagged.slice(begin, end).into_iter_ref();
+            let from_jagged: Vec<_> = iter_ref.cloned().collect();
+
+            assert_eq!(from_jagged, expected);
+        }
+    }
+
+    let vectors: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let jagged = RawJagged::new(vectors.into_iter(), matrix_indexer(n), true);
     for begin in 0..jagged.len() {
         for end in begin..jagged.len() {
             let expected: Vec<_> = (begin..end).map(|x| x.to_string()).collect();
@@ -75,12 +87,24 @@ fn jagged_indexer() -> impl Fn(usize) -> [usize; 2] {
 
 #[test]
 fn raw_jagged_slice_iter_ref_jagged() {
-    let jagged = get_jagged();
-    let jagged = RawJagged::new(
-        jagged.into_iter().map(RawVec::<String>::from),
-        jagged_indexer(),
-    );
+    let data = get_jagged();
+    let slices: Vec<_> = data.iter().map(|x| RawVec::from(x.as_slice())).collect();
+    let jagged = RawJagged::new(slices.into_iter(), jagged_indexer(), false);
+    for begin in 0..jagged.len() {
+        for end in begin..jagged.len() {
+            let expected: Vec<_> = (begin..end).map(|x| x.to_string()).collect();
+            let iter_ref = jagged.slice(begin, end).into_iter_ref();
+            let from_jagged: Vec<_> = iter_ref.cloned().collect();
 
+            assert_eq!(from_jagged, expected);
+        }
+    }
+
+    let jagged = RawJagged::new(
+        data.into_iter().map(RawVec::<String>::from),
+        jagged_indexer(),
+        true,
+    );
     for begin in 0..jagged.len() {
         for end in begin..jagged.len() {
             let expected: Vec<_> = (begin..end).map(|x| x.to_string()).collect();

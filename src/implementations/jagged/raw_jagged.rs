@@ -9,14 +9,14 @@ where
     vectors: Vec<RawVec<T>>,
     len: usize,
     indexer: X,
-    num_taken: usize,
+    num_taken: Option<usize>,
 }
 
 impl<'a, T, X> RawJagged<T, X>
 where
     X: Fn(usize) -> [usize; 2],
 {
-    pub fn new<I, V>(iter: I, indexer: X) -> Self
+    pub fn new<I, V>(iter: I, indexer: X, droppable: bool) -> Self
     where
         V: Into<RawVec<T>>,
         I: Iterator<Item = V>,
@@ -33,11 +33,13 @@ where
             vectors.push(v);
         }
 
+        let num_taken = droppable.then_some(0);
+
         Self {
             vectors,
             len,
             indexer,
-            num_taken: 0,
+            num_taken,
         }
     }
 
@@ -75,8 +77,10 @@ where
     }
 
     pub fn set_num_taken(&mut self, num_taken: usize) {
-        debug_assert!(num_taken >= self.num_taken);
-        self.num_taken = num_taken;
+        debug_assert!(num_taken >= self.num_taken.unwrap());
+        if let Some(x) = self.num_taken.as_mut() {
+            *x = num_taken;
+        }
     }
 }
 
@@ -85,19 +89,21 @@ where
     X: Fn(usize) -> [usize; 2],
 {
     fn drop(&mut self) {
-        // drop elements
-        if let Some(begin) = self.jagged_index(self.num_taken) {
-            let [f, i] = [begin.f, begin.i];
-            unsafe { self.vectors[f].drop_elements_in_place(i) };
+        if let Some(num_taken) = self.num_taken {
+            // drop elements
+            if let Some(begin) = self.jagged_index(num_taken) {
+                let [f, i] = [begin.f, begin.i];
+                unsafe { self.vectors[f].drop_elements_in_place(i) };
 
-            for f in (f + 1)..self.vectors.len() {
-                unsafe { self.vectors[f].drop_elements_in_place(0) };
+                for f in (f + 1)..self.vectors.len() {
+                    unsafe { self.vectors[f].drop_elements_in_place(0) };
+                }
             }
-        }
 
-        // drop allocation
-        for vec in &self.vectors {
-            unsafe { vec.drop_allocation() };
+            // drop allocation
+            for vec in &self.vectors {
+                unsafe { vec.drop_allocation() };
+            }
         }
     }
 }

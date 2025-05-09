@@ -41,7 +41,7 @@ fn invalid_raw_jagged_slice_indices((begin, end): ([usize; 2], [usize; 2])) {
     let n = 4;
     let matrix = get_matrix(n);
     let vectors: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
-    let jagged = RawJagged::new(vectors.into_iter(), |_| [0, 0]);
+    let jagged = RawJagged::new(vectors.into_iter(), |_| [0, 0], true);
     let _slice = RawJaggedSlice::new(jagged.vectors(), begin, end);
 }
 
@@ -56,7 +56,7 @@ fn empty_non_default_raw_jagged_slice() {
     let n = 4;
     let matrix = get_matrix(n);
     let vectors: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
-    let jagged = RawJagged::new(vectors.into_iter(), |_| [0, 0]);
+    let jagged = RawJagged::new(vectors.into_iter(), |_| [0, 0], true);
 
     let empty_indices = [
         ([0, 0], [0, 0]),
@@ -89,7 +89,7 @@ fn validate_raw_jagged_slice(flat_begin: usize, flat_end: usize) {
     let n = 4;
     let matrix = get_matrix(n);
     let vectors: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
-    let jagged = RawJagged::new(vectors.into_iter(), |_| [0, 0]);
+    let jagged = RawJagged::new(vectors.into_iter(), |_| [0, 0], true);
 
     let [f, i] = [flat_begin / n, flat_begin % n];
     let begin = JaggedIndex::new(f, i);

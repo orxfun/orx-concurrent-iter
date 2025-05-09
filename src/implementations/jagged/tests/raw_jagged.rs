@@ -25,6 +25,7 @@ fn matrix_raw_jagged_drop_zero_taken() {
     let _jagged = RawJagged::new(
         matrix.into_iter().map(RawVec::<String>::from),
         matrix_indexer(n),
+        true,
     );
 }
 
@@ -39,6 +40,7 @@ fn matrix_raw_jagged_drop_by_taken() {
             let mut jagged = RawJagged::new(
                 matrix.into_iter().map(RawVec::<String>::from),
                 matrix_indexer(n),
+                true,
             );
             jagged.set_num_taken(num_taken);
 
@@ -95,6 +97,7 @@ fn jagged_raw_jagged_drop_zero_taken() {
     let _jagged = RawJagged::new(
         jagged.into_iter().map(RawVec::<String>::from),
         jagged_indexer(),
+        true,
     );
 }
 
@@ -107,6 +110,7 @@ fn jagged_raw_jagged_drop_by_taken() {
             let mut jagged = RawJagged::new(
                 jagged.into_iter().map(RawVec::<String>::from),
                 jagged_indexer(),
+                true,
             );
             jagged.set_num_taken(num_taken);
 
