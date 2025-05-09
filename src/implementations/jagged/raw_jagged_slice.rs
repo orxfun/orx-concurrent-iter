@@ -26,7 +26,7 @@ impl<'a, T> RawJaggedSlice<'a, T> {
     /// Returns None if `f` is out of bounds, or the corresponding slice is empty.
     /// Therefore, if this method returns Some, returned slice always have at least one element.
     pub fn get_slice(&self, f: usize) -> Option<&'a [T]> {
-        match (self.begin[0]..=self.end[0]).contains(&f) {
+        match (self.begin[0]..self.end[0]).contains(&f) {
             true => {
                 let f = self.begin[0] + f;
                 let i = match f == self.begin[0] {

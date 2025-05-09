@@ -12,6 +12,15 @@ impl<T> From<&[T]> for RawSlice<T> {
     }
 }
 
+impl<T> Default for RawSlice<T> {
+    fn default() -> Self {
+        Self {
+            ptr: core::ptr::null(),
+            len: Default::default(),
+        }
+    }
+}
+
 impl<T> RawSlice<T> {
     pub fn len(&self) -> usize {
         self.len
