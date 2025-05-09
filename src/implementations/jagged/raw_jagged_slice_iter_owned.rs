@@ -45,6 +45,26 @@ where
             None => None,
         }
     }
+
+    // fn drop_next_slice(&mut self) -> bool {
+    //     true
+    // }
+
+    // fn drop_next(&mut self) -> bool {
+    //     match self.current_ptr.is_null() {
+    //         false => {
+    //             let is_last_of_slice = self.current_ptr as *const T == self.current_last;
+    //             let ptr = self.current_ptr as *mut T;
+    //             let value = Some(unsafe { take(ptr) });
+    //             self.current_ptr = match is_last_of_slice {
+    //                 false => unsafe { self.current_ptr.add(1) },
+    //                 true => core::ptr::null_mut(),
+    //             };
+    //             value
+    //         }
+    //         true => self.drop_next_slice(),
+    //     }
+    // }
 }
 
 impl<'a, T> Iterator for RawJaggedSliceIterOwned<'a, T>
@@ -56,16 +76,21 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         match self.current_ptr.is_null() {
             false => {
-                let is_last = self.current_ptr as *const T == self.current_last;
-                let ptr = self.current_ptr as *mut T;
-                let value = Some(unsafe { take(ptr) });
-                self.current_ptr = match is_last {
+                let ptr = self.current_ptr;
+                let is_last_of_slice = ptr as *const T == self.current_last;
+                self.current_ptr = match is_last_of_slice {
                     false => unsafe { self.current_ptr.add(1) },
                     true => core::ptr::null_mut(),
                 };
-                value
+                Some(unsafe { take(ptr) })
             }
             true => self.next_slice(),
         }
+    }
+}
+
+impl<'a, T> Drop for RawJaggedSliceIterOwned<'a, T> {
+    fn drop(&mut self) {
+        // todo!()
     }
 }
