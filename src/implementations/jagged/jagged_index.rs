@@ -1,6 +1,7 @@
+#[derive(PartialEq, Debug)]
 pub struct JaggedIndex {
-    f: usize,
-    i: usize,
+    pub f: usize,
+    pub i: usize,
 }
 
 impl JaggedIndex {

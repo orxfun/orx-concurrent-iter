@@ -85,22 +85,12 @@ where
         RawJaggedSlice::new(&self.slices, begin, end)
     }
 
-    pub fn jagged_index_inc(&self, flat_index: usize) -> Option<JaggedIndex> {
-        match flat_index < self.len {
-            true => {
-                let [f, i] = (self.indexer)(flat_index);
-                Some(JaggedIndex::new(f, i))
-            }
-            false => None,
-        }
-    }
-
-    pub fn jagged_index_exc(&self, flat_index: usize) -> Option<JaggedIndex> {
+    pub fn jagged_index(&self, flat_index: usize) -> Option<JaggedIndex> {
         match flat_index.cmp(&self.len) {
             Ordering::Equal => Some(JaggedIndex::new(self.slices.len(), 0)),
             Ordering::Less => {
                 let [f, i] = (self.indexer)(flat_index);
-                Some(JaggedIndex::new(f, i + 1))
+                Some(JaggedIndex::new(f, i))
             }
             Ordering::Greater => None,
         }
