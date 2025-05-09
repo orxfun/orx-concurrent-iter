@@ -7,7 +7,38 @@ pub struct RawJaggedSliceIterOwned<'a, T> {
     current_ptr: *const T,
 }
 
+impl<'a, T> Default for RawJaggedSliceIterOwned<'a, T> {
+    fn default() -> Self {
+        Self {
+            slice: Default::default(),
+            f: Default::default(),
+            current_last: core::ptr::null(),
+            current_ptr: core::ptr::null(),
+        }
+    }
+}
+
 impl<'a, T> RawJaggedSliceIterOwned<'a, T> {
+    pub(super) fn new(slice: RawJaggedSlice<'a, T>) -> Self {
+        Self {
+            slice,
+            ..Default::default()
+        }
+    }
+
+    fn next_slice(&mut self) -> Option<T> {
+        match self.f == self.slice.num_slices() {
+            false => {
+                // let slice = self.slice.get_slice(self.f).unwrap_or(Default::default());
+                // self.current = slice.iter();
+                // self.f += 1;
+                // self.next()
+                None
+            }
+            true => None,
+        }
+    }
+
     // pub(super) fn new(slice: RawJaggedSlice<'a, T>) -> Self {
     //     let f = 0;
 

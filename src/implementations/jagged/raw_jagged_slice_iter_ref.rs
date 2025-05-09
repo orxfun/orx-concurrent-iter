@@ -25,14 +25,13 @@ impl<'a, T> RawJaggedSliceIterRef<'a, T> {
     }
 
     fn next_slice(&mut self) -> Option<&'a T> {
-        match self.f == self.slice.num_slices() {
-            false => {
-                let slice = self.slice.get_slice(self.f).unwrap_or(Default::default());
+        match self.slice.get_slice(self.f) {
+            Some(slice) => {
                 self.current = slice.iter();
                 self.f += 1;
                 self.next()
             }
-            true => None,
+            None => None,
         }
     }
 }
