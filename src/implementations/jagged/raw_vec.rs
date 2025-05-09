@@ -29,6 +29,17 @@ impl<T> From<Vec<T>> for RawVec<T> {
     }
 }
 
+impl<T> From<&[T]> for RawVec<T> {
+    fn from(value: &[T]) -> Self {
+        let value = ManuallyDrop::new(value);
+        Self {
+            ptr: value.as_ptr() as *mut T,
+            len: value.len(),
+            capacity: value.len(),
+        }
+    }
+}
+
 impl<T> RawVec<T> {
     pub fn len(&self) -> usize {
         self.len
