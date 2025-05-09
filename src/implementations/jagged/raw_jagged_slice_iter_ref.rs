@@ -1,5 +1,3 @@
-use std::fmt::Debug;
-
 use super::raw_jagged_slice::RawJaggedSlice;
 
 pub struct RawJaggedSliceIterRef<'a, T> {
@@ -18,10 +16,7 @@ impl<'a, T> Default for RawJaggedSliceIterRef<'a, T> {
     }
 }
 
-impl<'a, T> RawJaggedSliceIterRef<'a, T>
-where
-    T: Debug,
-{
+impl<'a, T> RawJaggedSliceIterRef<'a, T> {
     pub(super) fn new(slice: RawJaggedSlice<'a, T>) -> Self {
         Self {
             slice,
@@ -41,10 +36,7 @@ where
     }
 }
 
-impl<'a, T> Iterator for RawJaggedSliceIterRef<'a, T>
-where
-    T: Debug,
-{
+impl<'a, T> Iterator for RawJaggedSliceIterRef<'a, T> {
     type Item = &'a T;
 
     fn next(&mut self) -> Option<Self::Item> {
