@@ -1,12 +1,11 @@
-use std::fmt::Debug;
-
 use super::{
     jagged_index::JaggedIndex, raw_jagged_slice_iter_owned::RawJaggedSliceIterOwned,
-    raw_jagged_slice_iter_ref::RawJaggedSliceIterRef, raw_slice::RawSlice,
+    raw_jagged_slice_iter_ref::RawJaggedSliceIterRef, raw_slice::RawSlice, raw_vec::RawVec,
 };
+use std::fmt::Debug;
 
 pub struct RawJaggedSlice<'a, T> {
-    slices: &'a [RawSlice<T>],
+    vectors: &'a [RawVec<T>],
     begin: JaggedIndex,
     end: JaggedIndex,
     num_slices: usize,
@@ -15,7 +14,7 @@ pub struct RawJaggedSlice<'a, T> {
 impl<'a, T> Default for RawJaggedSlice<'a, T> {
     fn default() -> Self {
         Self {
-            slices: Default::default(),
+            vectors: Default::default(),
             begin: Default::default(),
             end: Default::default(),
             num_slices: Default::default(),
@@ -27,9 +26,9 @@ impl<'a, T> RawJaggedSlice<'a, T>
 where
     T: Debug,
 {
-    pub fn new(slices: &'a [RawSlice<T>], begin: JaggedIndex, end: JaggedIndex) -> Self {
-        assert!(begin.is_in_inc_bounds_of(&slices));
-        assert!(end.is_in_exc_bounds_of(&slices));
+    pub fn new(vectors: &'a [RawVec<T>], begin: JaggedIndex, end: JaggedIndex) -> Self {
+        assert!(begin.is_in_inc_bounds_of(&vectors));
+        assert!(end.is_in_exc_bounds_of(&vectors));
         assert!(begin <= end);
 
         let num_slices = match begin.f == end.f {
@@ -49,10 +48,35 @@ where
         };
 
         Self {
-            slices,
+            vectors,
             begin,
             end,
             num_slices,
+        }
+    }
+
+    pub fn get_raw_slice(&self, s: usize) -> Option<RawSlice<T>> {
+        match s < self.num_slices {
+            true => {
+                let f = self.begin.f + s;
+                let slice = &self.vectors[f];
+
+                let start = match s == 0 {
+                    true => self.begin.i,
+                    false => 0,
+                };
+
+                let end_exc = match s == self.num_slices - 1 {
+                    false => slice.len(),
+                    true => match self.end.i {
+                        0 => slice.len(),
+                        end => end,
+                    },
+                };
+
+                Some(slice.raw_slice(start, end_exc))
+            }
+            false => None,
         }
     }
 
@@ -64,7 +88,7 @@ where
         match s < self.num_slices {
             true => {
                 let f = self.begin.f + s;
-                let slice = &self.slices[f];
+                let slice = &self.vectors[f];
 
                 let start = match s == 0 {
                     true => self.begin.i,

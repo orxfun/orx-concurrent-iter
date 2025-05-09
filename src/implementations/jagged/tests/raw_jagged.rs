@@ -21,10 +21,26 @@ fn matrix_indexer(n: usize) -> impl Fn(usize) -> [usize; 2] {
 fn raw_jagged_drop_zero_taken() {
     let n = 4;
     let matrix = get_matrix(n);
-    let jagged = RawJagged::new(
+    let _jagged = RawJagged::new(
         matrix.into_iter().map(RawVec::<String>::from),
         matrix_indexer(n),
     );
+}
+
+#[test]
+fn raw_jagged_drop_one_taken() {
+    let n = 4;
+    let matrix = get_matrix(n);
+    let mut jagged = RawJagged::new(
+        matrix.into_iter().map(RawVec::<String>::from),
+        matrix_indexer(n),
+    );
+    jagged.set_num_taken(1);
+
+    let slice = jagged.slice(0, 1);
+    let mut iter = slice.into_iter_owned();
+    let value = iter.next();
+    assert_eq!(value, Some(0.to_string()));
 }
 
 // #[test]

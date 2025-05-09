@@ -1,4 +1,4 @@
-use super::raw_slice::RawSlice;
+use super::raw_vec::RawVec;
 use core::cmp::Ordering;
 
 #[derive(Default, PartialEq, Debug, Clone)]
@@ -12,11 +12,11 @@ impl JaggedIndex {
         Self { f, i }
     }
 
-    pub fn is_in_exc_bounds_of<T>(&self, slices: &[RawSlice<T>]) -> bool {
+    pub fn is_in_exc_bounds_of<T>(&self, slices: &[RawVec<T>]) -> bool {
         self.f < slices.len() && self.i <= slices[self.f].len()
     }
 
-    pub fn is_in_inc_bounds_of<T>(&self, slices: &[RawSlice<T>]) -> bool {
+    pub fn is_in_inc_bounds_of<T>(&self, slices: &[RawVec<T>]) -> bool {
         self.f < slices.len() && self.i < slices[self.f].len()
     }
 }

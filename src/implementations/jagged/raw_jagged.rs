@@ -55,8 +55,7 @@ where
     pub fn slice(&self, begin: usize, end: usize) -> RawJaggedSlice<T> {
         let begin = self.jagged_index(begin).expect("index-out-of-bounds");
         let end = self.jagged_index(end).expect("index-out-of-bounds");
-        // RawJaggedSlice::new(&self.vectors, begin, end)
-        todo!()
+        RawJaggedSlice::new(&self.vectors, begin, end)
     }
 
     pub fn jagged_index(&self, flat_index: usize) -> Option<JaggedIndex> {

@@ -32,6 +32,10 @@ impl<T> RawSlice<T> {
         self.len
     }
 
+    pub fn ptr(&self) -> *mut T {
+        self.ptr
+    }
+
     /// Returns the slice from the raw slice for elements in range [start..start+len].
     ///
     /// Returns None if the range is empty or out of bounds.
