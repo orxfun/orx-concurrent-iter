@@ -1,12 +1,10 @@
 use super::{jagged_index::JaggedIndex, raw_jagged_slice::RawJaggedSlice, raw_vec::RawVec};
 use alloc::vec::Vec;
 use core::cmp::Ordering;
-use std::fmt::Debug;
 
 pub struct RawJagged<T, X>
 where
     X: Fn(usize) -> [usize; 2],
-    T: Debug,
 {
     vectors: Vec<RawVec<T>>,
     len: usize,
@@ -17,7 +15,6 @@ where
 impl<'a, T, X> RawJagged<T, X>
 where
     X: Fn(usize) -> [usize; 2],
-    T: Debug,
 {
     pub fn new<I, V>(iter: I, indexer: X) -> Self
     where
@@ -46,6 +43,10 @@ where
 
     pub fn len(&self) -> usize {
         self.len
+    }
+
+    pub fn vectors(&self) -> &[RawVec<T>] {
+        &self.vectors
     }
 
     pub fn num_slices(&self) -> usize {
@@ -82,7 +83,6 @@ where
 impl<T, X> Drop for RawJagged<T, X>
 where
     X: Fn(usize) -> [usize; 2],
-    T: Debug,
 {
     fn drop(&mut self) {
         // drop elements
