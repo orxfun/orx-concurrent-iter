@@ -18,6 +18,7 @@ impl<'a, T> Default for RawJaggedSlice<'a, T> {
 
 impl<'a, T> RawJaggedSlice<'a, T> {
     pub fn new(slices: &'a [RawSlice<T>], begin: JaggedIndex, end: JaggedIndex) -> Self {
+        assert!(begin <= end);
         // assert!(end[0] >= begin[0]);
         // assert!(end[0] != begin[0] || end[1] >= begin[1]);
         // assert!(begin[0] <= slices.len());
