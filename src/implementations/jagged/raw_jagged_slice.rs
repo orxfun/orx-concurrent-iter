@@ -1,4 +1,7 @@
-use super::{jagged_index::JaggedIndex, raw_slice::RawSlice};
+use super::{
+    jagged_index::JaggedIndex, raw_jagged_slice_iter_ref::RawJaggedSliceIterRef,
+    raw_slice::RawSlice,
+};
 
 pub struct RawJaggedSlice<'a, T> {
     slices: &'a [RawSlice<T>],
@@ -81,5 +84,15 @@ impl<'a, T> RawJaggedSlice<'a, T> {
 
     pub fn num_slices(&self) -> usize {
         self.num_slices
+    }
+}
+
+impl<'a, T> IntoIterator for RawJaggedSlice<'a, T> {
+    type Item = &'a T;
+
+    type IntoIter = RawJaggedSliceIterRef<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        RawJaggedSliceIterRef::new(self)
     }
 }
