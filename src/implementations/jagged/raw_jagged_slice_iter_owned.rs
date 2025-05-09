@@ -4,10 +4,8 @@ pub struct RawJaggedSliceIterOwned<'a, T> {
     slice: RawJaggedSlice<'a, T>,
     f: usize,
     completed: bool,
-    first: *const T,
-    last: *const T,
-    drop_vec_capacity: Option<usize>,
-    current: *const T,
+    current_last: *const T,
+    current_ptr: *const T,
 }
 
 impl<'a, T> RawJaggedSliceIterOwned<'a, T> {

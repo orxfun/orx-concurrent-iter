@@ -6,11 +6,22 @@ pub struct RawJaggedSliceIterRef<'a, T> {
     current: core::slice::Iter<'a, T>,
 }
 
+impl<'a, T> Default for RawJaggedSliceIterRef<'a, T> {
+    fn default() -> Self {
+        Self {
+            slice: Default::default(),
+            f: Default::default(),
+            current: Default::default(),
+        }
+    }
+}
+
 impl<'a, T> RawJaggedSliceIterRef<'a, T> {
     pub(super) fn new(slice: RawJaggedSlice<'a, T>) -> Self {
-        let f = 0;
-        let current = Self::get_next_slice(&slice, f);
-        Self { slice, f, current }
+        Self {
+            slice,
+            ..Default::default()
+        }
     }
 
     fn get_next_slice(slice: &RawJaggedSlice<'a, T>, f: usize) -> core::slice::Iter<'a, T> {
@@ -21,8 +32,8 @@ impl<'a, T> RawJaggedSliceIterRef<'a, T> {
     fn next_slice(&mut self) -> Option<&'a T> {
         match self.f == self.slice.num_slices() - 1 {
             false => {
-                self.f += 1;
                 self.current = Self::get_next_slice(&self.slice, self.f);
+                self.f += 1;
                 self.next()
             }
             true => None,

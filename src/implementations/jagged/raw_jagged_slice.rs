@@ -6,6 +6,16 @@ pub struct RawJaggedSlice<'a, T> {
     end: [usize; 2],
 }
 
+impl<'a, T> Default for RawJaggedSlice<'a, T> {
+    fn default() -> Self {
+        Self {
+            slices: Default::default(),
+            begin: Default::default(),
+            end: Default::default(),
+        }
+    }
+}
+
 impl<'a, T> RawJaggedSlice<'a, T> {
     pub fn new(slices: &'a [RawSlice<T>], begin: [usize; 2], end: [usize; 2]) -> Self {
         Self { slices, begin, end }
