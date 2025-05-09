@@ -18,6 +18,12 @@ impl<'a, T> Default for RawJaggedSlice<'a, T> {
 
 impl<'a, T> RawJaggedSlice<'a, T> {
     pub fn new(slices: &'a [RawSlice<T>], begin: [usize; 2], end: [usize; 2]) -> Self {
+        assert!(end[0] >= begin[0]);
+        assert!(end[0] != begin[0] || end[1] >= begin[1]);
+        assert!(begin[0] <= slices.len());
+        assert!((begin[0] == slices.len() && begin[1] == 0) || begin[1] <= slices[begin[0]].len());
+        assert!(end[0] <= slices.len());
+        assert!((end[0] == slices.len() && end[1] == 0) || end[1] <= slices[end[0]].len());
         Self { slices, begin, end }
     }
 
