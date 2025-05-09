@@ -21,7 +21,7 @@ impl<T> RawSlice<T> {
     ///
     /// Returns None if the range is empty or out of bounds.
     /// Therefore, if this method returns Some, returned slice always have at least one element.
-    pub fn slice(&self, start: usize, len: usize) -> Option<&[T]> {
+    fn slice(&self, start: usize, len: usize) -> Option<&[T]> {
         match start + len <= self.len && len > 0 {
             true => {
                 let ptr = unsafe { self.ptr.add(start) }; // ptr + start is in bounds
