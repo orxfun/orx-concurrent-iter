@@ -85,14 +85,8 @@ impl<'a, T> RawJaggedSlice<'a, T> {
     pub fn num_slices(&self) -> usize {
         self.num_slices
     }
-}
 
-impl<'a, T> IntoIterator for RawJaggedSlice<'a, T> {
-    type Item = &'a T;
-
-    type IntoIter = RawJaggedSliceIterRef<'a, T>;
-
-    fn into_iter(self) -> Self::IntoIter {
+    pub fn into_iter_ref(self) -> RawJaggedSliceIterRef<'a, T> {
         RawJaggedSliceIterRef::new(self)
     }
 }
