@@ -1,4 +1,6 @@
-use crate::implementations::jagged::raw_jagged::RawJagged;
+use crate::implementations::jagged::{raw_jagged::RawJagged, raw_vec::RawVec};
+
+// matrix
 
 fn get_matrix(n: usize) -> Vec<Vec<String>> {
     let mut matrix = Vec::new();
@@ -8,19 +10,20 @@ fn get_matrix(n: usize) -> Vec<Vec<String>> {
     matrix
 }
 
+fn matrix_indexer(n: usize) -> impl Fn(usize) -> [usize; 2] {
+    move |idx| {
+        let f = idx / n;
+        let i = idx % n;
+        [f, i]
+    }
+}
+
 #[test]
 fn raw_jagged_slice_iter_ref_matrix() {
     let n = 4;
     let matrix = get_matrix(n);
-
-    let iter = (0..n).map(|i| matrix[i].as_slice());
-    let indexer = |idx| {
-        let f = idx / n;
-        let i = idx % n;
-        [f, i]
-    };
-
-    let jagged = RawJagged::new(iter, indexer);
+    let vectors: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let jagged = RawJagged::new(vectors.into_iter(), matrix_indexer(n));
 
     for begin in 0..jagged.len() {
         for end in begin..jagged.len() {
@@ -33,17 +36,19 @@ fn raw_jagged_slice_iter_ref_matrix() {
     }
 }
 
-#[test]
-fn raw_jagged_slice_iter_ref_jagged() {
-    let matrix = vec![vec![0, 1], vec![2, 3, 4], vec![5], vec![6, 7, 8, 9]];
-    let matrix: Vec<_> = matrix
+// jagged
+
+fn get_jagged() -> Vec<Vec<String>> {
+    let jagged = vec![vec![0, 1], vec![2, 3, 4], vec![5], vec![6, 7, 8, 9]];
+    jagged
         .into_iter()
         .map(|x| x.into_iter().map(|x| x.to_string()).collect::<Vec<_>>())
-        .collect();
+        .collect()
+}
 
-    let iter = (0..matrix.len()).map(|i| matrix[i].as_slice());
+fn jagged_indexer() -> impl Fn(usize) -> [usize; 2] {
     let lengths = vec![2, 3, 1, 4];
-    let indexer = |idx| match idx == lengths.iter().sum() {
+    move |idx| match idx == lengths.iter().sum::<usize>() {
         true => [lengths.len() - 1, lengths[lengths.len() - 1]],
         false => {
             let mut idx = idx;
@@ -65,9 +70,16 @@ fn raw_jagged_slice_iter_ref_jagged() {
             }
             [f, i]
         }
-    };
+    }
+}
 
-    let jagged = RawJagged::new(iter, indexer);
+#[test]
+fn raw_jagged_slice_iter_ref_jagged() {
+    let jagged = get_jagged();
+    let jagged = RawJagged::new(
+        jagged.into_iter().map(RawVec::<String>::from),
+        jagged_indexer(),
+    );
 
     for begin in 0..jagged.len() {
         for end in begin..jagged.len() {
