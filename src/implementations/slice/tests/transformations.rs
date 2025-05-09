@@ -1,4 +1,4 @@
-use crate::{concurrent_iterable::ConcurrentIterable, ChunkPuller, ConcurrentIter};
+use crate::{ChunkPuller, ConcurrentIter, concurrent_iterable::ConcurrentIterable};
 
 #[test]
 fn enumerate_item() {

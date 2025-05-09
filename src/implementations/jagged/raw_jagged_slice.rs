@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use super::{
     jagged_index::JaggedIndex, raw_jagged_slice_iter_owned::RawJaggedSliceIterOwned,
     raw_jagged_slice_iter_ref::RawJaggedSliceIterRef, raw_slice::RawSlice,
@@ -21,7 +23,10 @@ impl<'a, T> Default for RawJaggedSlice<'a, T> {
     }
 }
 
-impl<'a, T> RawJaggedSlice<'a, T> {
+impl<'a, T> RawJaggedSlice<'a, T>
+where
+    T: Debug,
+{
     pub fn new(slices: &'a [RawSlice<T>], begin: JaggedIndex, end: JaggedIndex) -> Self {
         assert!(begin.is_in_inc_bounds_of(&slices));
         assert!(end.is_in_exc_bounds_of(&slices));
@@ -90,7 +95,10 @@ impl<'a, T> RawJaggedSlice<'a, T> {
         RawJaggedSliceIterRef::new(self)
     }
 
-    pub fn into_iter_owned(self) -> RawJaggedSliceIterOwned<'a, T> {
+    pub fn into_iter_owned(self) -> RawJaggedSliceIterOwned<'a, T>
+    where
+        T: Debug,
+    {
         RawJaggedSliceIterOwned::new(self)
     }
 }

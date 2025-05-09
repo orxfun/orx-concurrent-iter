@@ -1,8 +1,9 @@
 use crate::implementations::jagged::raw_jagged::RawJagged;
+use core::mem::ManuallyDrop;
 
 fn get_matrix(n: usize) -> Vec<Vec<String>> {
     let mut matrix = Vec::new();
-    for i in 0..n {
+    for i in 0..1 {
         matrix.push(((i * n)..((i + 1) * n)).map(|x| x.to_string()).collect());
     }
     matrix
@@ -11,26 +12,48 @@ fn get_matrix(n: usize) -> Vec<Vec<String>> {
 #[test]
 fn raw_jagged_slice_iter_owned_matrix() {
     let n = 4;
-    let matrix = get_matrix(n);
+    let len = 1 * n;
 
-    let iter = (0..n).map(|i| matrix[i].as_slice());
-    let indexer = |idx| {
-        let f = idx / n;
-        let i = idx % n;
-        [f, i]
+    let jagged = || {
+        let matrix = get_matrix(n);
+        let matrix = ManuallyDrop::new(matrix);
+
+        let iter = (0..1).map(|i| matrix[i].as_slice());
+        let indexer = |idx| {
+            let f = idx / n;
+            let i = idx % n;
+            [f, i]
+        };
+        RawJagged::new(iter, indexer)
     };
 
-    let jagged = RawJagged::new(iter, indexer);
+    let mut jagged = jagged();
+    jagged.max_drop_after(0);
 
-    for begin in 0..jagged.len() {
-        for end in begin..jagged.len() {
-            let expected: Vec<_> = (begin..end).map(|x| x.to_string()).collect();
-            let iter_owned = jagged.slice(begin, end).into_iter_owned();
-            let from_jagged: Vec<_> = iter_owned.collect();
+    let end = 0;
+    let mut iter_owned = jagged.slice(0, end).into_iter_owned();
+    let x = iter_owned.next();
+    dbg!(x);
 
-            assert_eq!(from_jagged, expected);
-        }
-    }
+    assert_eq!(n, 2);
+
+    // for end in 1..2 {
+    //     let mut jagged = jagged();
+    //     jagged.max_drop_after(end);
+
+    //     let mut iter_owned = jagged.slice(0, end).into_iter_owned();
+    //     let x = iter_owned.next();
+    //     dbg!(x);
+    //     let y = 12;
+    //     let z = y + 30;
+    //     // let from_jagged: Vec<_> = iter_owned.collect();
+    //     // dbg!(&from_jagged);
+
+    //     // let x = &jagged;
+    //     // let expected: Vec<_> = (0..end).map(|x| x.to_string()).collect();
+
+    //     // assert_eq!(from_jagged, expected);
+    // }
 }
 
 // #[test]

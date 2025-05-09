@@ -1,9 +1,10 @@
 use super::raw_jagged::RawJagged;
 use core::sync::atomic::{AtomicUsize, Ordering};
+use std::fmt::Debug;
 
 pub struct ConIterJagged<T, X>
 where
-    T: Send + Sync,
+    T: Send + Sync + Debug,
     X: Fn(usize) -> [usize; 2],
 {
     slices: RawJagged<T, X>,
@@ -13,7 +14,7 @@ where
 
 impl<T, X> ConIterJagged<T, X>
 where
-    T: Send + Sync,
+    T: Send + Sync + Debug,
     X: Fn(usize) -> [usize; 2],
 {
     pub(crate) fn new(slices: RawJagged<T, X>, begin: usize) -> Self {

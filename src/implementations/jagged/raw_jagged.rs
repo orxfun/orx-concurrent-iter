@@ -1,98 +1,69 @@
-use super::{jagged_index::JaggedIndex, raw_jagged_slice::RawJaggedSlice, raw_slice::RawSlice};
+use super::{jagged_index::JaggedIndex, raw_jagged_slice::RawJaggedSlice, raw_vec::RawVec};
 use alloc::vec::Vec;
 use core::cmp::Ordering;
+use std::fmt::Debug;
 
 pub struct RawJagged<T, X>
 where
     X: Fn(usize) -> [usize; 2],
+    T: Debug,
 {
-    slices: Vec<RawSlice<T>>,
+    vectors: Vec<RawVec<T>>,
     len: usize,
     indexer: X,
+    num_taken: usize,
 }
 
 impl<'a, T, X> RawJagged<T, X>
 where
     X: Fn(usize) -> [usize; 2],
+    T: Debug,
 {
-    pub fn new<I>(iter: I, indexer: X) -> Self
+    pub fn new<I, V>(iter: I, indexer: X) -> Self
     where
-        I: Iterator<Item = &'a [T]>,
-        T: 'a,
+        V: Into<RawVec<T>>,
+        I: Iterator<Item = V>,
     {
         let mut len = 0;
-        let mut slices = match iter.size_hint() {
+        let mut vectors = match iter.size_hint() {
             (lb, Some(ub)) if lb == ub => Vec::with_capacity(lb),
             _ => Vec::new(),
         };
-        for slice in iter {
-            len += slice.len();
-            slices.push(slice.into())
-        }
 
-        // slices is never empty, has at least one slice
-        let slices = match slices.is_empty() {
-            true => [RawSlice::default()].into_iter().collect(),
-            false => slices,
-        };
+        for v in iter {
+            let v = v.into();
+            len += v.len();
+            vectors.push(v);
+        }
 
         Self {
-            slices,
+            vectors,
             len,
             indexer,
+            num_taken: 0,
         }
     }
-}
 
-impl<'a, T, X> IntoIterator for &'a RawJagged<T, X>
-where
-    X: Fn(usize) -> [usize; 2],
-{
-    type Item = &'a RawSlice<T>;
-
-    type IntoIter = core::slice::Iter<'a, RawSlice<T>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.slices.iter()
-    }
-}
-
-impl<T, X> IntoIterator for RawJagged<T, X>
-where
-    X: Fn(usize) -> [usize; 2],
-{
-    type Item = RawSlice<T>;
-
-    type IntoIter = alloc::vec::IntoIter<RawSlice<T>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.slices.into_iter()
-    }
-}
-
-impl<T, X> RawJagged<T, X>
-where
-    X: Fn(usize) -> [usize; 2],
-{
     pub fn len(&self) -> usize {
         self.len
     }
 
     pub fn num_slices(&self) -> usize {
-        self.slices.len()
+        self.vectors.len()
     }
 
     pub fn slice(&self, begin: usize, end: usize) -> RawJaggedSlice<T> {
         let begin = self.jagged_index(begin).expect("index-out-of-bounds");
         let end = self.jagged_index(end).expect("index-out-of-bounds");
-        RawJaggedSlice::new(&self.slices, begin, end)
+        // RawJaggedSlice::new(&self.vectors, begin, end)
+        todo!()
     }
 
     pub fn jagged_index(&self, flat_index: usize) -> Option<JaggedIndex> {
         match flat_index.cmp(&self.len) {
             Ordering::Equal => {
-                let f = self.slices.len() - 1;
-                let i = self.slices[f].len();
+                let f = self.vectors.len() - 1;
+                let i = self.vectors[f].len();
                 Some(JaggedIndex::new(f, i))
             }
             Ordering::Less => {
@@ -100,6 +71,34 @@ where
                 Some(JaggedIndex::new(f, i))
             }
             Ordering::Greater => None,
+        }
+    }
+
+    pub fn set_num_taken(&mut self, num_taken: usize) {
+        debug_assert!(num_taken >= self.num_taken);
+        self.num_taken = num_taken;
+    }
+}
+
+impl<T, X> Drop for RawJagged<T, X>
+where
+    X: Fn(usize) -> [usize; 2],
+    T: Debug,
+{
+    fn drop(&mut self) {
+        // drop elements
+        if let Some(begin) = self.jagged_index(self.num_taken) {
+            let [f, i] = [begin.f, begin.i];
+            unsafe { self.vectors[f].drop_elements_in_place(i) };
+
+            for f in (f + 1)..self.vectors.len() {
+                unsafe { self.vectors[f].drop_elements_in_place(0) };
+            }
+        }
+
+        // drop allocation
+        for vec in &self.vectors {
+            unsafe { vec.drop_allocation() };
         }
     }
 }

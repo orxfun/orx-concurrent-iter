@@ -1,6 +1,6 @@
 use crate::{
-    concurrent_collection::ConcurrentCollection, concurrent_iter::ConcurrentIter,
-    IntoConcurrentIter,
+    IntoConcurrentIter, concurrent_collection::ConcurrentCollection,
+    concurrent_iter::ConcurrentIter,
 };
 use orx_concurrent_bag::ConcurrentBag;
 

@@ -1,6 +1,6 @@
 use crate::{
-    concurrent_iter::ConcurrentIter, concurrent_iterable::ConcurrentIterable,
-    IterIntoConcurrentIter,
+    IterIntoConcurrentIter, concurrent_iter::ConcurrentIter,
+    concurrent_iterable::ConcurrentIterable,
 };
 use orx_concurrent_bag::ConcurrentBag;
 use orx_iterable::IntoCloningIterable;

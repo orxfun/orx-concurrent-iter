@@ -1,5 +1,5 @@
 use crate::{
-    concurrent_collection::ConcurrentCollection, ChunkPuller, ConcurrentIter, IntoConcurrentIter,
+    ChunkPuller, ConcurrentIter, IntoConcurrentIter, concurrent_collection::ConcurrentCollection,
 };
 
 #[test]

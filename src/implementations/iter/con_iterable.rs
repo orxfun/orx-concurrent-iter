@@ -1,6 +1,6 @@
 use super::ConIterOfIter;
 use crate::concurrent_iterable::ConcurrentIterable;
-use orx_iterable::{transformations::CloningIterable, Iterable};
+use orx_iterable::{Iterable, transformations::CloningIterable};
 
 impl<I> ConcurrentIterable for CloningIterable<I>
 where
