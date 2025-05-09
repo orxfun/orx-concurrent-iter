@@ -4,6 +4,7 @@ pub struct RawJaggedSlice<'a, T> {
     slices: &'a [RawSlice<T>],
     begin: JaggedIndex,
     end: JaggedIndex,
+    num_slices: usize,
 }
 
 impl<'a, T> Default for RawJaggedSlice<'a, T> {
@@ -12,16 +13,39 @@ impl<'a, T> Default for RawJaggedSlice<'a, T> {
             slices: Default::default(),
             begin: Default::default(),
             end: Default::default(),
+            num_slices: Default::default(),
         }
     }
 }
 
 impl<'a, T> RawJaggedSlice<'a, T> {
     pub fn new(slices: &'a [RawSlice<T>], begin: JaggedIndex, end: JaggedIndex) -> Self {
-        assert!(begin.is_in_exc_bounds_of(&slices));
+        assert!(begin.is_in_inc_bounds_of(&slices));
         assert!(end.is_in_exc_bounds_of(&slices));
         assert!(begin <= end);
-        Self { slices, begin, end }
+
+        let num_slices = match begin.f == end.f {
+            true => match begin.i < end.i {
+                true => 1,
+                false => 0,
+            },
+            false => {
+                const FIRST: usize = 1;
+                let last = match end.i > 0 {
+                    true => 1,
+                    false => 0,
+                };
+                let middle = end.f - begin.f - 1;
+                FIRST + last + middle
+            }
+        };
+
+        Self {
+            slices,
+            begin,
+            end,
+            num_slices,
+        }
     }
 
     /// Returns the `f`-th slice of the jagged slice.
@@ -29,30 +53,33 @@ impl<'a, T> RawJaggedSlice<'a, T> {
     /// Returns None if `f` is out of bounds, or the corresponding slice is empty.
     /// Therefore, if this method returns Some, returned slice always have at least one element.
     pub fn get_slice(&self, s: usize) -> Option<&'a [T]> {
-        // let f = self.begin[0] + s;
-        // match (self.begin[0]..self.end[0]).contains(&f) {
-        //     true => {
-        //         let i = match f == self.begin[0] {
-        //             true => self.begin[1],
-        //             false => 0,
-        //         };
-        //         let j = match f == self.end[0] - 1 {
-        //             false => self.slices[f].len(),
-        //             true => match self.end[0] == self.slices.len() {
-        //                 true => self.slices[f - 1].len(),
-        //                 false => self.end[1],
-        //             },
-        //         };
+        match s < self.num_slices {
+            true => {
+                let f = self.begin.f + s;
+                let slice = &self.slices[f];
 
-        //         self.slices[f].slice(i, j - i)
-        //     }
-        //     false => None,
-        // }
-        todo!()
+                let start = match s == 0 {
+                    true => self.begin.i,
+                    false => 0,
+                };
+
+                let end_exc = match s == self.num_slices - 1 {
+                    false => slice.len(),
+                    true => match self.end.i {
+                        0 => slice.len(),
+                        end => end,
+                    },
+                };
+
+                let len = end_exc - start;
+
+                slice.slice(start, len)
+            }
+            false => None,
+        }
     }
 
     pub fn num_slices(&self) -> usize {
-        // self.end[0] - self.begin[0]
-        todo!()
+        self.num_slices
     }
 }

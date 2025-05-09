@@ -1,7 +1,7 @@
 use super::raw_slice::RawSlice;
 use core::cmp::Ordering;
 
-#[derive(Default, PartialEq, Debug)]
+#[derive(Default, PartialEq, Debug, Clone)]
 pub struct JaggedIndex {
     pub f: usize,
     pub i: usize,
@@ -13,11 +13,7 @@ impl JaggedIndex {
     }
 
     pub fn is_in_exc_bounds_of<T>(&self, slices: &[RawSlice<T>]) -> bool {
-        match self.f.cmp(&slices.len()) {
-            Ordering::Less => self.i <= slices[self.f].len(),
-            Ordering::Equal => self.i == 0,
-            Ordering::Greater => false,
-        }
+        self.f < slices.len() && self.i <= slices[self.f].len()
     }
 
     pub fn is_in_inc_bounds_of<T>(&self, slices: &[RawSlice<T>]) -> bool {

@@ -29,6 +29,13 @@ where
             len += slice.len();
             slices.push(slice.into())
         }
+
+        // slices is never empty, has at least one slice
+        let slices = match slices.is_empty() {
+            true => [RawSlice::default()].into_iter().collect(),
+            false => slices,
+        };
+
         Self {
             slices,
             len,
@@ -75,20 +82,19 @@ where
         self.slices.len()
     }
 
-    pub fn slice(&self, start: usize, end_inclusive: usize) -> RawJaggedSlice<T> {
-        let begin = (self.indexer)(start);
-        let end_inclusive = (self.indexer)(end_inclusive);
-        let end = match end_inclusive[0] + 1 == self.slices.len() {
-            false => [end_inclusive[0] + 1, end_inclusive[1] + 1],
-            true => [end_inclusive[0] + 1, end_inclusive[1]],
-        };
-        // RawJaggedSlice::new(&self.slices, begin, end)
-        todo!()
+    pub fn slice(&self, begin: usize, end: usize) -> RawJaggedSlice<T> {
+        let begin = self.jagged_index(begin).expect("index-out-of-bounds");
+        let end = self.jagged_index(end).expect("index-out-of-bounds");
+        RawJaggedSlice::new(&self.slices, begin, end)
     }
 
     pub fn jagged_index(&self, flat_index: usize) -> Option<JaggedIndex> {
         match flat_index.cmp(&self.len) {
-            Ordering::Equal => Some(JaggedIndex::new(self.slices.len(), 0)),
+            Ordering::Equal => {
+                let f = self.slices.len() - 1;
+                let i = self.slices[f].len();
+                Some(JaggedIndex::new(f, i))
+            }
             Ordering::Less => {
                 let [f, i] = (self.indexer)(flat_index);
                 Some(JaggedIndex::new(f, i))
