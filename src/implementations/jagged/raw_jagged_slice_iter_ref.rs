@@ -30,7 +30,7 @@ impl<'a, T> RawJaggedSliceIterRef<'a, T> {
     }
 
     fn next_slice(&mut self) -> Option<&'a T> {
-        match self.f == self.slice.num_slices() - 1 {
+        match self.f == self.slice.num_slices() {
             false => {
                 self.current = Self::get_next_slice(&self.slice, self.f);
                 self.f += 1;

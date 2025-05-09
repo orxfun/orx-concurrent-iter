@@ -25,6 +25,7 @@ impl<'a, T> RawJaggedSlice<'a, T> {
     pub fn new(slices: &'a [RawSlice<T>], begin: JaggedIndex, end: JaggedIndex) -> Self {
         assert!(begin.is_in_inc_bounds_of(&slices));
         assert!(end.is_in_exc_bounds_of(&slices));
+        dbg!(&begin, &end);
         assert!(begin <= end);
 
         let num_slices = match begin.f == end.f {
