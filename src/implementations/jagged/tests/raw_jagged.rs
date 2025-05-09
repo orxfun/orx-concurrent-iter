@@ -1,5 +1,5 @@
-// use crate::implementations::jagged::{jagged_index::JaggedIndex, raw_jagged::RawJagged};
 use crate::implementations::jagged::{raw_jagged::RawJagged, raw_vec::RawVec};
+use test_case::test_matrix;
 
 fn get_matrix(n: usize) -> Vec<Vec<String>> {
     let mut matrix = Vec::new();
@@ -18,7 +18,7 @@ fn matrix_indexer(n: usize) -> impl Fn(usize) -> [usize; 2] {
 }
 
 #[test]
-fn raw_jagged_drop_zero_taken() {
+fn matrix_raw_jagged_drop_zero_taken() {
     let n = 4;
     let matrix = get_matrix(n);
     let _jagged = RawJagged::new(
@@ -28,19 +28,26 @@ fn raw_jagged_drop_zero_taken() {
 }
 
 #[test]
-fn raw_jagged_drop_one_taken() {
+fn matrix_raw_jagged_drop_by_taken() {
     let n = 4;
-    let matrix = get_matrix(n);
-    let mut jagged = RawJagged::new(
-        matrix.into_iter().map(RawVec::<String>::from),
-        matrix_indexer(n),
-    );
-    jagged.set_num_taken(1);
+    let len = n * n;
 
-    let slice = jagged.slice(0, 1);
-    let mut iter = slice.into_iter_owned();
-    let value = iter.next();
-    assert_eq!(value, Some(0.to_string()));
+    for num_taken in 0..len {
+        let matrix = get_matrix(n);
+        let mut jagged = RawJagged::new(
+            matrix.into_iter().map(RawVec::<String>::from),
+            matrix_indexer(n),
+        );
+        jagged.set_num_taken(num_taken);
+
+        let slice = jagged.slice(0, num_taken);
+        let mut iter = slice.into_iter_owned();
+
+        for i in 0..num_taken {
+            assert_eq!(iter.next(), Some(i.to_string()));
+        }
+        assert_eq!(iter.next(), None);
+    }
 }
 
 // #[test]
