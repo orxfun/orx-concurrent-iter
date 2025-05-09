@@ -90,6 +90,7 @@ fn non_empty_raw_jagged_slice((begin, end): ([usize; 2], [usize; 2])) {
         .collect();
 
     let slice = RawJaggedSlice::new(&slices, begin, end);
+    assert_eq!(slice.num_slices(), end[0] - begin[0]);
 
     for (s, f) in (begin[0]..end[0]).enumerate() {
         let i = match f == begin[0] {

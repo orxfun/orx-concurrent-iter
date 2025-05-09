@@ -47,8 +47,6 @@ impl<'a, T> RawJaggedSlice<'a, T> {
                     },
                 };
 
-                dbg!(f, i, j);
-
                 self.slices[f].slice(i, j - i)
             }
             false => None,

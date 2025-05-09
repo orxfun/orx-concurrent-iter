@@ -1,5 +1,6 @@
-use super::{raw_jagged_slice::RawJaggedSlice, raw_slice::RawSlice};
+use super::{jagged_index::JaggedIndex, raw_jagged_slice::RawJaggedSlice, raw_slice::RawSlice};
 use alloc::vec::Vec;
+use core::cmp::Ordering;
 
 pub struct RawJagged<T, X>
 where
@@ -74,9 +75,34 @@ where
         self.slices.len()
     }
 
-    pub fn slice(&self, start: usize, end: usize) -> RawJaggedSlice<T> {
+    pub fn slice(&self, start: usize, end_inclusive: usize) -> RawJaggedSlice<T> {
         let begin = (self.indexer)(start);
-        let end = (self.indexer)(end);
+        let end_inclusive = (self.indexer)(end_inclusive);
+        let end = match end_inclusive[0] + 1 == self.slices.len() {
+            false => [end_inclusive[0] + 1, end_inclusive[1] + 1],
+            true => [end_inclusive[0] + 1, end_inclusive[1]],
+        };
         RawJaggedSlice::new(&self.slices, begin, end)
+    }
+
+    pub fn jagged_index_inc(&self, flat_index: usize) -> Option<JaggedIndex> {
+        match flat_index < self.len {
+            true => {
+                let [f, i] = (self.indexer)(flat_index);
+                Some(JaggedIndex::new(f, i))
+            }
+            false => None,
+        }
+    }
+
+    pub fn jagged_index_exc(&self, flat_index: usize) -> Option<JaggedIndex> {
+        match flat_index.cmp(&self.len) {
+            Ordering::Equal => Some(JaggedIndex::new(self.slices.len(), 0)),
+            Ordering::Less => {
+                let [f, i] = (self.indexer)(flat_index);
+                Some(JaggedIndex::new(f, i + 1))
+            }
+            Ordering::Greater => None,
+        }
     }
 }
