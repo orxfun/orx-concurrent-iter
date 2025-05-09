@@ -9,17 +9,20 @@ pub struct RawJaggedSliceIterRef<'a, T> {
 impl<'a, T> RawJaggedSliceIterRef<'a, T> {
     pub(super) fn new(slice: RawJaggedSlice<'a, T>) -> Self {
         let f = 0;
-        let first_slice = slice.get_slice(f).unwrap_or(Default::default());
-        let current = first_slice.iter();
+        let current = Self::get_next_slice(&slice, f);
         Self { slice, f, current }
+    }
+
+    fn get_next_slice(slice: &RawJaggedSlice<'a, T>, f: usize) -> core::slice::Iter<'a, T> {
+        let first_slice = slice.get_slice(f).unwrap_or(Default::default());
+        first_slice.iter()
     }
 
     fn next_slice(&mut self) -> Option<&'a T> {
         match self.f == self.slice.num_slices() - 1 {
             false => {
                 self.f += 1;
-                let new_slice = self.slice.get_slice(self.f).unwrap_or(Default::default());
-                self.current = new_slice.iter();
+                self.current = Self::get_next_slice(&self.slice, self.f);
                 self.next()
             }
             true => None,
