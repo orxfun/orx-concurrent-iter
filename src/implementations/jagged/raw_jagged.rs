@@ -14,7 +14,7 @@ impl<'a, T, X> RawJagged<T, X>
 where
     X: Fn(usize) -> [usize; 2],
 {
-    fn from<I>(iter: I, indexer: X) -> Self
+    pub fn new<I>(iter: I, indexer: X) -> Self
     where
         I: Iterator<Item = &'a [T]>,
         T: 'a,
