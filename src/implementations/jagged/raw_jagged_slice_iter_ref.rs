@@ -24,15 +24,11 @@ impl<'a, T> RawJaggedSliceIterRef<'a, T> {
         }
     }
 
-    fn get_next_slice(slice: &RawJaggedSlice<'a, T>, f: usize) -> core::slice::Iter<'a, T> {
-        let first_slice = slice.get_slice(f).unwrap_or(Default::default());
-        first_slice.iter()
-    }
-
     fn next_slice(&mut self) -> Option<&'a T> {
         match self.f == self.slice.num_slices() {
             false => {
-                self.current = Self::get_next_slice(&self.slice, self.f);
+                let slice = self.slice.get_slice(self.f).unwrap_or(Default::default());
+                self.current = slice.iter();
                 self.f += 1;
                 self.next()
             }

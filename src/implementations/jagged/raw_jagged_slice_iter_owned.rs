@@ -3,7 +3,6 @@ use super::raw_jagged_slice::RawJaggedSlice;
 pub struct RawJaggedSliceIterOwned<'a, T> {
     slice: RawJaggedSlice<'a, T>,
     f: usize,
-    completed: bool,
     current_last: *const T,
     current_ptr: *const T,
 }
@@ -17,3 +16,5 @@ impl<'a, T> RawJaggedSliceIterOwned<'a, T> {
     //     Self { slice, f, current }
     // }
 }
+
+impl<'a, T> RawJaggedSliceIterOwned<'a, T> {}
