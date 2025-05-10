@@ -79,4 +79,17 @@ impl<T> RawVec<T> {
     pub unsafe fn drop_allocation(&self) {
         let _vec_to_drop = unsafe { Vec::from_raw_parts(self.ptr as *mut T, 0, self.capacity) };
     }
+
+    /// Returns pointers to the first and last, (len-1)-th, element of the vector.
+    ///
+    /// If the vector is empty, both pointers are null.
+    pub fn first_and_last_ptrs(&self) -> [*const T; 2] {
+        match self.len {
+            0 => [core::ptr::null(), core::ptr::null()],
+            n => {
+                let last = unsafe { self.ptr.add(n - 1) };
+                [self.ptr, last]
+            }
+        }
+    }
 }

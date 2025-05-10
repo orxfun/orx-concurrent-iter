@@ -34,8 +34,8 @@ fn raw_jagged_slice_iter_owned_matrix() {
         jagged.set_num_taken(num_taken);
 
         let expected: Vec<_> = (0..num_taken).map(|x| x.to_string()).collect();
-        let iter_ref = jagged.slice(0, num_taken).into_iter_owned();
-        let from_jagged: Vec<_> = iter_ref.collect();
+        let iter_owned = jagged.slice(0, num_taken).into_iter_owned();
+        let from_jagged: Vec<_> = iter_owned.collect();
 
         assert_eq!(from_jagged, expected);
     }

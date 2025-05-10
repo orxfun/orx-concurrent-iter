@@ -69,4 +69,17 @@ impl<T> RawSlice<T> {
             unsafe { core::ptr::drop_in_place(ptr) };
         }
     }
+
+    /// Returns pointers to the first and last, (len-1)-th, element of the vector.
+    ///
+    /// If the vector is empty, both pointers are null.
+    pub fn first_and_last_ptrs(&self) -> [*const T; 2] {
+        match self.len {
+            0 => [core::ptr::null(), core::ptr::null()],
+            n => {
+                let last = unsafe { self.ptr.add(n - 1) };
+                [self.ptr, last]
+            }
+        }
+    }
 }
