@@ -72,6 +72,35 @@ fn raw_jagged_slice_iter_owned_matrix_twice_iteration() {
     }
 }
 
+#[test]
+fn raw_jagged_slice_iter_owned_exact_size_matrix() {
+    let n = 4;
+    let len = n * n;
+
+    let jagged = || {
+        let matrix = get_matrix(n);
+        let vectors: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+        RawJagged::new(vectors.into_iter(), matrix_indexer(n), true)
+    };
+
+    for num_taken in 0..len {
+        let mut jagged = jagged();
+        jagged.set_num_taken(Some(num_taken));
+
+        let mut iter_owned = jagged.slice(0, num_taken).into_iter_owned();
+
+        let mut len = num_taken;
+        assert_eq!(iter_owned.len(), len);
+        while let Some(_) = iter_owned.next() {
+            len -= 1;
+            assert_eq!(iter_owned.len(), len);
+        }
+
+        assert_eq!(iter_owned.len(), 0);
+        assert_eq!(iter_owned.next(), None);
+    }
+}
+
 // jagged
 
 fn get_jagged() -> Vec<Vec<String>> {
