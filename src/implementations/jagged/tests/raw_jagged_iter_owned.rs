@@ -30,7 +30,7 @@ fn raw_jagged_iter_owned_matrix(consume_taken: bool, consume_remaining: bool) {
     let jagged = || {
         let matrix = get_matrix(n);
         let vectors: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
-        RawJagged::new(vectors.into_iter(), matrix_indexer(n), true)
+        RawJagged::new(vectors, matrix_indexer(n), true)
     };
 
     for num_taken in 0..len {
@@ -100,7 +100,7 @@ fn raw_jagged_iter_owned_jagged(consume_taken: bool, consume_remaining: bool) {
     let jagged = || {
         let jagged = get_jagged();
         let vectors: Vec<_> = jagged.into_iter().map(RawVec::from).collect();
-        RawJagged::new(vectors.into_iter(), jagged_indexer(), true)
+        RawJagged::new(vectors, jagged_indexer(), true)
     };
 
     for num_taken in 0..len {

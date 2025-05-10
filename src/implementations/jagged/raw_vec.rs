@@ -41,7 +41,6 @@ impl<T> From<Vec<T>> for RawVec<T> {
 
 impl<T> From<&[T]> for RawVec<T> {
     fn from(value: &[T]) -> Self {
-        let value = ManuallyDrop::new(value);
         Self {
             ptr: value.as_ptr(),
             len: value.len(),

@@ -34,23 +34,8 @@ impl<'a, T, X> RawJagged<T, X>
 where
     X: Fn(usize) -> [usize; 2] + Clone,
 {
-    pub fn new<I, V>(iter: I, indexer: X, droppable: bool) -> Self
-    where
-        V: Into<RawVec<T>>,
-        I: Iterator<Item = V>,
-    {
-        let mut len = 0;
-        let mut vectors = match iter.size_hint() {
-            (lb, Some(ub)) if lb == ub => Vec::with_capacity(lb),
-            _ => Vec::new(),
-        };
-
-        for v in iter {
-            let v = v.into();
-            len += v.len();
-            vectors.push(v);
-        }
-
+    pub fn new(vectors: Vec<RawVec<T>>, indexer: X, droppable: bool) -> Self {
+        let len = vectors.iter().map(|v| v.len()).sum();
         let num_taken = droppable.then_some(0);
 
         Self {

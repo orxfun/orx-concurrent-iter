@@ -26,7 +26,7 @@ fn raw_jagged_slice_iter_owned_matrix() {
     let jagged = || {
         let matrix = get_matrix(n);
         let vectors: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
-        RawJagged::new(vectors.into_iter(), matrix_indexer(n), true)
+        RawJagged::new(vectors, matrix_indexer(n), true)
     };
 
     for num_taken in 0..len {
@@ -49,7 +49,7 @@ fn raw_jagged_slice_iter_owned_matrix_twice_iteration() {
     let jagged = || {
         let matrix = get_matrix(n);
         let vectors: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
-        RawJagged::new(vectors.into_iter(), matrix_indexer(n), true)
+        RawJagged::new(vectors, matrix_indexer(n), true)
     };
 
     for num_taken_1 in 0..len {
@@ -80,7 +80,7 @@ fn raw_jagged_slice_iter_owned_exact_size_matrix() {
     let jagged = || {
         let matrix = get_matrix(n);
         let vectors: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
-        RawJagged::new(vectors.into_iter(), matrix_indexer(n), true)
+        RawJagged::new(vectors, matrix_indexer(n), true)
     };
 
     for num_taken in 0..len {
@@ -145,7 +145,7 @@ fn raw_jagged_slice_iter_owned_jagged() {
     let jagged = || {
         let jagged = get_jagged();
         let vectors: Vec<_> = jagged.into_iter().map(RawVec::from).collect();
-        RawJagged::new(vectors.into_iter(), jagged_indexer(), true)
+        RawJagged::new(vectors, jagged_indexer(), true)
     };
 
     for num_taken in 0..len {
@@ -167,7 +167,7 @@ fn raw_jagged_slice_iter_owned_jagged_twice_iteration() {
     let jagged = || {
         let jagged = get_jagged();
         let vectors: Vec<_> = jagged.into_iter().map(RawVec::from).collect();
-        RawJagged::new(vectors.into_iter(), jagged_indexer(), true)
+        RawJagged::new(vectors, jagged_indexer(), true)
     };
 
     for num_taken_1 in 0..len {

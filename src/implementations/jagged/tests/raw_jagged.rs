@@ -23,7 +23,7 @@ fn matrix_raw_jagged_drop_zero_taken() {
     let n = 4;
     let matrix = get_matrix(n);
     let _jagged = RawJagged::new(
-        matrix.into_iter().map(RawVec::<String>::from),
+        matrix.into_iter().map(RawVec::<String>::from).collect(),
         matrix_indexer(n),
         true,
     );
@@ -38,7 +38,7 @@ fn matrix_raw_jagged_drop_by_taken() {
         for num_iterated in 0..num_taken {
             let matrix = get_matrix(n);
             let mut jagged = RawJagged::new(
-                matrix.into_iter().map(RawVec::<String>::from),
+                matrix.into_iter().map(RawVec::<String>::from).collect(),
                 matrix_indexer(n),
                 true,
             );
@@ -95,7 +95,7 @@ fn jagged_indexer() -> impl Fn(usize) -> [usize; 2] + Clone {
 fn jagged_raw_jagged_drop_zero_taken() {
     let jagged = get_jagged();
     let _jagged = RawJagged::new(
-        jagged.into_iter().map(RawVec::<String>::from),
+        jagged.into_iter().map(RawVec::<String>::from).collect(),
         jagged_indexer(),
         true,
     );
@@ -108,7 +108,7 @@ fn jagged_raw_jagged_drop_by_taken() {
         for num_iterated in 0..num_taken {
             let jagged = get_jagged();
             let mut jagged = RawJagged::new(
-                jagged.into_iter().map(RawVec::<String>::from),
+                jagged.into_iter().map(RawVec::<String>::from).collect(),
                 jagged_indexer(),
                 true,
             );

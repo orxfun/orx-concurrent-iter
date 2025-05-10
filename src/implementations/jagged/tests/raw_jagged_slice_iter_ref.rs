@@ -24,7 +24,7 @@ fn raw_jagged_slice_iter_ref_matrix() {
     let matrix = get_matrix(n);
 
     let slices: Vec<_> = matrix.iter().map(|x| RawVec::from(x.as_slice())).collect();
-    let jagged = RawJagged::new(slices.into_iter(), matrix_indexer(n), false);
+    let jagged = RawJagged::new(slices, matrix_indexer(n), false);
     for begin in 0..jagged.len() {
         for end in begin..jagged.len() {
             let expected: Vec<_> = (begin..end).map(|x| x.to_string()).collect();
@@ -36,7 +36,7 @@ fn raw_jagged_slice_iter_ref_matrix() {
     }
 
     let vectors: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
-    let jagged = RawJagged::new(vectors.into_iter(), matrix_indexer(n), true);
+    let jagged = RawJagged::new(vectors, matrix_indexer(n), true);
     for begin in 0..jagged.len() {
         for end in begin..jagged.len() {
             let expected: Vec<_> = (begin..end).map(|x| x.to_string()).collect();
@@ -56,7 +56,7 @@ fn raw_jagged_slice_iter_ref_exact_size_matrix() {
 
     let jagged = || {
         let slices: Vec<_> = matrix.iter().map(|x| RawVec::from(x.as_slice())).collect();
-        RawJagged::new(slices.into_iter(), matrix_indexer(n), false)
+        RawJagged::new(slices, matrix_indexer(n), false)
     };
 
     for num_taken in 0..len {
@@ -117,7 +117,7 @@ fn jagged_indexer() -> impl Fn(usize) -> [usize; 2] + Clone {
 fn raw_jagged_slice_iter_ref_jagged() {
     let data = get_jagged();
     let slices: Vec<_> = data.iter().map(|x| RawVec::from(x.as_slice())).collect();
-    let jagged = RawJagged::new(slices.into_iter(), jagged_indexer(), false);
+    let jagged = RawJagged::new(slices, jagged_indexer(), false);
     for begin in 0..jagged.len() {
         for end in begin..jagged.len() {
             let expected: Vec<_> = (begin..end).map(|x| x.to_string()).collect();
@@ -129,7 +129,7 @@ fn raw_jagged_slice_iter_ref_jagged() {
     }
 
     let jagged = RawJagged::new(
-        data.into_iter().map(RawVec::<String>::from),
+        data.into_iter().map(RawVec::<String>::from).collect(),
         jagged_indexer(),
         true,
     );
