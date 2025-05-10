@@ -15,7 +15,7 @@ impl<'a, T> Default for RawJaggedSliceIterOwned<'a, T> {
             slice: Default::default(),
             len_of_remaining_slices: 0,
             f: 0,
-            current_ptr: core::ptr::null_mut(),
+            current_ptr: core::ptr::null(),
             current_last: core::ptr::null(),
         }
     }
