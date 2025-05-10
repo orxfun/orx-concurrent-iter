@@ -13,11 +13,17 @@ impl JaggedIndex {
     }
 
     pub fn is_in_exc_bounds_of<T>(&self, slices: &[RawVec<T>]) -> bool {
-        self.f < slices.len() && self.i <= slices[self.f].len()
+        match slices.is_empty() {
+            true => self.f == 0 && self.i == 0,
+            false => self.f < slices.len() && self.i <= slices[self.f].len(),
+        }
     }
 
     pub fn is_in_inc_bounds_of<T>(&self, slices: &[RawVec<T>]) -> bool {
-        self.f < slices.len() && self.i < slices[self.f].len()
+        match slices.is_empty() {
+            true => self.f == 0 && self.i == 0,
+            false => self.f < slices.len() && self.i < slices[self.f].len(),
+        }
     }
 }
 

@@ -1,12 +1,11 @@
-use orx_concurrent_bag::ConcurrentBag;
-use test_case::test_matrix;
-
 use crate::{
     ChunkPuller, ConcurrentIter, ExactSizeConcurrentIter,
     implementations::jagged::{
         con_iter_ref::ConIterJaggedRef, raw_jagged::RawJagged, raw_vec::RawVec,
     },
 };
+use orx_concurrent_bag::ConcurrentBag;
+use test_case::test_matrix;
 
 #[cfg(miri)]
 const N: usize = 11;

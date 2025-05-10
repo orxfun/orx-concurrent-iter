@@ -63,10 +63,19 @@ where
     }
 
     pub fn slice(&self, begin: usize, end: usize) -> RawJaggedSlice<T> {
-        let known_len = Some(end.saturating_sub(begin));
-        let begin = self.jagged_index(begin).expect("index-out-of-bounds");
-        let end = self.jagged_index(end).expect("index-out-of-bounds");
-        RawJaggedSlice::new(&self.vectors, begin, end, known_len)
+        match end.saturating_sub(begin) {
+            0 => RawJaggedSlice::new(
+                &self.vectors,
+                Default::default(),
+                Default::default(),
+                Some(0),
+            ),
+            known_len => {
+                let begin = self.jagged_index(begin).expect("index-out-of-bounds");
+                let end = self.jagged_index(end).expect("index-out-of-bounds");
+                RawJaggedSlice::new(&self.vectors, begin, end, Some(known_len))
+            }
+        }
     }
 
     pub fn slice_from(&self, begin: usize) -> RawJaggedSlice<T> {
