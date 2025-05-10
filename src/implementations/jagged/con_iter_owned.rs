@@ -12,7 +12,6 @@ where
     X: Fn(usize) -> [usize; 2] + Send + Sync,
 {
     jagged: RawJagged<T, X>,
-    begin: usize,
     counter: AtomicUsize,
 }
 
@@ -38,7 +37,6 @@ where
     pub(crate) fn new(jagged: RawJagged<T, X>, begin: usize) -> Self {
         Self {
             jagged,
-            begin,
             counter: begin.into(),
         }
     }
