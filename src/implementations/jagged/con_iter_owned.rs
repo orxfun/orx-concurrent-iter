@@ -87,7 +87,10 @@ where
     }
 
     fn skip_to_end(&self) {
-        todo!()
+        let current = self.counter.fetch_max(self.jagged.len(), Ordering::Acquire);
+        let num_taken_before = current.min(self.jagged.len());
+        let slice = self.jagged.slice_from(num_taken_before);
+        let _iter = slice.into_iter_owned();
     }
 
     fn next(&self) -> Option<Self::Item> {
