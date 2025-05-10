@@ -48,6 +48,34 @@ fn raw_jagged_slice_iter_ref_matrix() {
     }
 }
 
+#[test]
+fn raw_jagged_slice_iter_ref_exact_size_matrix() {
+    let n = 4;
+    let len = n * n;
+    let matrix = get_matrix(n);
+
+    let jagged = || {
+        let slices: Vec<_> = matrix.iter().map(|x| RawVec::from(x.as_slice())).collect();
+        RawJagged::new(slices.into_iter(), matrix_indexer(n), false)
+    };
+
+    for num_taken in 0..len {
+        let jagged = jagged();
+
+        let mut iter_ref = jagged.slice(0, num_taken).into_iter_ref();
+
+        let mut len = num_taken;
+        assert_eq!(iter_ref.len(), len);
+        while let Some(_) = iter_ref.next() {
+            len -= 1;
+            assert_eq!(iter_ref.len(), len);
+        }
+
+        assert_eq!(iter_ref.len(), 0);
+        assert_eq!(iter_ref.next(), None);
+    }
+}
+
 // jagged
 
 fn get_jagged() -> Vec<Vec<String>> {
