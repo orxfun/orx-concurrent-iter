@@ -1,11 +1,14 @@
-use super::{raw_jagged::RawJagged, raw_jagged_slice_iter_owned::RawJaggedSliceIterOwned};
+use super::{
+    chunk_puller_owned::ChunkPullerJaggedOwned, raw_jagged::RawJagged,
+    raw_jagged_slice_iter_owned::RawJaggedSliceIterOwned,
+};
 use crate::ConcurrentIter;
 use core::sync::atomic::{AtomicUsize, Ordering};
 
 pub struct ConIterJaggedOwned<T, X>
 where
     T: Send + Sync,
-    X: Fn(usize) -> [usize; 2],
+    X: Fn(usize) -> [usize; 2] + Send + Sync,
 {
     jagged: RawJagged<T, X>,
     begin: usize,
@@ -15,7 +18,7 @@ where
 impl<T, X> ConIterJaggedOwned<T, X>
 where
     T: Send + Sync,
-    X: Fn(usize) -> [usize; 2],
+    X: Fn(usize) -> [usize; 2] + Send + Sync,
 {
     pub(crate) fn new(jagged: RawJagged<T, X>, begin: usize) -> Self {
         Self {
@@ -52,13 +55,14 @@ where
 impl<T, X> ConcurrentIter for ConIterJaggedOwned<T, X>
 where
     T: Send + Sync,
-    X: Fn(usize) -> [usize; 2],
+    X: Fn(usize) -> [usize; 2] + Send + Sync,
 {
     type Item = T;
 
-    type SequentialIter;
+    type SequentialIter = core::iter::Empty<T>;
 
     type ChunkPuller<'i>
+        = ChunkPullerJaggedOwned<'i, T, X>
     where
         Self: 'i;
 

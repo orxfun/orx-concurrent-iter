@@ -1,12 +1,12 @@
 pub struct RawSlice<T> {
-    ptr: *mut T,
+    ptr: *const T,
     len: usize,
 }
 
 impl<T> From<&[T]> for RawSlice<T> {
     fn from(slice: &[T]) -> Self {
         Self {
-            ptr: slice.as_ptr() as *mut T,
+            ptr: slice.as_ptr(),
             len: slice.len(),
         }
     }
@@ -22,7 +22,7 @@ impl<T> Default for RawSlice<T> {
 }
 
 impl<T> RawSlice<T> {
-    pub fn new(ptr: *mut T, len: usize) -> Self {
+    pub fn new(ptr: *const T, len: usize) -> Self {
         Self { ptr, len }
     }
 
@@ -30,7 +30,7 @@ impl<T> RawSlice<T> {
         self.len
     }
 
-    pub fn ptr(&self) -> *mut T {
+    pub fn ptr(&self) -> *const T {
         self.ptr
     }
 

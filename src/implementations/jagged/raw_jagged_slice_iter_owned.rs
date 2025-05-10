@@ -4,7 +4,7 @@ use crate::implementations::ptr_utils::take;
 pub struct RawJaggedSliceIterOwned<'a, T> {
     slice: RawJaggedSlice<'a, T>,
     f: usize,
-    current_ptr: *mut T,
+    current_ptr: *const T,
     current_last: *const T,
 }
 
@@ -60,7 +60,7 @@ impl<'a, T> RawJaggedSliceIterOwned<'a, T> {
     fn drop_next(&mut self) -> bool {
         match self.current_ptr.is_null() {
             false => {
-                unsafe { self.current_ptr.drop_in_place() };
+                unsafe { (self.current_ptr as *mut T).drop_in_place() };
 
                 let is_last_of_slice = self.current_ptr as *const T == self.current_last;
                 self.current_ptr = match is_last_of_slice {
@@ -81,8 +81,8 @@ impl<'a, T> Iterator for RawJaggedSliceIterOwned<'a, T> {
     fn next(&mut self) -> Option<Self::Item> {
         match self.current_ptr.is_null() {
             false => {
-                let ptr = self.current_ptr;
-                let is_last_of_slice = ptr as *const T == self.current_last;
+                let ptr = self.current_ptr as *mut T;
+                let is_last_of_slice = self.current_ptr == self.current_last;
                 self.current_ptr = match is_last_of_slice {
                     false => unsafe { self.current_ptr.add(1) },
                     true => core::ptr::null_mut(),

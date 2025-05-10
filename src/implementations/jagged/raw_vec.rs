@@ -3,7 +3,7 @@ use alloc::vec::Vec;
 use std::mem::ManuallyDrop;
 
 pub struct RawVec<T> {
-    ptr: *mut T,
+    ptr: *const T,
     len: usize,
     capacity: usize,
 }
@@ -11,7 +11,7 @@ pub struct RawVec<T> {
 impl<T> Default for RawVec<T> {
     fn default() -> Self {
         Self {
-            ptr: core::ptr::null_mut(),
+            ptr: core::ptr::null(),
             len: 0,
             capacity: 0,
         }
@@ -22,7 +22,7 @@ impl<T> From<Vec<T>> for RawVec<T> {
     fn from(value: Vec<T>) -> Self {
         let value = ManuallyDrop::new(value);
         Self {
-            ptr: value.as_ptr() as *mut T,
+            ptr: value.as_ptr(),
             len: value.len(),
             capacity: value.capacity(),
         }
@@ -33,7 +33,7 @@ impl<T> From<&[T]> for RawVec<T> {
     fn from(value: &[T]) -> Self {
         let value = ManuallyDrop::new(value);
         Self {
-            ptr: value.as_ptr() as *mut T,
+            ptr: value.as_ptr(),
             len: value.len(),
             capacity: value.len(),
         }
@@ -71,12 +71,12 @@ impl<T> RawVec<T> {
 
     pub unsafe fn drop_elements_in_place(&self, begin: usize) {
         for i in begin..self.len {
-            let ptr = unsafe { self.ptr.add(i) };
+            let ptr = unsafe { self.ptr.add(i) as *mut T };
             unsafe { ptr.drop_in_place() };
         }
     }
 
     pub unsafe fn drop_allocation(&self) {
-        let _vec_to_drop = unsafe { Vec::from_raw_parts(self.ptr, 0, self.capacity) };
+        let _vec_to_drop = unsafe { Vec::from_raw_parts(self.ptr as *mut T, 0, self.capacity) };
     }
 }
