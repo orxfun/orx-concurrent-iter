@@ -92,10 +92,8 @@ where
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let x = 12;
         match self.current_ptr.is_null() {
             false => {
-                let xyz = unsafe { &*self.current_ptr };
                 let ptr = self.current_ptr as *mut T;
                 let is_last_of_slice = self.current_ptr == self.current_last;
                 self.current_ptr = match is_last_of_slice {

@@ -120,7 +120,6 @@ where
     X: Fn(usize) -> [usize; 2],
 {
     fn drop(&mut self) {
-        let abc = 12;
         if let Some(num_taken) = self.num_taken {
             // drop elements
             if let Some(begin) = self.jagged_index(num_taken) {
