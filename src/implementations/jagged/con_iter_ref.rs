@@ -91,15 +91,13 @@ where
     }
 
     fn next(&self) -> Option<Self::Item> {
-        // self.progress_and_get_begin_idx(1)
-        //     .and_then(|idx| self.jagged.take(idx))
-        todo!()
+        self.progress_and_get_begin_idx(1)
+            .and_then(|idx| self.jagged.get(idx))
     }
 
     fn next_with_idx(&self) -> Option<(usize, Self::Item)> {
-        // self.progress_and_get_begin_idx(1)
-        //     .and_then(|idx| self.jagged.take(idx).map(|value| (idx, value)))
-        todo!()
+        self.progress_and_get_begin_idx(1)
+            .and_then(|idx| self.jagged.get(idx).map(|value| (idx, value)))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
