@@ -100,11 +100,14 @@ where
 
     pub fn jagged_index(&self, flat_index: usize) -> Option<JaggedIndex> {
         match flat_index.cmp(&self.len) {
-            Ordering::Equal => {
-                let f = self.vectors.len() - 1;
-                let i = self.vectors[f].len();
-                Some(JaggedIndex::new(f, i))
-            }
+            Ordering::Equal => match self.vectors.is_empty() {
+                true => None,
+                false => {
+                    let f = self.vectors.len() - 1;
+                    let i = self.vectors[f].len();
+                    Some(JaggedIndex::new(f, i))
+                }
+            },
             Ordering::Less => {
                 let [f, i] = (self.indexer)(flat_index);
                 Some(JaggedIndex::new(f, i))
