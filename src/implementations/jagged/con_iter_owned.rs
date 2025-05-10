@@ -81,6 +81,8 @@ where
         Self: 'i;
 
     fn into_seq_iter(self) -> Self::SequentialIter {
+        let num_taken = self.counter.load(Ordering::Acquire).min(self.jagged.len());
+        let slice = self.jagged.slice(num_taken, self.jagged.len());
         todo!()
     }
 

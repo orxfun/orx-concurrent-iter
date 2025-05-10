@@ -61,6 +61,10 @@ where
         RawJaggedSlice::new(&self.vectors, begin, end)
     }
 
+    pub fn slice_from(&self, begin: usize) -> RawJaggedSlice<T> {
+        self.slice(begin, self.len)
+    }
+
     pub fn jagged_index(&self, flat_index: usize) -> Option<JaggedIndex> {
         match flat_index.cmp(&self.len) {
             Ordering::Equal => {
