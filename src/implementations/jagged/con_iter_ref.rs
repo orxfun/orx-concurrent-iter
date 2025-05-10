@@ -1,7 +1,5 @@
 use super::{
-    chunk_puller_owned::ChunkPullerJaggedOwned, chunk_puller_ref::ChunkPullerJaggedRef,
-    raw_jagged::RawJagged, raw_jagged_iter_owned::RawJaggedIterOwned,
-    raw_jagged_slice_iter_owned::RawJaggedSliceIterOwned,
+    chunk_puller_ref::ChunkPullerJaggedRef, raw_jagged::RawJagged,
     raw_jagged_slice_iter_ref::RawJaggedSliceIterRef,
 };
 use crate::{ConcurrentIter, ExactSizeConcurrentIter};
@@ -121,16 +119,3 @@ where
         self.jagged.len().saturating_sub(num_taken)
     }
 }
-
-// impl<'a, T, X> Drop for  ConIterJaggedRef<'a, T, X>
-// where
-//     T: Send + Sync,
-//     X: Fn(usize) -> [usize; 2] + Clone + Send + Sync,
-// {
-//     fn drop(&mut self) {
-//         if self.jagged.num_taken().is_some() {
-//             let num_taken = self.counter.load(Ordering::Acquire);
-//             self.jagged.set_num_taken(Some(num_taken));
-//         }
-//     }
-// }
