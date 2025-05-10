@@ -73,27 +73,21 @@ where
 {
     type Item = &'a T;
 
-    type SequentialIter = core::iter::Empty<&'a T>;
+    type SequentialIter = RawJaggedSliceIterRef<'a, T>;
 
     type ChunkPuller<'i>
         = ChunkPullerJaggedRef<'i, 'a, T, X>
     where
         Self: 'i;
 
-    fn into_seq_iter(mut self) -> Self::SequentialIter {
-        // let num_taken = self.counter.load(Ordering::Acquire).min(self.jagged.len());
-        // let mut jagged_to_drop = self.jagged.clone();
-        // jagged_to_drop.set_num_taken(Some(num_taken));
-        // self.jagged.set_num_taken(None); // memory will be dropped by RawJaggedIterOwned
-        // RawJaggedIterOwned::new(jagged_to_drop)
-        todo!()
+    fn into_seq_iter(self) -> Self::SequentialIter {
+        let num_taken = self.counter.load(Ordering::Acquire).min(self.jagged.len());
+        let slice = self.jagged.slice_from(num_taken);
+        slice.into_iter_ref()
     }
 
     fn skip_to_end(&self) {
-        let current = self.counter.fetch_max(self.jagged.len(), Ordering::Acquire);
-        let num_taken_before = current.min(self.jagged.len());
-        let slice = self.jagged.slice_from(num_taken_before);
-        let _iter = slice.into_iter_owned();
+        let _ = self.counter.fetch_max(self.jagged.len(), Ordering::Acquire);
     }
 
     fn next(&self) -> Option<Self::Item> {

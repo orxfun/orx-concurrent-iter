@@ -106,4 +106,8 @@ impl<T> RawVec<T> {
     pub unsafe fn ptr_at(&self, position: usize) -> *const T {
         unsafe { self.ptr.add(position) }
     }
+
+    pub unsafe fn get_unchecked(&self, position: usize) -> &T {
+        unsafe { &*self.ptr.add(position) }
+    }
 }

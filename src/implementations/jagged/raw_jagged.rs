@@ -141,6 +141,11 @@ where
             unsafe { take(ptr) }
         })
     }
+
+    pub fn get(&self, flat_index: usize) -> Option<&T> {
+        self.jagged_index(flat_index)
+            .map(|idx| unsafe { self.vectors[idx.f].get_unchecked(idx.i) })
+    }
 }
 
 impl<T, X> Drop for RawJagged<T, X>
