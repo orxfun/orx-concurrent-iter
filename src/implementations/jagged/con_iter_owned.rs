@@ -110,7 +110,7 @@ where
     }
 
     fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
-        todo!()
+        Self::ChunkPuller::new(self, chunk_size)
     }
 }
 
