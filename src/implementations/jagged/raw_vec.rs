@@ -92,4 +92,8 @@ impl<T> RawVec<T> {
             }
         }
     }
+
+    pub unsafe fn ptr_at(&self, position: usize) -> *const T {
+        unsafe { self.ptr.add(position) }
+    }
 }

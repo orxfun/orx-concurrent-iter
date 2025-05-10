@@ -1,3 +1,5 @@
+use crate::implementations::ptr_utils::take;
+
 use super::{
     jagged_index::JaggedIndex, raw_jagged_iter_owned::RawJaggedIterOwned,
     raw_jagged_slice::RawJaggedSlice, raw_slice::RawSlice, raw_vec::RawVec,
@@ -112,6 +114,14 @@ where
             }
             false => None,
         }
+    }
+
+    pub fn take(&self, flat_index: usize) -> Option<T> {
+        self.jagged_index(flat_index).map(|idx| {
+            let vec = &self.vectors[idx.f];
+            let ptr = unsafe { vec.ptr_at(idx.i) as *mut T }; // index is in bounds
+            unsafe { take(ptr) }
+        })
     }
 }
 
