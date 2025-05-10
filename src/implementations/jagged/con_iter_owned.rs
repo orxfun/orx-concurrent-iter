@@ -3,7 +3,7 @@ use super::{
     raw_jagged_iter_owned::RawJaggedIterOwned,
     raw_jagged_slice_iter_owned::RawJaggedSliceIterOwned,
 };
-use crate::ConcurrentIter;
+use crate::{ConcurrentIter, ExactSizeConcurrentIter};
 use core::sync::atomic::{AtomicUsize, Ordering};
 
 pub struct ConIterJaggedOwned<T, X>
@@ -111,5 +111,16 @@ where
 
     fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
         todo!()
+    }
+}
+
+impl<T, X> ExactSizeConcurrentIter for ConIterJaggedOwned<T, X>
+where
+    T: Send + Sync,
+    X: Fn(usize) -> [usize; 2] + Send + Sync,
+{
+    fn len(&self) -> usize {
+        let num_taken = self.counter.load(Ordering::Acquire);
+        self.jagged.len().saturating_sub(num_taken)
     }
 }
