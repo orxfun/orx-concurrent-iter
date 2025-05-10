@@ -1,5 +1,6 @@
 use super::{
     chunk_puller_owned::ChunkPullerJaggedOwned, raw_jagged::RawJagged,
+    raw_jagged_iter_owned::RawJaggedIterOwned,
     raw_jagged_slice_iter_owned::RawJaggedSliceIterOwned,
 };
 use crate::ConcurrentIter;
@@ -73,7 +74,7 @@ where
 {
     type Item = T;
 
-    type SequentialIter = core::iter::Empty<T>;
+    type SequentialIter = RawJaggedIterOwned<T, X>;
 
     type ChunkPuller<'i>
         = ChunkPullerJaggedOwned<'i, T, X>
@@ -82,9 +83,7 @@ where
 
     fn into_seq_iter(self) -> Self::SequentialIter {
         let num_taken = self.counter.load(Ordering::Acquire).min(self.jagged.len());
-        let slice = self.jagged.slice_from(num_taken);
-        let iter = slice.into_iter_owned();
-        todo!()
+        RawJaggedIterOwned::new(self.jagged, num_taken)
     }
 
     fn skip_to_end(&self) {
