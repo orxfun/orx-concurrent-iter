@@ -10,7 +10,7 @@ fn get_matrix(n: usize) -> Vec<Vec<String>> {
     matrix
 }
 
-fn matrix_indexer(n: usize) -> impl Fn(usize) -> [usize; 2] {
+fn matrix_indexer(n: usize) -> impl Fn(usize) -> [usize; 2] + Clone {
     move |idx| {
         let f = idx / n;
         let i = idx % n;
@@ -58,7 +58,7 @@ fn get_jagged() -> Vec<Vec<String>> {
         .collect()
 }
 
-fn jagged_indexer() -> impl Fn(usize) -> [usize; 2] {
+fn jagged_indexer() -> impl Fn(usize) -> [usize; 2] + Clone {
     let lengths = vec![2, 3, 1, 4];
     move |idx| match idx == lengths.iter().sum::<usize>() {
         true => [lengths.len() - 1, lengths[lengths.len() - 1]],

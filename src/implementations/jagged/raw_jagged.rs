@@ -1,15 +1,14 @@
-use crate::implementations::ptr_utils::take;
-
 use super::{
     jagged_index::JaggedIndex, raw_jagged_iter_owned::RawJaggedIterOwned,
     raw_jagged_slice::RawJaggedSlice, raw_slice::RawSlice, raw_vec::RawVec,
 };
+use crate::implementations::ptr_utils::take;
 use alloc::vec::Vec;
 use core::cmp::Ordering;
 
 pub struct RawJagged<T, X>
 where
-    X: Fn(usize) -> [usize; 2],
+    X: Fn(usize) -> [usize; 2] + Clone,
 {
     vectors: Vec<RawVec<T>>,
     len: usize,
@@ -17,9 +16,23 @@ where
     num_taken: Option<usize>,
 }
 
+impl<T, X> Clone for RawJagged<T, X>
+where
+    X: Fn(usize) -> [usize; 2] + Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            vectors: self.vectors.clone(),
+            len: self.len,
+            indexer: self.indexer.clone(),
+            num_taken: self.num_taken,
+        }
+    }
+}
+
 impl<'a, T, X> RawJagged<T, X>
 where
-    X: Fn(usize) -> [usize; 2],
+    X: Fn(usize) -> [usize; 2] + Clone,
 {
     pub fn new<I, V>(iter: I, indexer: X, droppable: bool) -> Self
     where
@@ -99,11 +112,22 @@ where
         }
     }
 
-    pub fn set_num_taken(&mut self, num_taken: usize) {
-        debug_assert!(num_taken >= self.num_taken.unwrap());
-        if let Some(x) = self.num_taken.as_mut() {
-            *x = num_taken;
-        }
+    /// Sets `num_taken`:
+    ///
+    /// * when `Some(n)`, the first `n` elements of the jagged array will not be dropped when
+    ///   this `RawJagged` is dropped. The remaining elements and the allocations will be dropped.
+    /// * when `None`, neither any of the elements nor the allocations will be dropped.
+    pub fn set_num_taken(&mut self, num_taken: Option<usize>) {
+        self.num_taken = num_taken;
+    }
+
+    /// Returns the currently set `num_taken`:
+    ///
+    /// * when `Some(n)`, the first `n` elements of the jagged array will not be dropped when
+    ///   this `RawJagged` is dropped. The remaining elements and the allocations will be dropped.
+    /// * when `None`, neither any of the elements nor the allocations will be dropped.
+    pub fn num_taken(&self) -> Option<usize> {
+        self.num_taken
     }
 
     pub fn get_raw_slice(&self, f: usize) -> Option<RawSlice<T>> {
@@ -127,7 +151,7 @@ where
 
 impl<T, X> Drop for RawJagged<T, X>
 where
-    X: Fn(usize) -> [usize; 2],
+    X: Fn(usize) -> [usize; 2] + Clone,
 {
     fn drop(&mut self) {
         if let Some(num_taken) = self.num_taken {

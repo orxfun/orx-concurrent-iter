@@ -9,7 +9,7 @@ use core::sync::atomic::{AtomicUsize, Ordering};
 pub struct ConIterJaggedOwned<T, X>
 where
     T: Send + Sync,
-    X: Fn(usize) -> [usize; 2] + Send + Sync,
+    X: Fn(usize) -> [usize; 2] + Clone + Send + Sync,
 {
     jagged: RawJagged<T, X>,
     counter: AtomicUsize,
@@ -18,21 +18,21 @@ where
 unsafe impl<T, X> Sync for ConIterJaggedOwned<T, X>
 where
     T: Send + Sync,
-    X: Fn(usize) -> [usize; 2] + Send + Sync,
+    X: Fn(usize) -> [usize; 2] + Clone + Send + Sync,
 {
 }
 
 unsafe impl<T, X> Send for ConIterJaggedOwned<T, X>
 where
     T: Send + Sync,
-    X: Fn(usize) -> [usize; 2] + Send + Sync,
+    X: Fn(usize) -> [usize; 2] + Clone + Send + Sync,
 {
 }
 
 impl<T, X> ConIterJaggedOwned<T, X>
 where
     T: Send + Sync,
-    X: Fn(usize) -> [usize; 2] + Send + Sync,
+    X: Fn(usize) -> [usize; 2] + Clone + Send + Sync,
 {
     pub(crate) fn new(jagged: RawJagged<T, X>, begin: usize) -> Self {
         Self {
@@ -68,7 +68,7 @@ where
 impl<T, X> ConcurrentIter for ConIterJaggedOwned<T, X>
 where
     T: Send + Sync,
-    X: Fn(usize) -> [usize; 2] + Send + Sync,
+    X: Fn(usize) -> [usize; 2] + Clone + Send + Sync,
 {
     type Item = T;
 
@@ -79,9 +79,11 @@ where
     where
         Self: 'i;
 
-    fn into_seq_iter(self) -> Self::SequentialIter {
+    fn into_seq_iter(mut self) -> Self::SequentialIter {
         let num_taken = self.counter.load(Ordering::Acquire).min(self.jagged.len());
-        RawJaggedIterOwned::new(self.jagged, num_taken)
+        let jagged_to_drop = self.jagged.clone();
+        self.jagged.set_num_taken(None); // memory will be dropped by RawJaggedIterOwned
+        RawJaggedIterOwned::new(jagged_to_drop, num_taken)
     }
 
     fn skip_to_end(&self) {
@@ -115,10 +117,23 @@ where
 impl<T, X> ExactSizeConcurrentIter for ConIterJaggedOwned<T, X>
 where
     T: Send + Sync,
-    X: Fn(usize) -> [usize; 2] + Send + Sync,
+    X: Fn(usize) -> [usize; 2] + Clone + Send + Sync,
 {
     fn len(&self) -> usize {
         let num_taken = self.counter.load(Ordering::Acquire);
         self.jagged.len().saturating_sub(num_taken)
+    }
+}
+
+impl<T, X> Drop for ConIterJaggedOwned<T, X>
+where
+    T: Send + Sync,
+    X: Fn(usize) -> [usize; 2] + Clone + Send + Sync,
+{
+    fn drop(&mut self) {
+        if self.jagged.num_taken().is_some() {
+            let num_taken = self.counter.load(Ordering::Acquire);
+            self.jagged.set_num_taken(Some(num_taken));
+        }
     }
 }

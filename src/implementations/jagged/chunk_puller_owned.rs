@@ -5,7 +5,7 @@ use super::con_iter_owned::ConIterJaggedOwned;
 pub struct ChunkPullerJaggedOwned<'i, T, X>
 where
     T: Send + Sync,
-    X: Fn(usize) -> [usize; 2] + Send + Sync,
+    X: Fn(usize) -> [usize; 2] + Clone + Send + Sync,
 {
     con_iter: &'i ConIterJaggedOwned<T, X>,
     chunk_size: usize,
@@ -14,7 +14,7 @@ where
 impl<'i, T, X> ChunkPullerJaggedOwned<'i, T, X>
 where
     T: Send + Sync,
-    X: Fn(usize) -> [usize; 2] + Send + Sync,
+    X: Fn(usize) -> [usize; 2] + Clone + Send + Sync,
 {
     pub(super) fn new(con_iter: &'i ConIterJaggedOwned<T, X>, chunk_size: usize) -> Self {
         Self {
@@ -27,7 +27,7 @@ where
 impl<'i, T, X> ChunkPuller for ChunkPullerJaggedOwned<'i, T, X>
 where
     T: Send + Sync,
-    X: Fn(usize) -> [usize; 2] + Send + Sync,
+    X: Fn(usize) -> [usize; 2] + Clone + Send + Sync,
 {
     type ChunkItem = T;
 

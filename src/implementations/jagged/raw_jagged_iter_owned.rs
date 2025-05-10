@@ -3,7 +3,7 @@ use crate::implementations::ptr_utils::take;
 
 pub struct RawJaggedIterOwned<T, X>
 where
-    X: Fn(usize) -> [usize; 2],
+    X: Fn(usize) -> [usize; 2] + Clone,
 {
     jagged: RawJagged<T, X>,
     f: usize,
@@ -13,7 +13,7 @@ where
 
 impl<T, X> RawJaggedIterOwned<T, X>
 where
-    X: Fn(usize) -> [usize; 2],
+    X: Fn(usize) -> [usize; 2] + Clone,
 {
     pub(super) fn new(jagged: RawJagged<T, X>, num_taken: usize) -> Self {
         let taken_idx = match num_taken < jagged.len() {
@@ -87,7 +87,7 @@ where
 
 impl<T, X> Iterator for RawJaggedIterOwned<T, X>
 where
-    X: Fn(usize) -> [usize; 2],
+    X: Fn(usize) -> [usize; 2] + Clone,
 {
     type Item = T;
 
@@ -109,7 +109,7 @@ where
 
 impl<T, X> Drop for RawJaggedIterOwned<T, X>
 where
-    X: Fn(usize) -> [usize; 2],
+    X: Fn(usize) -> [usize; 2] + Clone,
 {
     fn drop(&mut self) {
         while self.drop_next() {}

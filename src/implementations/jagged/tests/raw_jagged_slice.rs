@@ -12,7 +12,7 @@ fn get_matrix(n: usize) -> Vec<Vec<String>> {
     matrix
 }
 
-fn matrix_indexer(n: usize) -> impl Fn(usize) -> [usize; 2] {
+fn matrix_indexer(n: usize) -> impl Fn(usize) -> [usize; 2] + Clone {
     move |idx| {
         let f = idx / n;
         let i = idx % n;

@@ -10,7 +10,7 @@ fn get_matrix(n: usize) -> Vec<Vec<String>> {
     matrix
 }
 
-fn matrix_indexer(n: usize) -> impl Fn(usize) -> [usize; 2] {
+fn matrix_indexer(n: usize) -> impl Fn(usize) -> [usize; 2] + Clone {
     move |idx| {
         let f = idx / n;
         let i = idx % n;
@@ -31,7 +31,7 @@ fn raw_jagged_slice_iter_owned_matrix() {
 
     for num_taken in 0..len {
         let mut jagged = jagged();
-        jagged.set_num_taken(num_taken);
+        jagged.set_num_taken(Some(num_taken));
 
         let expected: Vec<_> = (0..num_taken).map(|x| x.to_string()).collect();
         let iter_owned = jagged.slice(0, num_taken).into_iter_owned();
@@ -55,7 +55,7 @@ fn raw_jagged_slice_iter_owned_matrix_twice_iteration() {
     for num_taken_1 in 0..len {
         for num_taken_2 in num_taken_1..len {
             let mut jagged = jagged();
-            jagged.set_num_taken(num_taken_2);
+            jagged.set_num_taken(Some(num_taken_2));
 
             let expected: Vec<_> = (0..num_taken_1).map(|x| x.to_string()).collect();
             let iter_ref = jagged.slice(0, num_taken_1).into_iter_owned();
@@ -82,7 +82,7 @@ fn get_jagged() -> Vec<Vec<String>> {
         .collect()
 }
 
-fn jagged_indexer() -> impl Fn(usize) -> [usize; 2] {
+fn jagged_indexer() -> impl Fn(usize) -> [usize; 2] + Clone {
     let lengths = vec![2, 3, 1, 4];
     move |idx| match idx == lengths.iter().sum::<usize>() {
         true => [lengths.len() - 1, lengths[lengths.len() - 1]],
@@ -121,7 +121,7 @@ fn raw_jagged_slice_iter_owned_jagged() {
 
     for num_taken in 0..len {
         let mut jagged = jagged();
-        jagged.set_num_taken(num_taken);
+        jagged.set_num_taken(Some(num_taken));
 
         let expected: Vec<_> = (0..num_taken).map(|x| x.to_string()).collect();
         let iter_ref = jagged.slice(0, num_taken).into_iter_owned();
@@ -144,7 +144,7 @@ fn raw_jagged_slice_iter_owned_jagged_twice_iteration() {
     for num_taken_1 in 0..len {
         for num_taken_2 in num_taken_1..len {
             let mut jagged = jagged();
-            jagged.set_num_taken(num_taken_2);
+            jagged.set_num_taken(Some(num_taken_2));
 
             let expected: Vec<_> = (0..num_taken_1).map(|x| x.to_string()).collect();
             let iter_ref = jagged.slice(0, num_taken_1).into_iter_owned();

@@ -18,6 +18,16 @@ impl<T> Default for RawVec<T> {
     }
 }
 
+impl<T> Clone for RawVec<T> {
+    fn clone(&self) -> Self {
+        Self {
+            ptr: self.ptr,
+            len: self.len,
+            capacity: self.capacity,
+        }
+    }
+}
+
 impl<T> From<Vec<T>> for RawVec<T> {
     fn from(value: Vec<T>) -> Self {
         let value = ManuallyDrop::new(value);
