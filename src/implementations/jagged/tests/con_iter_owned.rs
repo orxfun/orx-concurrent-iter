@@ -47,3 +47,62 @@ fn enumeration() {
     assert_eq!(iter.next(), None);
     assert_eq!(iter.next_with_idx(), None);
 }
+
+// #[test]
+// fn size_hint() {
+//     let n = 4;
+//     let matrix = get_matrix(n);
+//     let vectors: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+//     let jagged = RawJagged::new(vectors.into_iter(), matrix_indexer(n), true);
+//     let iter = ConIterJaggedOwned::new(jagged, 0);
+
+//     let mut n = n * n;
+
+//     for _ in 0..10 {
+//         assert_eq!(iter.size_hint(), (n, Some(n)));
+//         let _ = iter.next();
+//         n -= 1;
+//     }
+
+//     let mut chunks_iter = iter.chunk_puller(7);
+
+//     assert_eq!(iter.size_hint(), (n, Some(n)));
+//     assert_eq!(iter.len(), n);
+//     let _ = chunks_iter.pull();
+//     n -= 7;
+
+//     assert_eq!(iter.size_hint(), (n, Some(n)));
+//     assert_eq!(iter.len(), n);
+//     let _ = chunks_iter.pull();
+//     assert_eq!(iter.size_hint(), (1, Some(1)));
+
+//     let _ = chunks_iter.pull();
+//     assert_eq!(iter.len(), 0);
+//     assert_eq!(iter.size_hint(), (0, Some(0)));
+
+//     let _ = chunks_iter.pull();
+//     assert_eq!(iter.len(), 0);
+//     assert_eq!(iter.size_hint(), (0, Some(0)));
+
+//     let _ = iter.next();
+//     assert_eq!(iter.len(), 0);
+//     assert_eq!(iter.size_hint(), (0, Some(0)));
+// }
+
+// #[test]
+// fn size_hint_skip_to_end() {
+//     let n = 25;
+//     let vec = new_vec(n, |x| (x + 10).to_string());
+//     let iter = ConIterVec::new(vec);
+
+//     for _ in 0..10 {
+//         let _ = iter.next();
+//     }
+//     let mut chunks_iter = iter.chunk_puller(7);
+//     let _ = chunks_iter.pull();
+
+//     assert_eq!(iter.len(), 8);
+
+//     iter.skip_to_end();
+//     assert_eq!(iter.len(), 0);
+// }

@@ -88,9 +88,10 @@ where
     }
 
     pub fn slice(&self, begin: usize, end: usize) -> RawJaggedSlice<T> {
+        let known_len = Some(end.saturating_sub(begin));
         let begin = self.jagged_index(begin).expect("index-out-of-bounds");
         let end = self.jagged_index(end).expect("index-out-of-bounds");
-        RawJaggedSlice::new(&self.vectors, begin, end)
+        RawJaggedSlice::new(&self.vectors, begin, end, known_len)
     }
 
     pub fn slice_from(&self, begin: usize) -> RawJaggedSlice<T> {

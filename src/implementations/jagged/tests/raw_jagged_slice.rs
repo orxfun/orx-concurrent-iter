@@ -50,7 +50,7 @@ fn invalid_raw_jagged_slice_indices((begin, end): ([usize; 2], [usize; 2])) {
     let matrix = get_matrix(n);
     let vectors: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
     let jagged = RawJagged::new(vectors.into_iter(), matrix_indexer(n), true);
-    let _slice = RawJaggedSlice::new(jagged.vectors(), begin, end);
+    let _slice = RawJaggedSlice::new(jagged.vectors(), begin, end, None);
 }
 
 #[test]
@@ -76,7 +76,7 @@ fn empty_non_default_raw_jagged_slice() {
 
     for (begin, end) in empty_indices {
         let [begin, end] = [begin, end].map(into_jagged_index);
-        let empty_slice = RawJaggedSlice::new(jagged.vectors(), begin, end);
+        let empty_slice = RawJaggedSlice::new(jagged.vectors(), begin, end, None);
         assert_empty(&empty_slice, 10);
     }
 }
@@ -104,7 +104,12 @@ fn validate_raw_jagged_slice(flat_begin: usize, flat_end: usize) {
     let [f, i] = [flat_end / n, flat_end % n];
     let end = JaggedIndex::new(f, i);
 
-    let slice = RawJaggedSlice::new(jagged.vectors(), begin.clone(), end.clone());
+    let slice = RawJaggedSlice::new(
+        jagged.vectors(),
+        begin.clone(),
+        end.clone(),
+        Some(flat_end - flat_begin),
+    );
     let expected: Vec<_> = (flat_begin..flat_end).map(|x| x.to_string()).collect();
     let mut slice_from_jagged = Vec::new();
     for s in 0..slice.num_slices() {

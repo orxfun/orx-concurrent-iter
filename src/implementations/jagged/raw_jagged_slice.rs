@@ -7,6 +7,7 @@ pub struct RawJaggedSlice<'a, T> {
     vectors: &'a [RawVec<T>],
     begin: JaggedIndex,
     end: JaggedIndex,
+    len: usize,
     num_slices: usize,
 }
 
@@ -16,13 +17,19 @@ impl<'a, T> Default for RawJaggedSlice<'a, T> {
             vectors: Default::default(),
             begin: Default::default(),
             end: Default::default(),
-            num_slices: Default::default(),
+            len: 0,
+            num_slices: 0,
         }
     }
 }
 
 impl<'a, T> RawJaggedSlice<'a, T> {
-    pub fn new(vectors: &'a [RawVec<T>], begin: JaggedIndex, end: JaggedIndex) -> Self {
+    pub fn new(
+        vectors: &'a [RawVec<T>],
+        begin: JaggedIndex,
+        end: JaggedIndex,
+        known_len: Option<usize>,
+    ) -> Self {
         assert!(begin.is_in_inc_bounds_of(&vectors));
         assert!(end.is_in_exc_bounds_of(&vectors));
         assert!(begin <= end);
@@ -43,10 +50,30 @@ impl<'a, T> RawJaggedSlice<'a, T> {
             }
         };
 
+        let len = match known_len {
+            Some(x) => x,
+            None => {
+                let mut len = 0;
+                for f in begin.f..=end.f {
+                    if let Some(vec) = vectors.get(f) {
+                        let slice_len = match f {
+                            f if f == begin.f && f == end.f => end.i - begin.i,
+                            f if f == begin.f => vec.len() - begin.i,
+                            f if f == end.f => end.i,
+                            _ => vec.len(),
+                        };
+                        len += slice_len
+                    }
+                }
+                len
+            }
+        };
+
         Self {
             vectors,
             begin,
             end,
+            len,
             num_slices,
         }
     }
@@ -109,6 +136,10 @@ impl<'a, T> RawJaggedSlice<'a, T> {
 
     pub fn num_slices(&self) -> usize {
         self.num_slices
+    }
+
+    pub fn len(&self) -> usize {
+        self.len
     }
 
     pub fn into_iter_ref(self) -> RawJaggedSliceIterRef<'a, T> {
