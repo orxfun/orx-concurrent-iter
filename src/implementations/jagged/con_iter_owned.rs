@@ -15,6 +15,20 @@ where
     counter: AtomicUsize,
 }
 
+unsafe impl<T, X> Sync for ConIterJaggedOwned<T, X>
+where
+    T: Send + Sync,
+    X: Fn(usize) -> [usize; 2] + Send + Sync,
+{
+}
+
+unsafe impl<T, X> Send for ConIterJaggedOwned<T, X>
+where
+    T: Send + Sync,
+    X: Fn(usize) -> [usize; 2] + Send + Sync,
+{
+}
+
 impl<T, X> ConIterJaggedOwned<T, X>
 where
     T: Send + Sync,

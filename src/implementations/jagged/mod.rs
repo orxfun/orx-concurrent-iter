@@ -1,5 +1,5 @@
-// mod chunk_puller_owned;
-// mod con_iter_owned;
+mod chunk_puller_owned;
+mod con_iter_owned;
 mod jagged_index;
 mod raw_jagged;
 mod raw_jagged_slice;
