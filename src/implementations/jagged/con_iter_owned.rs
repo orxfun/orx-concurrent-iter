@@ -81,9 +81,10 @@ where
 
     fn into_seq_iter(mut self) -> Self::SequentialIter {
         let num_taken = self.counter.load(Ordering::Acquire).min(self.jagged.len());
-        let jagged_to_drop = self.jagged.clone();
+        let mut jagged_to_drop = self.jagged.clone();
+        jagged_to_drop.set_num_taken(Some(num_taken));
         self.jagged.set_num_taken(None); // memory will be dropped by RawJaggedIterOwned
-        RawJaggedIterOwned::new(jagged_to_drop, num_taken)
+        RawJaggedIterOwned::new(jagged_to_drop)
     }
 
     fn skip_to_end(&self) {

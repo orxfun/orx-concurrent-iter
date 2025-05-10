@@ -15,10 +15,14 @@ impl<T, X> RawJaggedIterOwned<T, X>
 where
     X: Fn(usize) -> [usize; 2] + Clone,
 {
-    pub(super) fn new(mut jagged: RawJagged<T, X>, num_taken: usize) -> Self {
-        if jagged.num_taken().is_some() {
-            jagged.set_num_taken(Some(jagged.len()));
-        }
+    pub(super) fn new(mut jagged: RawJagged<T, X>) -> Self {
+        let num_taken = match jagged.num_taken() {
+            Some(num_taken) => {
+                jagged.set_num_taken(Some(jagged.len()));
+                num_taken
+            }
+            None => jagged.len(),
+        };
 
         let taken_idx = match num_taken < jagged.len() {
             true => jagged.jagged_index(num_taken),

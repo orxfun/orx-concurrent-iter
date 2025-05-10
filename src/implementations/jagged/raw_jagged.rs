@@ -61,18 +61,8 @@ where
         }
     }
 
-    pub fn into_iter_owned(mut self) -> RawJaggedIterOwned<T, X> {
-        match self.num_taken {
-            Some(num_taken) => {
-                self.num_taken = Some(self.len);
-                RawJaggedIterOwned::new(self, num_taken)
-            }
-            None => {
-                // we don't need to drop elements, return an empty iterator
-                let len_as_num_taken = self.len;
-                RawJaggedIterOwned::new(self, len_as_num_taken)
-            }
-        }
+    pub fn into_iter_owned(self) -> RawJaggedIterOwned<T, X> {
+        RawJaggedIterOwned::new(self)
     }
 
     pub fn len(&self) -> usize {
