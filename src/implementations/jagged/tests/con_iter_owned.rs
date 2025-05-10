@@ -30,20 +30,20 @@ fn matrix_indexer(n: usize) -> impl Fn(usize) -> [usize; 2] + Clone {
 }
 
 #[test]
-fn abc_enumeration() {
-    let n = 1;
+fn enumeration() {
+    let n = 2;
     let matrix = get_matrix(n);
     let vectors: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
     let jagged = RawJagged::new(vectors.into_iter(), matrix_indexer(n), true);
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
     assert_eq!(iter.next(), Some(0.to_string()));
-    // assert_eq!(iter.next_with_idx(), Some((1, 1.to_string())));
-    // assert_eq!(iter.next(), Some(2.to_string()));
-    // assert_eq!(iter.next_with_idx(), Some((3, 3.to_string())));
-    // assert_eq!(iter.next(), Some(4.to_string()));
-    // assert_eq!(iter.next(), None);
-    // assert_eq!(iter.next_with_idx(), None);
-    // assert_eq!(iter.next(), None);
-    // assert_eq!(iter.next_with_idx(), None);
+    assert_eq!(iter.next_with_idx(), Some((1, 1.to_string())));
+    assert_eq!(iter.next(), Some(2.to_string()));
+    assert_eq!(iter.next_with_idx(), Some((3, 3.to_string())));
+    assert_eq!(iter.next(), None);
+    assert_eq!(iter.next(), None);
+    assert_eq!(iter.next_with_idx(), None);
+    assert_eq!(iter.next(), None);
+    assert_eq!(iter.next_with_idx(), None);
 }
