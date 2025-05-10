@@ -1,8 +1,7 @@
-use crate::ChunkPuller;
-
 use super::{
     con_iter_owned::ConIterJaggedOwned, raw_jagged_slice_iter_owned::RawJaggedSliceIterOwned,
 };
+use crate::ChunkPuller;
 
 pub struct ChunkPullerJaggedOwned<'i, T, X>
 where
@@ -34,7 +33,7 @@ where
     type ChunkItem = T;
 
     type Chunk<'c>
-        = core::iter::Empty<T>
+        = RawJaggedSliceIterOwned<'c, T>
     where
         Self: 'c;
 
@@ -45,11 +44,10 @@ where
     fn pull(&mut self) -> Option<Self::Chunk<'_>> {
         self.con_iter
             .progress_and_get_iter(self.chunk_size)
-            .map(|(_begin_idx, iter)| iter);
-        todo!()
+            .map(|(_begin_idx, iter)| iter)
     }
 
     fn pull_with_idx(&mut self) -> Option<(usize, Self::Chunk<'_>)> {
-        todo!()
+        self.con_iter.progress_and_get_iter(self.chunk_size)
     }
 }
