@@ -31,8 +31,14 @@ impl<T> RawSlice<T> {
         Self { ptr, len }
     }
 
+    /// Number of elements in the slice.
     pub fn len(&self) -> usize {
         self.len
+    }
+
+    /// Returns true if `self.len() == 0`.
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
     }
 
     pub fn ptr(&self) -> *const T {
