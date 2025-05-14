@@ -23,6 +23,7 @@ impl<T> Default for RawJaggedSlice<'_, T> {
 }
 
 impl<'a, T> RawJaggedSlice<'a, T> {
+    /// Constructs a non-empty raw jagged slice.
     pub(super) fn new(
         arrays: &'a [RawVec<T>],
         begin: JaggedIndex,
@@ -32,6 +33,7 @@ impl<'a, T> RawJaggedSlice<'a, T> {
         debug_assert!(begin.is_in_exc_bounds_of(&arrays));
         debug_assert!(end.is_in_exc_bounds_of(&arrays));
         debug_assert!(begin <= end);
+        debug_assert!(len > 0);
 
         let num_slices = match begin.f == end.f {
             true => match begin.i < end.i {
@@ -70,7 +72,8 @@ impl<'a, T> RawJaggedSlice<'a, T> {
 
     /// Returns the `s`-th raw slice among the slices of this jagged array slice.
     ///
-    /// Returns `None` if `s >= self.num_slices`.
+    /// Returns None if `f` is out of bounds, or the corresponding slice is empty.
+    /// Therefore, if this method returns Some, returned slice always have at least one element.
     pub fn get_raw_slice(&self, s: usize) -> Option<RawSlice<T>> {
         match s < self.num_slices {
             true => {
@@ -93,7 +96,10 @@ impl<'a, T> RawJaggedSlice<'a, T> {
                     },
                 };
 
-                Some(vec.raw_slice(start, end_exc))
+                let len = end_exc - start;
+                debug_assert!(len > 0);
+
+                Some(vec.raw_slice(start, len))
             }
             false => None,
         }
@@ -123,6 +129,7 @@ impl<'a, T> RawJaggedSlice<'a, T> {
                 };
 
                 let len = end_exc - start;
+                debug_assert!(len > 0);
 
                 slice.slice(start, len)
             }
