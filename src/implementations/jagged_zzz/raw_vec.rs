@@ -2,12 +2,6 @@ use super::raw_slice::RawSlice;
 use alloc::vec::Vec;
 use std::mem::ManuallyDrop;
 
-/// Raw representation of a vector defined by a pointer, capacity and length.
-///
-/// All elements within the length of the vector are assumed to be initialized;
-/// no assumptions made for the range between length and capacity.
-///
-/// Does not release memory.
 pub struct RawVec<T> {
     ptr: *const T,
     len: usize,

@@ -1,5 +1,6 @@
 mod empty;
 mod iter;
+mod jagged;
 mod ptr_utils;
 mod range;
 mod slice;

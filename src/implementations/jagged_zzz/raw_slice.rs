@@ -1,8 +1,3 @@
-/// Raw representation of a slice defined by a pointer and length.
-///
-/// All elements in the slice are assumed to be initialized.
-///
-/// Does not release memory.
 pub struct RawSlice<T> {
     ptr: *const T,
     len: usize,

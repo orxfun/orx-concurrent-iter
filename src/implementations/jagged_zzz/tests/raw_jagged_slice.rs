@@ -1,4 +1,4 @@
-use crate::implementations::jagged::{
+use crate::implementations::jagged_zzz::{
     jagged_index::JaggedIndex, raw_jagged::RawJagged, raw_jagged_slice::RawJaggedSlice,
     raw_vec::RawVec,
 };
