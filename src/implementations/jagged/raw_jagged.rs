@@ -1,10 +1,8 @@
-use std::cmp::Ordering;
-
-use crate::implementations::ptr_utils::take;
-
 use super::{
     jagged_index::JaggedIndex, jagged_indexer::JaggedIndexer, raw_slice::RawSlice, raw_vec::RawVec,
 };
+use crate::implementations::ptr_utils::take;
+use std::cmp::Ordering;
 
 /// Raw representation of a jagged array.
 /// Internally, the jagged array is stored as a vector of raw vectors.
