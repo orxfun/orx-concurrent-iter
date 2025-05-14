@@ -2,7 +2,9 @@ use std::cmp::Ordering;
 
 use crate::implementations::ptr_utils::take;
 
-use super::{jagged_index::JaggedIndex, jagged_indexer::JaggedIndexer, raw_vec::RawVec};
+use super::{
+    jagged_index::JaggedIndex, jagged_indexer::JaggedIndexer, raw_slice::RawSlice, raw_vec::RawVec,
+};
 
 /// Raw representation of a jagged array.
 /// Internally, the jagged array is stored as a vector of raw vectors.
@@ -204,5 +206,20 @@ where
             let ptr = unsafe { vec.ptr_at(idx.i) as *mut T }; // index is in bounds
             unsafe { take(ptr) }
         })
+    }
+
+    /// Returns a reference to the element at the `flat_index`-th position of the flattened jagged array.
+    pub fn get(&self, flat_index: usize) -> Option<&T> {
+        self.jagged_index(flat_index).map(|idx| {
+            // SAFETY: jagged_index call ensures that idx.i is in bounds
+            unsafe { self.arrays[idx.f].get_unchecked(idx.i) }
+        })
+    }
+
+    /// Returns the `f`-th array of the jagged array as a raw slice.
+    ///
+    /// Returns `None` if `f >= self.num_arrays()`.
+    pub fn get_raw_slice(&self, f: usize) -> Option<RawSlice<T>> {
+        self.arrays.get(f).map(|vec| vec.as_raw_slice())
     }
 }
