@@ -1,2 +1,3 @@
 mod raw_jagged_iter_owned;
+mod raw_jagged_slice_iter_owned;
 mod raw_jagged_slice_iter_ref;

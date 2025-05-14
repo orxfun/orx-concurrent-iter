@@ -88,6 +88,7 @@ impl<T> RawSlice<T> {
         match self.len {
             0 => [core::ptr::null(), core::ptr::null()],
             n => {
+                // SAFETY: ptr+n-1 is in bounds pointing at the last element
                 let last = unsafe { self.ptr.add(n - 1) };
                 [self.ptr, last]
             }
