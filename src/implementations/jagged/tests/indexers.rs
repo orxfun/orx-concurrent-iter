@@ -64,6 +64,12 @@ pub struct GeneralJaggedIndexer {
     len: usize,
 }
 
+impl GeneralJaggedIndexer {
+    pub fn new(len: usize) -> Self {
+        Self { len }
+    }
+}
+
 impl JaggedIndexer for GeneralJaggedIndexer {
     fn jagged_index<T>(&self, arrays: &[RawVec<T>], flat_index: usize) -> Option<JaggedIndex> {
         match flat_index <= self.len {

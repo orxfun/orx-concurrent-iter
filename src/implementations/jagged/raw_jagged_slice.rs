@@ -92,10 +92,7 @@ impl<'a, T> RawJaggedSlice<'a, T> {
                 let end_exc = match s == self.num_slices - 1 {
                     false => vec.len(),
                     true => match self.end.i {
-                        0 => {
-                            core::panic!("todo: why?");
-                            vec.len()
-                        }
+                        0 => vec.len(),
                         end => end,
                     },
                 };
