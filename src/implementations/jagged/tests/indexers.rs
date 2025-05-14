@@ -35,13 +35,15 @@ impl JaggedIndexer for MatrixIndexer {
 
 #[derive(Clone)]
 pub struct GeneralJaggedIndexer {
-    lengths: Vec<usize>,
     len: usize,
 }
 
 impl JaggedIndexer for GeneralJaggedIndexer {
     fn jagged_index<T>(&self, arrays: &[RawVec<T>], flat_index: usize) -> Option<JaggedIndex> {
-        todo!()
+        match flat_index <= self.len {
+            true => Some(unsafe { self.jagged_index_unchecked(arrays, flat_index) }),
+            false => None,
+        }
     }
 
     unsafe fn jagged_index_unchecked<T>(
@@ -49,9 +51,11 @@ impl JaggedIndexer for GeneralJaggedIndexer {
         arrays: &[RawVec<T>],
         flat_index: usize,
     ) -> JaggedIndex {
+        assert!(flat_index <= self.len);
+
         match flat_index == self.len {
-            true => match self.lengths.last() {
-                Some(last_len) => JaggedIndex::new(self.lengths.len() - 1, *last_len),
+            true => match arrays.iter().map(|x| x.len()).enumerate().last() {
+                Some((f, last_len)) => JaggedIndex::new(f, last_len),
                 None => JaggedIndex::new(0, 0),
             },
             false => {
@@ -59,7 +63,7 @@ impl JaggedIndexer for GeneralJaggedIndexer {
                 let [mut f, mut i] = [0, 0];
                 let mut current_f = 0;
                 while idx > 0 {
-                    let current_len = lengths[current_f];
+                    let current_len = arrays[current_f].len();
                     match current_len > idx {
                         true => {
                             i = idx;
@@ -72,35 +76,8 @@ impl JaggedIndexer for GeneralJaggedIndexer {
                     }
                     current_f += 1;
                 }
-                [f, i]
+                JaggedIndex::new(f, i)
             }
         }
     }
 }
-
-// fn jagged_indexer() -> impl Fn(usize) -> [usize; 2] + Clone {
-//     let lengths = vec![2, 3, 1, 4];
-//     move |idx| match idx == lengths.iter().sum::<usize>() {
-//         true => [lengths.len() - 1, lengths[lengths.len() - 1]],
-//         false => {
-//             let mut idx = idx;
-//             let [mut f, mut i] = [0, 0];
-//             let mut current_f = 0;
-//             while idx > 0 {
-//                 let current_len = lengths[current_f];
-//                 match current_len > idx {
-//                     true => {
-//                         i = idx;
-//                         idx = 0;
-//                     }
-//                     false => {
-//                         f += 1;
-//                         idx -= current_len;
-//                     }
-//                 }
-//                 current_f += 1;
-//             }
-//             [f, i]
-//         }
-//     }
-// }
