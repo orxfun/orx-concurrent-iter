@@ -17,7 +17,7 @@ pub struct RawJagged<T, X>
 where
     X: JaggedIndexer,
 {
-    vectors: Vec<RawVec<T>>,
+    arrays: Vec<RawVec<T>>,
     len: usize,
     indexer: X,
     num_taken: Option<usize>,
@@ -29,7 +29,7 @@ where
 {
     fn clone(&self) -> Self {
         Self {
-            vectors: self.vectors.clone(),
+            arrays: self.arrays.clone(),
             len: self.len,
             indexer: self.indexer.clone(),
             num_taken: self.num_taken,
@@ -41,30 +41,53 @@ impl<T, X> RawJagged<T, X>
 where
     X: JaggedIndexer,
 {
-    fn new(vectors: Vec<RawVec<T>>, indexer: X, droppable: bool) -> Self {
-        let len = vectors.iter().map(|v| v.len()).sum();
+    fn new(arrays: Vec<RawVec<T>>, indexer: X, droppable: bool, total_len: Option<usize>) -> Self {
+        let len = total_len.unwrap_or_else(|| arrays.iter().map(|v| v.len()).sum());
         let num_taken = droppable.then_some(0);
 
         Self {
-            vectors,
+            arrays,
             len,
             indexer,
             num_taken,
         }
     }
 
-    /// Creates the raw jagged array for the given `vectors` and `indexer`.
+    /// Creates the raw jagged array for the given `arrays` and `indexer`.
+    ///
+    /// If the total number of elements in all `arrays` is known, it can be passed in as `total_len`,
+    /// which will be assumed to be correct.
+    /// If `None` is passed as the total length, it will be computed as sum of all vectors.
     ///
     /// Once the jagged array is dropped, the elements and allocation of the vectors
     /// will also be dropped.
-    pub fn new_as_owned(vectors: Vec<RawVec<T>>, indexer: X) -> Self {
-        Self::new(vectors, indexer, true)
+    pub fn new_as_owned(arrays: Vec<RawVec<T>>, indexer: X, total_len: Option<usize>) -> Self {
+        Self::new(arrays, indexer, true, total_len)
     }
 
-    /// Creates the raw jagged array for the given `vectors` and `indexer`.
+    /// Creates the raw jagged array for the given `arrays` and `indexer`.
+    ///
+    /// If the total number of elements in all `arrays` is known, it can be passed in as `total_len`,
+    /// which will be assumed to be correct.
+    /// If `None` is passed as the total length, it will be computed as sum of all vectors.
     ///
     /// Dropping this jagged array will not drop the underlying elements or allocations.
-    pub fn new_as_reference(vectors: Vec<RawVec<T>>, indexer: X) -> Self {
-        Self::new(vectors, indexer, false)
+    pub fn new_as_reference(arrays: Vec<RawVec<T>>, indexer: X, total_len: Option<usize>) -> Self {
+        Self::new(arrays, indexer, false, total_len)
+    }
+
+    /// Total number of elements in the jagged array (`O(1)`).
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    /// Returns a reference to raw vectors of the jagged array.
+    pub fn arrays(&self) -> &[RawVec<T>] {
+        &self.arrays
+    }
+
+    /// Returns number of arrays of the jagged array.
+    pub fn num_arrays(&self) -> usize {
+        self.arrays.len()
     }
 }
