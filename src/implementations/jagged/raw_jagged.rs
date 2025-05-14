@@ -1,5 +1,6 @@
 use super::{
-    jagged_index::JaggedIndex, jagged_indexer::JaggedIndexer, raw_slice::RawSlice, raw_vec::RawVec,
+    jagged_index::JaggedIndex, jagged_indexer::JaggedIndexer, raw_jagged_slice::RawJaggedSlice,
+    raw_slice::RawSlice, raw_vec::RawVec,
 };
 use crate::implementations::ptr_utils::take;
 use std::cmp::Ordering;
@@ -219,6 +220,27 @@ where
     /// Returns `None` if `f >= self.num_arrays()`.
     pub fn get_raw_slice(&self, f: usize) -> Option<RawSlice<T>> {
         self.arrays.get(f).map(|vec| vec.as_raw_slice())
+    }
+
+    /// Returns the raw jagged array slice containing all elements having positions in range `flat_begin..flat_end`
+    /// of the flattened jagged array.
+    ///
+    /// Returns an empty slice if any of the indices are out of bounds or if `flat_end <= flat_begin`.
+    pub fn slice(&self, flat_begin: usize, flat_end: usize) -> RawJaggedSlice<T> {
+        match flat_end.saturating_sub(flat_begin) {
+            0 => Default::default(),
+            len => {
+                let [begin, end] = [flat_begin, flat_end].map(|i| self.jagged_index(i));
+                match (begin, end) {
+                    (Some(begin), Some(end)) => RawJaggedSlice::new(&self.arrays, begin, end, len),
+                    _ => Default::default(),
+                }
+            }
+        }
+    }
+
+    pub fn slice_from(&self, begin: usize) -> RawJaggedSlice<T> {
+        self.slice(begin, self.len)
     }
 }
 

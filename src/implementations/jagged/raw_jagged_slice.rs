@@ -27,7 +27,7 @@ impl<'a, T> RawJaggedSlice<'a, T> {
         arrays: &'a [RawVec<T>],
         begin: JaggedIndex,
         end: JaggedIndex,
-        known_len: Option<usize>,
+        len: usize,
     ) -> Self {
         debug_assert!(begin.is_in_exc_bounds_of(&arrays));
         debug_assert!(end.is_in_exc_bounds_of(&arrays));
@@ -46,25 +46,6 @@ impl<'a, T> RawJaggedSlice<'a, T> {
                 };
                 let middle = end.f - begin.f - 1;
                 FIRST + last + middle
-            }
-        };
-
-        let len = match known_len {
-            Some(x) => x,
-            None => {
-                let mut len = 0;
-                for f in begin.f..=end.f {
-                    if let Some(vec) = arrays.get(f) {
-                        let slice_len = match f {
-                            f if f == begin.f && f == end.f => end.i - begin.i,
-                            f if f == begin.f => vec.len() - begin.i,
-                            f if f == end.f => end.i,
-                            _ => vec.len(),
-                        };
-                        len += slice_len
-                    }
-                }
-                len
             }
         };
 
