@@ -1,3 +1,4 @@
+use super::indexers::MatrixIndexer;
 use crate::implementations::jagged::{
     jagged_index::JaggedIndex, raw_jagged::RawJagged, raw_jagged_slice::RawJaggedSlice,
     raw_vec::RawVec,
@@ -10,14 +11,6 @@ fn get_matrix(n: usize) -> Vec<Vec<String>> {
         matrix.push(((i * n)..((i + 1) * n)).map(|x| x.to_string()).collect());
     }
     matrix
-}
-
-fn matrix_indexer(n: usize) -> impl Fn(usize) -> [usize; 2] + Clone {
-    move |idx| {
-        let f = idx / n;
-        let i = idx % n;
-        [f, i]
-    }
 }
 
 fn assert_empty(slice: &RawJaggedSlice<String>, num_test_slice_index: usize) {
@@ -47,10 +40,14 @@ fn into_jagged_index(idx: [usize; 2]) -> JaggedIndex {
 fn invalid_raw_jagged_slice_indices((begin, end): ([usize; 2], [usize; 2])) {
     let [begin, end] = [begin, end].map(into_jagged_index);
     let n = 4;
+    let x = MatrixIndexer::new(n);
+
     let matrix = get_matrix(n);
-    let vectors: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
-    let jagged = RawJagged::new(vectors, matrix_indexer(n), true);
-    let _slice = RawJaggedSlice::new(jagged.vectors(), begin, end, None);
+    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let slice_len = x.slice_len(&arrays, &begin, &end);
+
+    let jagged = RawJagged::new_as_owned(arrays, x, Some(n * n));
+    let _slice = RawJaggedSlice::new(jagged.arrays(), begin, end, slice_len);
 }
 
 #[test]
@@ -62,9 +59,12 @@ fn default_raw_jagged_slice() {
 #[test]
 fn empty_non_default_raw_jagged_slice() {
     let n = 4;
+    let x = MatrixIndexer::new(n);
+
     let matrix = get_matrix(n);
-    let vectors: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
-    let jagged = RawJagged::new(vectors, matrix_indexer(n), true);
+    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+
+    let jagged = RawJagged::new_as_owned(arrays, x.clone(), Some(n * n));
 
     let empty_indices = [
         ([0, 0], [0, 0]),
@@ -76,7 +76,8 @@ fn empty_non_default_raw_jagged_slice() {
 
     for (begin, end) in empty_indices {
         let [begin, end] = [begin, end].map(into_jagged_index);
-        let empty_slice = RawJaggedSlice::new(jagged.vectors(), begin, end, None);
+        let slice_len = x.slice_len(jagged.arrays(), &begin, &end);
+        let empty_slice = RawJaggedSlice::new(jagged.arrays(), begin, end, slice_len);
         assert_empty(&empty_slice, 10);
     }
 }
@@ -95,9 +96,12 @@ fn non_empty_raw_jagged_slice() {
 
 fn validate_raw_jagged_slice(flat_begin: usize, flat_end: usize) {
     let n = 4;
+    let x = MatrixIndexer::new(n);
+
     let matrix = get_matrix(n);
-    let vectors: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
-    let jagged = RawJagged::new(vectors, matrix_indexer(n), true);
+    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+
+    let jagged = RawJagged::new_as_owned(arrays, x, Some(n * n));
 
     let [f, i] = [flat_begin / n, flat_begin % n];
     let begin = JaggedIndex::new(f, i);
@@ -105,10 +109,10 @@ fn validate_raw_jagged_slice(flat_begin: usize, flat_end: usize) {
     let end = JaggedIndex::new(f, i);
 
     let slice = RawJaggedSlice::new(
-        jagged.vectors(),
+        jagged.arrays(),
         begin.clone(),
         end.clone(),
-        Some(flat_end - flat_begin),
+        flat_end - flat_begin,
     );
     let expected: Vec<_> = (flat_begin..flat_end).map(|x| x.to_string()).collect();
     let mut slice_from_jagged = Vec::new();
@@ -130,9 +134,12 @@ fn non_empty_raw_jagged_slice_from() {
 
 fn validate_raw_jagged_slice_from(flat_begin: usize) {
     let n = 4;
+    let x = MatrixIndexer::new(n);
+
     let matrix = get_matrix(n);
-    let vectors: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
-    let jagged = RawJagged::new(vectors, matrix_indexer(n), true);
+    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+
+    let jagged = RawJagged::new_as_owned(arrays, x, Some(n * n));
 
     let slice = jagged.slice_from(flat_begin);
     let expected: Vec<_> = (flat_begin..(n * n)).map(|x| x.to_string()).collect();
