@@ -223,3 +223,27 @@ where
         self.arrays.get(f).map(|vec| vec.as_raw_slice())
     }
 }
+
+impl<T, X> Drop for RawJagged<T, X>
+where
+    X: JaggedIndexer,
+{
+    fn drop(&mut self) {
+        if let Some(num_taken) = self.num_taken {
+            // drop elements
+            if let Some(begin) = self.jagged_index(num_taken) {
+                let [f, i] = [begin.f, begin.i];
+                unsafe { self.arrays[f].drop_elements_in_place(i) };
+
+                for f in (f + 1)..self.arrays.len() {
+                    unsafe { self.arrays[f].drop_elements_in_place(0) };
+                }
+            }
+
+            // drop allocation
+            for vec in &self.arrays {
+                unsafe { vec.drop_allocation() };
+            }
+        }
+    }
+}
