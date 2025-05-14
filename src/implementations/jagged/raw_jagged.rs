@@ -239,8 +239,9 @@ where
         }
     }
 
-    pub fn slice_from(&self, begin: usize) -> RawJaggedSlice<T> {
-        self.slice(begin, self.len)
+    /// Returns the raw jagged array slice for the flattened positions within range `flat_begin..self.len()`.
+    pub fn slice_from(&self, flat_begin: usize) -> RawJaggedSlice<T> {
+        self.slice(flat_begin, self.len)
     }
 }
 
