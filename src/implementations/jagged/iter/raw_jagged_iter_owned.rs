@@ -25,7 +25,7 @@ impl<T, X> RawJaggedIterOwned<T, X>
 where
     X: JaggedIndexer,
 {
-    pub(super) fn new(mut jagged: RawJagged<T, X>) -> Self {
+    pub(crate) fn new(mut jagged: RawJagged<T, X>) -> Self {
         let num_taken = match jagged.num_taken() {
             Some(num_taken) => {
                 // SAFETY: we assume all elements are taken out.

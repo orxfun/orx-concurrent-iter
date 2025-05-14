@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests;
 
+mod con_iter;
 mod iter;
 mod jagged_index;
 mod jagged_indexer;

@@ -33,7 +33,7 @@ impl<'a, T> Default for RawJaggedSliceIterOwned<'a, T> {
 }
 
 impl<'a, T> RawJaggedSliceIterOwned<'a, T> {
-    pub(super) fn new(slice: RawJaggedSlice<'a, T>) -> Self {
+    pub(crate) fn new(slice: RawJaggedSlice<'a, T>) -> Self {
         Self {
             len_of_remaining_slices: slice.len(),
             slice,

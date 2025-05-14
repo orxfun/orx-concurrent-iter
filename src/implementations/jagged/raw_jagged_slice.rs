@@ -1,4 +1,9 @@
-use super::{jagged_index::JaggedIndex, raw_slice::RawSlice, raw_vec::RawVec};
+use super::{
+    iter::{RawJaggedSliceIterOwned, RawJaggedSliceIterRef},
+    jagged_index::JaggedIndex,
+    raw_slice::RawSlice,
+    raw_vec::RawVec,
+};
 
 /// A slice of a jagged array which might be empty, a slice of a single vector,
 /// or a series of slices of subsequent arrays of the jagged array.
@@ -135,5 +140,13 @@ impl<'a, T> RawJaggedSlice<'a, T> {
             }
             false => None,
         }
+    }
+
+    pub fn into_iter_ref(self) -> RawJaggedSliceIterRef<'a, T> {
+        RawJaggedSliceIterRef::new(self)
+    }
+
+    pub fn into_iter_owned(self) -> RawJaggedSliceIterOwned<'a, T> {
+        RawJaggedSliceIterOwned::new(self)
     }
 }
