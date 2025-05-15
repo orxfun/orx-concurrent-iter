@@ -13,4 +13,5 @@ mod raw_vec;
 pub use con_iter::{ConIterJaggedOwned, ConIterJaggedRef};
 pub use jagged_index::JaggedIndex;
 pub use jagged_indexer::JaggedIndexer;
+pub use raw_jagged::RawJagged;
 pub use raw_vec::RawVec;

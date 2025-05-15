@@ -58,6 +58,16 @@ where
         }
     }
 
+    /// Creates an empty raw jagged array with the given `indexer`.
+    pub fn empty(indexer: X) -> Self {
+        Self {
+            arrays: Default::default(),
+            len: 0,
+            num_taken: None,
+            indexer,
+        }
+    }
+
     /// Creates the raw jagged array for the given `arrays` and `indexer`.
     ///
     /// If the total number of elements in all `arrays` is known, it can be passed in as `total_len`,
