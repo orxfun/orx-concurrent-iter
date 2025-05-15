@@ -7,9 +7,9 @@ mod jagged_index;
 mod jagged_indexer;
 mod raw_jagged;
 mod raw_jagged_slice;
+mod raw_jagged_storage;
 mod raw_slice;
 mod raw_vec;
-mod raw_vectors;
 
 pub use con_iter::{ConIterJaggedOwned, ConIterJaggedRef};
 pub use jagged_index::JaggedIndex;
