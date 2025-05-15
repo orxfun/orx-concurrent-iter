@@ -13,6 +13,19 @@ impl MatrixIndexer {
         Self { n, len: n * n }
     }
 
+    fn flat_index<T>(&self, arrays: &[RawVec<T>], jagged_index: &JaggedIndex) -> Option<usize> {
+        let flat_index = unsafe { self.flat_index_unchecked(arrays, jagged_index) };
+        (flat_index <= self.len).then_some(flat_index)
+    }
+
+    unsafe fn flat_index_unchecked<T>(
+        &self,
+        _arrays: &[RawVec<T>],
+        jagged_index: &JaggedIndex,
+    ) -> usize {
+        jagged_index.f * self.n + jagged_index.i
+    }
+
     pub fn slice_len<T>(
         &self,
         arrays: &[RawVec<T>],
@@ -43,19 +56,6 @@ impl JaggedIndexer for MatrixIndexer {
         let f = flat_index / self.n;
         let i = flat_index % self.n;
         JaggedIndex::new(f, i)
-    }
-
-    fn flat_index<T>(&self, arrays: &[RawVec<T>], jagged_index: &JaggedIndex) -> Option<usize> {
-        let flat_index = unsafe { self.flat_index_unchecked(arrays, jagged_index) };
-        (flat_index <= self.len).then_some(flat_index)
-    }
-
-    unsafe fn flat_index_unchecked<T>(
-        &self,
-        _arrays: &[RawVec<T>],
-        jagged_index: &JaggedIndex,
-    ) -> usize {
-        jagged_index.f * self.n + jagged_index.i
     }
 }
 
@@ -111,20 +111,5 @@ impl JaggedIndexer for GeneralJaggedIndexer {
                 JaggedIndex::new(f, i)
             }
         }
-    }
-
-    fn flat_index<T>(&self, arrays: &[RawVec<T>], jagged_index: &JaggedIndex) -> Option<usize> {
-        let flat_index = unsafe { self.flat_index_unchecked(arrays, jagged_index) };
-        (flat_index <= self.len).then_some(flat_index)
-    }
-
-    unsafe fn flat_index_unchecked<T>(
-        &self,
-        arrays: &[RawVec<T>],
-        jagged_index: &JaggedIndex,
-    ) -> usize {
-        let [f, i] = [jagged_index.f, jagged_index.i];
-        let until: usize = arrays.iter().take(f).map(|x| x.len()).sum();
-        until + i
     }
 }
