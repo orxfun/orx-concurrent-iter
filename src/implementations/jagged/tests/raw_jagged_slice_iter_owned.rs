@@ -110,7 +110,7 @@ fn get_jagged() -> Vec<Vec<String>> {
 #[test]
 fn raw_jagged_slice_iter_owned_jagged() {
     let len = 10;
-    let indexer = || GeneralJaggedIndexer::new(len);
+    let indexer = || GeneralJaggedIndexer;
 
     let jagged = || {
         let data = get_jagged();
@@ -133,7 +133,7 @@ fn raw_jagged_slice_iter_owned_jagged() {
 #[test]
 fn raw_jagged_slice_iter_owned_jagged_twice_iteration() {
     let len = 10;
-    let indexer = || GeneralJaggedIndexer::new(len);
+    let indexer = || GeneralJaggedIndexer;
 
     let jagged = || {
         let data = get_jagged();

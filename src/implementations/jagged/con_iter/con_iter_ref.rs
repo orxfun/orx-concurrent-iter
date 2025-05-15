@@ -7,6 +7,7 @@ use crate::{
 };
 use core::sync::atomic::{AtomicUsize, Ordering};
 
+/// Flattened concurrent iterator of a raw jagged array yielding references to elements.
 pub struct ConIterJaggedRef<'a, T, X>
 where
     T: Send + Sync,

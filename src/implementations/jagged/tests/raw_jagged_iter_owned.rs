@@ -67,7 +67,7 @@ fn raw_jagged_iter_owned_jagged(consume_taken: bool, consume_remaining: bool) {
         let jagged = get_jagged();
         RawJagged::new_as_owned(
             jagged.into_iter().map(RawVec::<String>::from).collect(),
-            GeneralJaggedIndexer::new(10),
+            GeneralJaggedIndexer,
             Some(10),
         )
     };

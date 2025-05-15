@@ -1,6 +1,7 @@
 mod empty;
 mod iter;
-mod jagged;
+/// Generic implementations of jagged arrays or slice of slices, etc.
+pub mod jagged;
 mod ptr_utils;
 mod range;
 mod slice;

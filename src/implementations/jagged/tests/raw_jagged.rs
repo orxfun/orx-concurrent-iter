@@ -70,7 +70,7 @@ fn jagged_raw_jagged_drop_zero_taken() {
     let jagged = get_jagged();
     let _jagged = RawJagged::new_as_owned(
         jagged.into_iter().map(RawVec::<String>::from).collect(),
-        GeneralJaggedIndexer::new(10),
+        GeneralJaggedIndexer,
         Some(10),
     );
 }
@@ -83,7 +83,7 @@ fn jagged_raw_jagged_drop_by_taken() {
             let jagged = get_jagged();
             let mut jagged = RawJagged::new_as_owned(
                 jagged.into_iter().map(RawVec::<String>::from).collect(),
-                GeneralJaggedIndexer::new(10),
+                GeneralJaggedIndexer,
                 Some(10),
             );
             unsafe { jagged.set_num_taken(Some(num_taken)) };

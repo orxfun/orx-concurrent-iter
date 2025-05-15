@@ -5,11 +5,18 @@ pub trait JaggedIndexer: Clone {
     /// Returns the jagged index of the element `flat_index`-th position if the raw jagged array
     /// defined by the `arrays` collection would have been flattened.
     ///
-    /// Returns `None` if `flat_index > arrays.iter().map(|x| x.len()).sum()`.
+    /// The model expects `total_len` to be equal to `arrays.iter().map(|x| x.len()).sum()`.
+    ///
+    /// Returns `None` if `flat_index > total_len`.
     ///
     /// Importantly note that it returns Some when `flat_index` is equal to the total length of the
     /// jagged array, which represents the exclusive bound of the jagged indices.
-    fn jagged_index<T>(&self, arrays: &[RawVec<T>], flat_index: usize) -> Option<JaggedIndex>;
+    fn jagged_index<T>(
+        &self,
+        total_len: usize,
+        arrays: &[RawVec<T>],
+        flat_index: usize,
+    ) -> Option<JaggedIndex>;
 
     /// Returns the jagged index of the element `flat_index`-th position if the raw jagged array
     /// defined by the `arrays` collection would have been flattened.

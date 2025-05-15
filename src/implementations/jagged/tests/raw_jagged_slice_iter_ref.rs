@@ -87,7 +87,7 @@ fn get_jagged() -> Vec<Vec<String>> {
 fn raw_jagged_slice_iter_ref_jagged() {
     let data = get_jagged();
     let len = data.iter().map(|x| x.len()).sum();
-    let indexer = || GeneralJaggedIndexer::new(len);
+    let indexer = || GeneralJaggedIndexer;
     let slices: Vec<_> = data.iter().map(|v| v.as_slice().into()).collect();
     let jagged = RawJagged::new_as_reference(slices, indexer(), Some(len));
 

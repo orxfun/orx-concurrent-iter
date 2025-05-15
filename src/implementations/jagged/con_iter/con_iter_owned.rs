@@ -9,6 +9,10 @@ use crate::{
 };
 use core::sync::atomic::{AtomicUsize, Ordering};
 
+/// Flattened concurrent iterator of a raw jagged array yielding owned elements.
+///
+/// Ensures that all elements are dropped regardless of whether they are iterated over or skipped.
+/// Further, cleans up the allocations of the jagged array.
 pub struct ConIterJaggedOwned<T, X>
 where
     T: Send + Sync,
