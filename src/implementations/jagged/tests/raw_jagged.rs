@@ -1,8 +1,5 @@
-use crate::implementations::jagged::{
-    jagged_indexer::JaggedIndexer, raw_jagged::RawJagged, raw_vec::RawVec,
-};
-
 use super::indexers::{GeneralJaggedIndexer, MatrixIndexer};
+use crate::implementations::jagged::{raw_jagged::RawJagged, raw_vec::RawVec};
 
 // matrix
 
@@ -66,33 +63,6 @@ fn get_jagged() -> Vec<Vec<String>> {
         .into_iter()
         .map(|x| x.into_iter().map(|x| x.to_string()).collect::<Vec<_>>())
         .collect()
-}
-
-fn jagged_indexer() -> impl Fn(usize) -> [usize; 2] + Clone {
-    let lengths = vec![2, 3, 1, 4];
-    move |idx| match idx == lengths.iter().sum::<usize>() {
-        true => [lengths.len() - 1, lengths[lengths.len() - 1]],
-        false => {
-            let mut idx = idx;
-            let [mut f, mut i] = [0, 0];
-            let mut current_f = 0;
-            while idx > 0 {
-                let current_len = lengths[current_f];
-                match current_len > idx {
-                    true => {
-                        i = idx;
-                        idx = 0;
-                    }
-                    false => {
-                        f += 1;
-                        idx -= current_len;
-                    }
-                }
-                current_f += 1;
-            }
-            [f, i]
-        }
-    }
 }
 
 #[test]

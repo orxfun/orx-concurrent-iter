@@ -1,6 +1,6 @@
 use super::{
-    jagged_index::JaggedIndex, jagged_indexer::JaggedIndexer, raw_jagged_slice::RawJaggedSlice,
-    raw_slice::RawSlice, raw_vec::RawVec,
+    iter::RawJaggedIterOwned, jagged_index::JaggedIndex, jagged_indexer::JaggedIndexer,
+    raw_jagged_slice::RawJaggedSlice, raw_slice::RawSlice, raw_vec::RawVec,
 };
 use crate::implementations::ptr_utils::take;
 use std::cmp::Ordering;
@@ -242,6 +242,11 @@ where
     /// Returns the raw jagged array slice for the flattened positions within range `flat_begin..self.len()`.
     pub fn slice_from(&self, flat_begin: usize) -> RawJaggedSlice<T> {
         self.slice(flat_begin, self.len)
+    }
+
+    /// Converts the raw jagged array into a flattened iterator that yields owned elements.
+    pub fn into_iter_owned(self) -> RawJaggedIterOwned<T, X> {
+        RawJaggedIterOwned::new(self)
     }
 }
 
