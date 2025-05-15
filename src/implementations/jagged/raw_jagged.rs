@@ -1,9 +1,49 @@
 use super::{
     iter::RawJaggedIterOwned, jagged_index::JaggedIndex, jagged_indexer::JaggedIndexer,
     raw_jagged_slice::RawJaggedSlice, raw_slice::RawSlice, raw_vec::RawVec,
+    raw_vectors::RawVectors,
 };
 use crate::implementations::ptr_utils::take;
 use std::cmp::Ordering;
+
+pub struct RawJagged2<S, X>
+where
+    S: RawVectors,
+    X: JaggedIndexer,
+{
+    arrays: S,
+    len: usize,
+    indexer: X,
+    num_taken: Option<usize>,
+}
+
+impl<S, X> RawJagged2<S, X>
+where
+    S: RawVectors,
+    X: JaggedIndexer,
+{
+    fn new(arrays: S, indexer: X, droppable: bool, total_len: Option<usize>) -> Self {
+        let len = total_len.unwrap_or_else(|| arrays.vec_lengths().sum());
+        let num_taken = droppable.then_some(0);
+
+        Self {
+            arrays,
+            len,
+            indexer,
+            num_taken,
+        }
+    }
+
+    /// Creates an empty raw jagged array with the given `indexer`.
+    pub fn empty(indexer: X) -> Self {
+        Self::new(Default::default(), indexer, false, None)
+    }
+
+    /// Total number of elements in the jagged array (`O(1)`).
+    pub fn len(&self) -> usize {
+        self.len
+    }
+}
 
 /// Raw representation of a jagged array.
 /// Internally, the jagged array is stored as a vector of raw vectors.
