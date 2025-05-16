@@ -122,13 +122,14 @@ where
     }
 }
 
-// impl<'a, T, X> ExactSizeConcurrentIter for ConIterJaggedRef<'a, T, X>
-// where
-//     T: Send + Sync,
-//     X: JaggedIndexer + Send + Sync,
-// {
-//     fn len(&self) -> usize {
-//         let num_taken = self.counter.load(Ordering::Acquire);
-//         self.jagged.len().saturating_sub(num_taken)
-//     }
-// }
+impl<'a, J, X, T> ExactSizeConcurrentIter for ConIterJaggedRef<'a, J, X, T>
+where
+    T: Send + Sync,
+    X: JaggedIndexer + Send + Sync,
+    J: AsRawJaggedRef<'a, T, X>,
+{
+    fn len(&self) -> usize {
+        let num_taken = self.counter.load(Ordering::Acquire);
+        self.jagged.len().saturating_sub(num_taken)
+    }
+}
