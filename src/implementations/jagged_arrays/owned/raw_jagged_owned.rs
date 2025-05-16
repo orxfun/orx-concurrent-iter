@@ -172,6 +172,21 @@ where
             unsafe { take(ptr) }
         })
     }
+
+    /// Returns a reference to the `f`-th slice, returns None iF `f >= self.num_arrays()`.
+    pub fn get(&self, f: usize) -> Option<&S> {
+        self.arrays.get(f)
+    }
+
+    /// Returns a reference to the `f`-th slice, without bounds checking.
+    ///
+    /// # SAFETY
+    ///
+    /// `f` must be within bounds; i.e., `f < self.num_arrays()`.
+    pub unsafe fn get_unchecked(&self, f: usize) -> &S {
+        debug_assert!(f < self.arrays.len());
+        unsafe { self.arrays.get_unchecked(f) }
+    }
 }
 
 impl<S, T, X> Drop for RawJagged<S, T, X>

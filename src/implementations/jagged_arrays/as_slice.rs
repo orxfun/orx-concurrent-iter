@@ -11,6 +11,21 @@ pub trait AsSlice<T> {
 
     // provided
 
+    /// True if length is zero; false otherwise.
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    /// Returns pointers to the first and last, (len-1)-th, element of the slice.
+    ///
+    /// If the slice is empty, both pointers are null.
+    fn first_and_last_ptrs(&self) -> [*const T; 2] {
+        match self.len() {
+            0 => [core::ptr::null(), core::ptr::null()],
+            n => [self.ptr(), unsafe { self.ptr_at(n - 1) }],
+        }
+    }
+
     /// Returns the pointer to the `position`-th element of the slice.
     ///
     /// # SAFETY
