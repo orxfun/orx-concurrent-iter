@@ -34,17 +34,18 @@ where
     X: JaggedIndexer,
     J: AsRawJaggedRef<'a, T, X>,
 {
-    // pub(crate) fn new(slice: RawJaggedSlice<'a, J, X, T>) -> Self
-    // where
-    //     X: JaggedIndexer,
-    //     J: AsRawJaggedRef<'a, T, X>,
-    // {
-    //     Self {
-    //         len_of_remaining_slices: slice.len(),
-    //         slice,
-    //         ..Default::default()
-    //     }
-    // }
+    pub(crate) fn new(slice: RawJaggedSlice<'a, J, X, T>) -> Self
+    where
+        X: JaggedIndexer,
+        J: AsRawJaggedRef<'a, T, X>,
+    {
+        Self {
+            len_of_remaining_slices: slice.len(),
+            slice,
+            f: 0,
+            current: Default::default(),
+        }
+    }
 
     fn remaining(&self) -> usize {
         let remaining_current = self.current.len();
