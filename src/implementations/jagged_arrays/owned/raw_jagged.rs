@@ -11,8 +11,7 @@ use crate::implementations::{
 use std::cmp::Ordering;
 
 /// Raw representation of a jagged array.
-/// Internally, the jagged array is stored as a vector of `S` that can
-/// be converted into a slice.
+/// Internally, the jagged array is stored as a vector of `RawVec<T>`.
 ///
 /// Further, jagged has an indexer which maps a flat-element-index to a
 /// two-dimensional index where the first is the index of the array and

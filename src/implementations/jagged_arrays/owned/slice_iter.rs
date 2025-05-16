@@ -1,9 +1,8 @@
+use super::raw_vec::RawVec;
 use crate::implementations::{
     jagged_arrays::{as_slice::AsSlice, jagged_slice::RawJaggedSlice},
     ptr_utils::take,
 };
-
-use super::raw_vec::RawVec;
 
 /// An iterator over owned elements of a slice of a raw jagged array;
 /// i.e., a [`RawJaggedSlice`].
