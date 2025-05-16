@@ -7,6 +7,8 @@ use crate::implementations::jagged_arrays::{
 use orx_pseudo_default::PseudoDefault;
 use std::{cmp::Ordering, marker::PhantomData};
 
+use super::slice::RawJaggedSlice;
+
 /// Raw representation of a reference to a jagged array.
 ///
 /// Further, jagged has an indexer which maps a flat-element-index to a
@@ -34,6 +36,21 @@ where
             len: Default::default(),
             indexer: PseudoDefault::pseudo_default(),
             phantom: Default::default(),
+        }
+    }
+}
+
+impl<'a, T, S, X> Clone for RawJaggedRef<'a, T, S, X>
+where
+    X: JaggedIndexer,
+    S: AsSlice<T>,
+{
+    fn clone(&self) -> Self {
+        Self {
+            arrays: self.arrays,
+            len: self.len.clone(),
+            indexer: self.indexer.clone(),
+            phantom: self.phantom.clone(),
         }
     }
 }
@@ -91,6 +108,23 @@ where
                 unsafe { core::slice::from_raw_parts(ptr, len) }
             })
         })
+    }
+
+    pub(super) fn jagged_slice(
+        &self,
+        flat_begin: usize,
+        flat_end: usize,
+    ) -> RawJaggedSlice<'a, T, S, X> {
+        match flat_end.saturating_sub(flat_begin) {
+            0 => Default::default(),
+            len => {
+                let [begin, end] = [flat_begin, flat_end].map(|i| self.jagged_index(i));
+                match (begin, end) {
+                    (Some(begin), Some(end)) => RawJaggedSlice::new(self.clone(), begin, end, len),
+                    _ => Default::default(),
+                }
+            }
+        }
     }
 
     pub(super) fn get(&self, flat_index: usize) -> Option<&'a T> {

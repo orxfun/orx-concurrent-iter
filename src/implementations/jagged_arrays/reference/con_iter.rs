@@ -46,9 +46,9 @@ where
     ) -> Option<(usize, RawJaggedSliceIterRef<'a, T, S, X>)> {
         self.progress_and_get_begin_idx(chunk_size)
             .map(|begin_idx| {
-                // let end_idx = (begin_idx + chunk_size)
-                //     .min(self.jagged.len())
-                //     .max(begin_idx);
+                let end_idx = (begin_idx + chunk_size)
+                    .min(self.jagged.len())
+                    .max(begin_idx);
                 // let slice = self.jagged.slice(begin_idx, end_idx);
                 // let iter = RawJaggedSliceIterRef::new(slice);
                 // (begin_idx, Default::default())
@@ -69,7 +69,7 @@ where
     type SequentialIter = RawJaggedSliceIterRef<'a, T, S, X>;
 
     type ChunkPuller<'i>
-        = ChunkPullerJaggedRef<'i, 'a, T, X>
+        = ChunkPullerJaggedRef<'i, 'a, T, S, X>
     where
         Self: 'i;
 
