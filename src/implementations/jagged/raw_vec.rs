@@ -64,8 +64,9 @@ impl<T> RawVec<T> {
         RawSlice::new(self.ptr, self.len)
     }
 
-    pub fn raw_slice(&self, begin: usize, len: usize) -> RawSlice<T> {
+    pub fn raw_slice(&self, begin: usize, end: usize) -> RawSlice<T> {
         let ptr = unsafe { self.ptr.add(begin) };
+        let len = end - begin;
         RawSlice::new(ptr, len)
     }
 

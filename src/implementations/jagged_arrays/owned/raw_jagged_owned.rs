@@ -1,73 +1,40 @@
-use super::{
-    iter::RawJaggedIterOwned, jagged_index::JaggedIndex, jagged_indexer::JaggedIndexer,
-    raw_jagged_slice::RawJaggedSlice, raw_slice::RawSlice, raw_vec::RawVec,
+use crate::implementations::{
+    jagged_arrays::{
+        as_slice::{AsOwningSlice, AsSlice},
+        jagged_index::JaggedIndex,
+        jagged_indexer::JaggedIndexer,
+    },
+    ptr_utils::take,
 };
-use crate::implementations::ptr_utils::take;
-use std::cmp::Ordering;
+use std::{cmp::Ordering, marker::PhantomData};
 
 /// Raw representation of a jagged array.
-/// Internally, the jagged array is stored as a vector of raw vectors.
+/// Internally, the jagged array is stored as a vector of `S` that can
+/// be converted into a slice.
 ///
 /// Further, jagged has an indexer which maps a flat-element-index to a
 /// two-dimensional index where the first is the index of the array and
 /// the second is the position of the element within this array.
 ///
-/// Depending on how it is constructed, might or might not drop
-/// the elements and allocation of its raw vectors;
-/// see [`new_as_owned`] and [`new_as_reference`] constructors.
-///
-/// [`new_as_owned`]: Self::new_as_owned
-/// [`new_as_reference`]: Self::new_as_reference
-pub struct RawJagged<T, X>
+/// Once dropped, the owned raw jagged array will drop the elements and
+/// allocation of its raw vectors.
+pub struct RawJagged<S, T, X>
 where
     X: JaggedIndexer,
+    S: AsOwningSlice<T>,
 {
-    arrays: Vec<RawVec<T>>,
+    arrays: Vec<S>,
     len: usize,
     indexer: X,
     num_taken: Option<usize>,
+    phantom: PhantomData<T>,
 }
 
-impl<T, X> Clone for RawJagged<T, X>
+impl<S, T, X> RawJagged<S, T, X>
 where
     X: JaggedIndexer,
+    S: AsOwningSlice<T>,
 {
-    fn clone(&self) -> Self {
-        Self {
-            arrays: self.arrays.clone(),
-            len: self.len,
-            indexer: self.indexer.clone(),
-            num_taken: self.num_taken,
-        }
-    }
-}
-
-impl<T, X> RawJagged<T, X>
-where
-    X: JaggedIndexer,
-{
-    fn new(arrays: Vec<RawVec<T>>, indexer: X, droppable: bool, total_len: Option<usize>) -> Self {
-        let len = total_len.unwrap_or_else(|| arrays.iter().map(|v| v.len()).sum());
-        let num_taken = droppable.then_some(0);
-
-        Self {
-            arrays,
-            len,
-            indexer,
-            num_taken,
-        }
-    }
-
-    /// Creates an empty raw jagged array with the given `indexer`.
-    pub fn empty(indexer: X) -> Self {
-        Self {
-            arrays: Default::default(),
-            len: 0,
-            num_taken: None,
-            indexer,
-        }
-    }
-
     /// Creates the raw jagged array for the given `arrays` and `indexer`.
     ///
     /// If the total number of elements in all `arrays` is known, it can be passed in as `total_len`,
@@ -76,29 +43,25 @@ where
     ///
     /// Once the jagged array is dropped, the elements and allocation of the vectors
     /// will also be dropped.
-    pub fn new_as_owned(arrays: Vec<RawVec<T>>, indexer: X, total_len: Option<usize>) -> Self {
-        Self::new(arrays, indexer, true, total_len)
+    pub fn new(arrays: Vec<S>, indexer: X, total_len: Option<usize>) -> Self {
+        let len = total_len.unwrap_or_else(|| arrays.iter().map(|v| v.len()).sum());
+        Self {
+            arrays,
+            len,
+            indexer,
+            num_taken: Some(0),
+            phantom: PhantomData,
+        }
     }
 
-    /// Creates the raw jagged array for the given `arrays` and `indexer`.
-    ///
-    /// If the total number of elements in all `arrays` is known, it can be passed in as `total_len`,
-    /// which will be assumed to be correct.
-    /// If `None` is passed as the total length, it will be computed as sum of all vectors.
-    ///
-    /// Dropping this jagged array will not drop the underlying elements or allocations.
-    pub fn new_as_reference(arrays: Vec<RawVec<T>>, indexer: X, total_len: Option<usize>) -> Self {
-        Self::new(arrays, indexer, false, total_len)
+    /// Creates an empty raw jagged array with the given `indexer`.
+    pub fn empty(indexer: X) -> Self {
+        Self::new(Default::default(), indexer, Some(0))
     }
 
     /// Total number of elements in the jagged array (`O(1)`).
     pub fn len(&self) -> usize {
         self.len
-    }
-
-    /// Returns a reference to raw vectors of the jagged array.
-    pub fn arrays(&self) -> &[RawVec<T>] {
-        &self.arrays
     }
 
     /// Returns number of arrays of the jagged array.
@@ -141,9 +104,8 @@ where
 
     /// Jagged array when created with `new_as_owned` is responsible for dropping its elements and clear the
     /// allocation of the vectors. However, it also allows that some of the elements are taken out before the
-    /// jagged array is dropped, see the [`take`] method. This is tracked by `num_taken` which is
-    /// * `Some(0)` on construction using `new_as_owned`,
-    /// * `None` on construction using `new_as_reference`.
+    /// jagged array is dropped, see the [`take`] method. This is tracked by `num_taken` which is `Some(0)`
+    /// on construction.
     ///
     /// This method overwrites `num_taken`:
     ///
@@ -156,10 +118,6 @@ where
     /// # Safety
     ///
     /// This method is unsafe due to the following use cases which would lead to undefined behavior.
-    ///
-    /// If the jagged array is created as a reference:
-    /// * we intend the drop the vectors outside of this jagged array,
-    /// * therefore, calling this method with `Some(n)` would lead to attempting the elements twice.
     ///
     /// If the jagged array is created as owned:
     /// * we intend to drop the vectors when we drop this jagged array,
@@ -185,9 +143,7 @@ where
 
     /// Jagged array when created with `new_as_owned` is responsible for dropping its elements and clear the
     /// allocation of the vectors. However, it also allows that some of the elements are taken out before the
-    /// jagged array is dropped. This is tracked by `num_taken` which is
-    /// * `Some(0)` on construction using `new_as_owned`,
-    /// * `None` on construction using `new_as_reference`.
+    /// jagged array is dropped. This is tracked by `num_taken` which is `Some(0)` on construction.
     ///
     /// See [`set_num_taken`] to update the number of manually taken elements in order to avoid dropping the
     /// same element twice.
@@ -216,63 +172,27 @@ where
             unsafe { take(ptr) }
         })
     }
-
-    /// Returns a reference to the element at the `flat_index`-th position of the flattened jagged array.
-    pub fn get(&self, flat_index: usize) -> Option<&T> {
-        self.jagged_index(flat_index).map(|idx| {
-            // SAFETY: jagged_index call ensures that idx.i is in bounds
-            unsafe { self.arrays[idx.f].get_unchecked(idx.i) }
-        })
-    }
-
-    /// Returns the `f`-th array of the jagged array as a raw slice.
-    ///
-    /// Returns `None` if `f >= self.num_arrays()`.
-    pub fn get_raw_slice(&self, f: usize) -> Option<RawSlice<T>> {
-        self.arrays.get(f).map(|vec| vec.as_raw_slice())
-    }
-
-    /// Returns the raw jagged array slice containing all elements having positions in range `flat_begin..flat_end`
-    /// of the flattened jagged array.
-    ///
-    /// Returns an empty slice if any of the indices are out of bounds or if `flat_end <= flat_begin`.
-    pub fn slice(&self, flat_begin: usize, flat_end: usize) -> RawJaggedSlice<T> {
-        match flat_end.saturating_sub(flat_begin) {
-            0 => Default::default(),
-            len => {
-                let [begin, end] = [flat_begin, flat_end].map(|i| self.jagged_index(i));
-                match (begin, end) {
-                    (Some(begin), Some(end)) => RawJaggedSlice::new(&self.arrays, begin, end, len),
-                    _ => Default::default(),
-                }
-            }
-        }
-    }
-
-    /// Returns the raw jagged array slice for the flattened positions within range `flat_begin..self.len()`.
-    pub fn slice_from(&self, flat_begin: usize) -> RawJaggedSlice<T> {
-        self.slice(flat_begin, self.len)
-    }
-
-    /// Converts the raw jagged array into a flattened iterator that yields owned elements.
-    pub fn into_iter_owned(self) -> RawJaggedIterOwned<T, X> {
-        RawJaggedIterOwned::new(self)
-    }
 }
 
-impl<T, X> Drop for RawJagged<T, X>
+impl<S, T, X> Drop for RawJagged<S, T, X>
 where
     X: JaggedIndexer,
+    S: AsOwningSlice<T>,
 {
     fn drop(&mut self) {
         if let Some(num_taken) = self.num_taken {
             // drop elements
             if let Some(begin) = self.jagged_index(num_taken) {
-                let [f, i] = [begin.f, begin.i];
-                unsafe { self.arrays[f].drop_elements_in_place(i) };
+                let s = &self.arrays[begin.f];
+                for p in begin.i..s.len() {
+                    unsafe { s.drop_in_place(p) };
+                }
 
-                for f in (f + 1)..self.arrays.len() {
-                    unsafe { self.arrays[f].drop_elements_in_place(0) };
+                for f in (begin.f + 1)..self.arrays.len() {
+                    let s = &self.arrays[f];
+                    for p in 0..s.len() {
+                        unsafe { s.drop_in_place(p) };
+                    }
                 }
             }
 
