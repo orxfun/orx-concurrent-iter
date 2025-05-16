@@ -1,21 +1,20 @@
-use super::{con_iter::ConIterJaggedOwned, slice_iter::RawJaggedSliceIterOwned};
-use crate::{ChunkPuller, implementations::jagged_arrays::indexer::JaggedIndexer};
+use crate::{ChunkPuller, implementations::jagged_arrays::JaggedIndexer};
 
-pub struct ChunkPullerJaggedOwned<'i, T, X>
+pub struct ChunkPullerJaggedRef<'i, 'a, T, X>
 where
     T: Send + Sync,
     X: JaggedIndexer + Send + Sync,
 {
-    con_iter: &'i ConIterJaggedOwned<T, X>,
+    con_iter: &'i ConIterJaggedRef<'a, T, X>,
     chunk_size: usize,
 }
 
-impl<'i, T, X> ChunkPullerJaggedOwned<'i, T, X>
+impl<'i, 'a, T, X> ChunkPullerJaggedRef<'i, 'a, T, X>
 where
     T: Send + Sync,
     X: JaggedIndexer + Send + Sync,
 {
-    pub(super) fn new(con_iter: &'i ConIterJaggedOwned<T, X>, chunk_size: usize) -> Self {
+    pub(super) fn new(con_iter: &'i ConIterJaggedRef<'a, T, X>, chunk_size: usize) -> Self {
         Self {
             con_iter,
             chunk_size,
@@ -23,15 +22,15 @@ where
     }
 }
 
-impl<'i, T, X> ChunkPuller for ChunkPullerJaggedOwned<'i, T, X>
+impl<'i, 'a, T, X> ChunkPuller for ChunkPullerJaggedRef<'i, 'a, T, X>
 where
     T: Send + Sync,
     X: JaggedIndexer + Send + Sync,
 {
-    type ChunkItem = T;
+    type ChunkItem = &'a T;
 
     type Chunk<'c>
-        = RawJaggedSliceIterOwned<'c, T>
+        = RawJaggedSliceIterRef<'a, T>
     where
         Self: 'c;
 
@@ -42,10 +41,12 @@ where
     fn pull(&mut self) -> Option<Self::Chunk<'_>> {
         self.con_iter
             .progress_and_get_iter(self.chunk_size)
-            .map(|(_begin_idx, iter)| iter)
+            .map(|(_, iter)| iter)
     }
 
     fn pull_with_idx(&mut self) -> Option<(usize, Self::Chunk<'_>)> {
-        self.con_iter.progress_and_get_iter(self.chunk_size)
+        self.con_iter
+            .progress_and_get_iter(self.chunk_size)
+            .map(|(begin_idx, iter)| (begin_idx, iter))
     }
 }

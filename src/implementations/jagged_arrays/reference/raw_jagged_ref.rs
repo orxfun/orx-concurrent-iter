@@ -1,3 +1,4 @@
+use super::{slice::RawJaggedSlice, slice_iter::RawJaggedSliceIterRef};
 use crate::implementations::{
     jagged_arrays::{
         RawSlice,
@@ -7,7 +8,7 @@ use crate::implementations::{
     },
     ptr_utils::take,
 };
-use std::cmp::Ordering;
+use std::{cmp::Ordering, marker::PhantomData};
 
 /// Raw representation of a reference to jagged array.
 /// Internally, the jagged array is stored as a vector of `RawSlice<T>`.
@@ -15,17 +16,17 @@ use std::cmp::Ordering;
 /// Further, jagged has an indexer which maps a flat-element-index to a
 /// two-dimensional index where the first is the index of the array and
 /// the second is the position of the element within this array.
-pub struct RawJagged<T, X>
+pub struct RawJaggedRef<'a, T, X>
 where
     X: JaggedIndexer,
 {
     arrays: Vec<RawSlice<T>>,
     len: usize,
     indexer: X,
-    num_taken: Option<usize>,
+    phantom: PhantomData<&'a ()>,
 }
 
-impl<T, X> RawJagged<T, X>
+impl<'a, T, X> RawJaggedRef<'a, T, X>
 where
     X: JaggedIndexer,
 {
@@ -40,7 +41,62 @@ where
             arrays,
             len,
             indexer,
-            num_taken: Some(0),
+            phantom: PhantomData,
+        }
+    }
+
+    /// Total number of elements in the jagged array (`O(1)`).
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    /// Returns the [`JaggedIndex`] of the element at the given `flat_index` position of the flattened
+    /// jagged array.
+    ///
+    /// It returns `None` when `flat_index > self.len()`.
+    /// Importantly note that it returns `Some` when `flat_index == self.len()` which is the exclusive bound
+    /// of the collection.
+    ///
+    /// Returns:
+    ///
+    /// * `Some([f, i])` if `flat_index < self.len()` such that the element is located at the `f`-th array's
+    ///   `i`-th position.
+    /// * `Some([f*, i*])` if `flat_index = self.len()` such that `f* = self.len() - 1` and `i* = self.arrays()[f*].len()`.
+    ///   In other words, this is the exclusive end of the jagged index range of the jagged array.
+    /// * `None` if `flat_index > self.len()`.
+    pub fn jagged_index(&self, flat_index: usize) -> Option<JaggedIndex> {
+        match flat_index.cmp(&self.len) {
+            Ordering::Less => Some(unsafe {
+                // SAFETY: flat_index is within bounds
+                self.indexer
+                    .jagged_index_unchecked(&self.arrays, flat_index)
+            }),
+            Ordering::Equal => match self.arrays.is_empty() {
+                true => None,
+                false => {
+                    let f = self.arrays.len() - 1;
+                    let i = self.arrays[f].length();
+                    Some(JaggedIndex::new(f, i))
+                }
+            },
+            Ordering::Greater => None,
+        }
+    }
+
+    /// Returns the raw jagged array slice containing all elements having positions in range `flat_begin..flat_end`
+    /// of the flattened jagged array.
+    ///
+    /// Returns an empty slice if any of the indices are out of bounds or if `flat_end <= flat_begin`.
+    pub fn slice(&self, flat_begin: usize, flat_end: usize) -> RawJaggedSlice<T> {
+        match flat_end.saturating_sub(flat_begin) {
+            0 => Default::default(),
+            len => {
+                let [begin, end] = [flat_begin, flat_end].map(|i| self.jagged_index(i));
+                match (begin, end) {
+                    (Some(begin), Some(end)) => RawJaggedSlice::new(&self.arrays, begin, end, len),
+                    _ => Default::default(),
+                }
+            }
         }
     }
 }
