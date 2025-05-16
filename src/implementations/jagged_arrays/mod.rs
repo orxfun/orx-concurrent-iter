@@ -4,6 +4,7 @@ mod indexer;
 mod jagged_slice;
 mod owned;
 mod raw_slice;
+mod reference;
 
 pub use as_slice::AsSlice;
 pub use index::JaggedIndex;
