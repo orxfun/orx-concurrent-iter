@@ -8,4 +8,4 @@ mod raw_slice;
 pub use as_slice::AsSlice;
 pub use index::JaggedIndex;
 pub use indexer::JaggedIndexer;
-pub use owned::RawVec;
+pub use owned::{ConIterJaggedOwned, RawJagged, RawVec};

@@ -1,4 +1,4 @@
-use super::jagged_owned::RawJagged;
+use super::raw_jagged::RawJagged;
 use crate::implementations::{
     jagged_arrays::{as_slice::AsSlice, indexer::JaggedIndexer},
     ptr_utils::take,

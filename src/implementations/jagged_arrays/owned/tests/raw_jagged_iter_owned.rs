@@ -1,6 +1,6 @@
 use super::indexers::{GeneralJaggedIndexer, MatrixIndexer};
 use crate::implementations::jagged_arrays::owned::{
-    into_iter::RawJaggedIterOwned, jagged_owned::RawJagged, raw_vec::RawVec,
+    into_iter::RawJaggedIterOwned, raw_jagged::RawJagged, raw_vec::RawVec,
     slice_iter::RawJaggedSliceIterOwned,
 };
 use test_case::test_matrix;

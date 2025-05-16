@@ -44,7 +44,6 @@ where
     /// will also be dropped.
     pub fn new(arrays: Vec<RawVec<T>>, indexer: X, total_len: Option<usize>) -> Self {
         let len = total_len.unwrap_or_else(|| arrays.iter().map(|v| v.length()).sum());
-        let arrays = arrays.into_iter().map(RawVec::from).collect();
         Self {
             arrays,
             len,

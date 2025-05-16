@@ -1,7 +1,7 @@
 use super::{as_slice::AsSlice, index::JaggedIndex};
 
 /// An indexer for the raw jagged arrays.
-pub trait JaggedIndexer: Clone {
+pub trait JaggedIndexer: Clone + Send + Sync {
     /// Returns the jagged index of the element `flat_index`-th position if the raw jagged array
     /// defined by the `arrays` collection would have been flattened.
     ///

@@ -1,5 +1,5 @@
 use super::{
-    chunk_puller::ChunkPullerJaggedOwned, into_iter::RawJaggedIterOwned, jagged_owned::RawJagged,
+    chunk_puller::ChunkPullerJaggedOwned, into_iter::RawJaggedIterOwned, raw_jagged::RawJagged,
     raw_vec::RawVec, slice_iter::RawJaggedSliceIterOwned,
 };
 use crate::{

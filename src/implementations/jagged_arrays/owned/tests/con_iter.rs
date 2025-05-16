@@ -3,7 +3,7 @@ use crate::{
     concurrent_iter::ConcurrentIter,
     exact_size_concurrent_iter::ExactSizeConcurrentIter,
     implementations::jagged_arrays::owned::{
-        con_iter::ConIterJaggedOwned, jagged_owned::RawJagged, raw_vec::RawVec,
+        con_iter::ConIterJaggedOwned, raw_jagged::RawJagged, raw_vec::RawVec,
         tests::indexers::MatrixIndexer,
     },
 };
