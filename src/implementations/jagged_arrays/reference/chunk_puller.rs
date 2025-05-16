@@ -1,4 +1,7 @@
-use super::{as_raw_jagged_ref::AsRawJaggedRef, slice_iter::RawJaggedSliceIterRef};
+use super::{
+    as_raw_jagged_ref::AsRawJaggedRef, con_iter::ConIterJaggedRef,
+    slice_iter::RawJaggedSliceIterRef,
+};
 use crate::{ChunkPuller, implementations::jagged_arrays::JaggedIndexer};
 
 pub struct ChunkPullerJaggedRef<'i, 'a, J, X, T>
