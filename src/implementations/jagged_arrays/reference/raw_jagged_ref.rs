@@ -56,6 +56,16 @@ where
     X: JaggedIndexer,
     S: AsSlice<T>,
 {
+    pub fn new(arrays: &'a [S], indexer: X, total_len: Option<usize>) -> Self {
+        let len = total_len.unwrap_or_else(|| arrays.iter().map(|v| v.length()).sum());
+        Self {
+            arrays,
+            len,
+            indexer,
+            phantom: PhantomData,
+        }
+    }
+
     pub(super) fn len(&self) -> usize {
         self.len
     }
