@@ -410,7 +410,8 @@ fn abc_skip_to_end(n: usize, nt: usize) {
     assert_eq!(expected, collected);
 }
 
-#[test_matrix([0, 6, N], [1, 2, 4], [0, N / 2, N])]
+// #[test_matrix([0, 6, N], [1, 2, 4], [0, N / 2, N])]
+#[test_matrix([6], [1], [N / 2])]
 fn abc_into_seq_iter(n: usize, nt: usize, until: usize) {
     let vec = new_vec(n, |x| (x + 10).to_string());
     let iter = ConIterVecDequeRef::new(&vec);

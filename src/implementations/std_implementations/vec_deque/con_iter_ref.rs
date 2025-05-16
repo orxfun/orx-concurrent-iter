@@ -6,9 +6,9 @@ use crate::{
 };
 use alloc::vec;
 use alloc::vec::Vec;
-use core::iter::Skip;
+use core::{iter::Skip, mem::ManuallyDrop};
 use orx_pseudo_default::PseudoDefault;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, time::UNIX_EPOCH};
 
 /// Concurrent iterator of a reference to a [`VecDeque`].
 ///
@@ -43,10 +43,13 @@ pub struct ConIterVecDequeRef<'a, T>
 where
     T: Send + Sync,
 {
-    vec_deque: &'a VecDeque<T>,
-    _slices_vec: Vec<&'a [T]>,
+    slices: *const &'a [T],
     con_iter: ConIterCore<'a, T>,
 }
+
+unsafe impl<'a, T: Send + Sync> Sync for ConIterVecDequeRef<'a, T> {}
+
+unsafe impl<'a, T: Send + Sync> Send for ConIterVecDequeRef<'a, T> {}
 
 impl<'a, T> ConIterVecDequeRef<'a, T>
 where
@@ -54,16 +57,35 @@ where
 {
     pub(super) fn new(vec_deque: &'a VecDeque<T>) -> Self {
         let (a, b) = vec_deque.as_slices();
-        let slices_vec = vec![a, b];
-        let slices = unsafe { core::slice::from_raw_parts(slices_vec.as_ptr(), 2) };
+
+        let mut x = Self {
+            slices: core::ptr::null(),
+            con_iter: ConIterCore::new(Default::default(), 0),
+        };
+
+        let mut slices_vec = Vec::with_capacity(2);
+        slices_vec.push(unsafe { core::slice::from_raw_parts(a.as_ptr(), a.len()) });
+        slices_vec.push(unsafe { core::slice::from_raw_parts(b.as_ptr(), b.len()) });
+        let slices_arr = ManuallyDrop::new(slices_vec);
+        x.slices = slices_arr.as_ptr();
+        let slices = unsafe { core::slice::from_raw_parts(x.slices, 2) };
         let jagged = RawJaggedRef::new(slices, VecDequeSlicesIndexer, Some(vec_deque.len()));
         let con_iter = ConIterCore::new(jagged, 0);
+        x.con_iter = con_iter;
+        x
 
-        ConIterVecDequeRef {
-            vec_deque,
-            _slices_vec: slices_vec,
-            con_iter,
-        }
+        // let (a, b) = vec_deque.as_slices();
+        // let slices_vec = vec![a, b];
+        // let slices = unsafe { core::slice::from_raw_parts(slices_vec.as_ptr(), 2) };
+        // let jagged = RawJaggedRef::new(slices, VecDequeSlicesIndexer, Some(vec_deque.len()));
+        // let con_iter = ConIterCore::new(jagged, 0);
+
+        // ConIterVecDequeRef {
+        //     vec_deque,
+        //     _slices_vec: slices_vec,
+        //     con_iter,
+        // }
+        // todo!()
     }
 }
 
@@ -107,7 +129,8 @@ where
 {
     type Item = <ConIterCore<'a, T> as ConcurrentIter>::Item;
 
-    type SequentialIter = Skip<std::collections::vec_deque::Iter<'a, T>>;
+    // type SequentialIter = Skip<std::collections::vec_deque::Iter<'a, T>>;
+    type SequentialIter = <ConIterCore<'a, T> as ConcurrentIter>::SequentialIter;
 
     type ChunkPuller<'i>
         = <ConIterCore<'a, T> as ConcurrentIter>::ChunkPuller<'i>
@@ -115,9 +138,32 @@ where
         Self: 'i;
 
     fn into_seq_iter(self) -> Self::SequentialIter {
-        let num_remaining = self.len();
-        let skip = self.vec_deque.len().saturating_sub(num_remaining);
-        self.vec_deque.iter().skip(skip)
+        self.con_iter.into_seq_iter()
+        // let num_remaining = self.len();
+
+        // let empty = ManuallyDrop::new(Vec::new());
+        // let empty_ptr = empty.as_ptr();
+        // let x = core::mem::replace(&mut self.slices, empty_ptr) as *mut &'a [T];
+        // let _vec_to_drop = unsafe { Vec::from_raw_parts(x, 0, 2) };
+
+        // // self.slices_arr.clear();
+        // // let ptr = self.slices as *mut &'a [T];
+        // // unsafe { ptr.write(Default::default()) };
+        // // unsafe { ptr.add(1).write(Default::default()) };
+        // // let _vec_to_drop = unsafe { Vec::from_raw_parts(self.slices as *mut &'a [T], 2, 2) };
+        // // _vec_to_drop.leak();
+
+        // // let _ = ManuallyDrop::new(self.con_iter);
+
+        // // self.slices_arr[0] = Default::default();
+        // // self.slices_arr[1] = Default::default();
+        // // unsafe { self.slices_arr.set_len(0) };
+        // // let mut empty = vec![Default::default(), Default::default()];
+        // // core::mem::swap(&mut self._slices_arr, &mut empty);
+        // // drop(empty);
+        // // let _ = ManuallyDrop::new(self._slices_vec);
+        // let skip = self.vec_deque.len().saturating_sub(num_remaining);
+        // self.vec_deque.iter().skip(skip)
     }
 
     fn skip_to_end(&self) {
