@@ -18,4 +18,10 @@ where
     fn len_of(&self, f: usize) -> usize;
 
     fn get(&self, flat_idx: usize) -> Option<&'a T>;
+
+    // provided
+
+    fn jagged_slice_from(&self, flat_begin_idx: usize) -> RawJaggedSlice<'a, Self, X, T> {
+        self.jagged_slice(flat_begin_idx, self.len())
+    }
 }

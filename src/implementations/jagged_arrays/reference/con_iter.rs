@@ -82,8 +82,7 @@ where
 {
     type Item = &'a T;
 
-    // type SequentialIter = RawJaggedSliceIterRef<'a, T>;
-    type SequentialIter = core::iter::Empty<&'a T>;
+    type SequentialIter = RawJaggedSliceIterRef<'a, J, X, T>;
 
     type ChunkPuller<'i>
         = ChunkPullerJaggedRef<'i, 'a, J, X, T>
@@ -92,9 +91,8 @@ where
 
     fn into_seq_iter(self) -> Self::SequentialIter {
         let num_taken = self.counter.load(Ordering::Acquire).min(self.jagged.len());
-        // let slice = self.jagged.slice_from(num_taken);
-        // slice.into_iter_ref()
-        todo!()
+        let slice = self.jagged.jagged_slice_from(num_taken);
+        RawJaggedSliceIterRef::new(slice)
     }
 
     fn skip_to_end(&self) {
