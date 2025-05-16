@@ -1,2 +1,3 @@
-mod as_raw_jagged_ref;
+mod raw_jagged_ref;
+mod slice;
 mod slice_iter;
