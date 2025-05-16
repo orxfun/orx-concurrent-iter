@@ -57,30 +57,20 @@ where
     ///
     /// The remaining elements with respect to `num_taken` together with the allocation, and hence,
     /// the responsibility to drop, are transferred to the returned raw jagged array.
-    pub(super) fn into_remaining_iter(&mut self, num_taken: usize) -> Self {
+    pub(super) fn move_into_new(&mut self, num_taken: usize) -> Self {
+        let arrays = core::mem::replace(&mut self.arrays, Vec::new());
+
         let jagged_to_drop = Self {
-            arrays: unsafe {
-                Vec::from_raw_parts(
-                    self.arrays.as_mut_ptr(),
-                    self.arrays.len(),
-                    self.arrays.capacity(),
-                )
-            },
+            arrays,
             len: self.len,
             indexer: self.indexer.clone(),
             num_taken: Some(num_taken),
         };
 
-        self.arrays = Vec::new();
         self.len = 0;
         self.num_taken = None;
 
         jagged_to_drop
-    }
-
-    /// Creates an empty raw jagged array with the given `indexer`.
-    pub fn empty(indexer: X) -> Self {
-        Self::new(Default::default(), indexer, Some(0))
     }
 
     /// Total number of elements in the jagged array (`O(1)`).
