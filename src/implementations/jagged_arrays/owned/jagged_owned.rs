@@ -1,8 +1,8 @@
 use crate::implementations::{
     jagged_arrays::{
         as_slice::{AsOwningSlice, AsSlice},
-        jagged_index::JaggedIndex,
-        jagged_indexer::JaggedIndexer,
+        index::JaggedIndex,
+        indexer::JaggedIndexer,
     },
     ptr_utils::take,
 };

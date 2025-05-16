@@ -1,4 +1,5 @@
 mod as_slice;
-mod jagged_index;
-mod jagged_indexer;
+mod index;
+mod indexer;
+mod jagged_slice;
 mod owned;

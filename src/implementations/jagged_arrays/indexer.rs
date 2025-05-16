@@ -1,4 +1,4 @@
-use super::{as_slice::AsSlice, jagged_index::JaggedIndex};
+use super::{as_slice::AsSlice, index::JaggedIndex};
 
 /// An indexer for the raw jagged arrays.
 pub trait JaggedIndexer: Clone {

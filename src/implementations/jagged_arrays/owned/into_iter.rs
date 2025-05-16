@@ -1,6 +1,6 @@
-use super::raw_jagged_owned::RawJagged;
+use super::jagged_owned::RawJagged;
 use crate::implementations::{
-    jagged_arrays::{as_slice::AsOwningSlice, jagged_indexer::JaggedIndexer},
+    jagged_arrays::{as_slice::AsOwningSlice, indexer::JaggedIndexer},
     ptr_utils::take,
 };
 
