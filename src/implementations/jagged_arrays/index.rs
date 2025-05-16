@@ -27,14 +27,14 @@ impl JaggedIndex {
     pub fn is_in_exc_bounds_of<T>(&self, slices: &[impl AsSlice<T>]) -> bool {
         match slices.is_empty() {
             true => self.f == 0 && self.i == 0,
-            false => self.f < slices.len() && self.i <= slices[self.f].len(),
+            false => self.f < slices.len() && self.i <= slices[self.f].length(),
         }
     }
 
     pub fn is_in_inc_bounds_of<T>(&self, slices: &[impl AsSlice<T>]) -> bool {
         match slices.is_empty() {
             true => self.f == 0 && self.i == 0,
-            false => self.f < slices.len() && self.i < slices[self.f].len(),
+            false => self.f < slices.len() && self.i < slices[self.f].length(),
         }
     }
 }

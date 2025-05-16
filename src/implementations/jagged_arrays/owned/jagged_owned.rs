@@ -44,7 +44,7 @@ where
     /// Once the jagged array is dropped, the elements and allocation of the vectors
     /// will also be dropped.
     pub fn new(arrays: Vec<S>, indexer: X, total_len: Option<usize>) -> Self {
-        let len = total_len.unwrap_or_else(|| arrays.iter().map(|v| v.len()).sum());
+        let len = total_len.unwrap_or_else(|| arrays.iter().map(|v| v.length()).sum());
         Self {
             arrays,
             len,
@@ -94,7 +94,7 @@ where
                 true => None,
                 false => {
                     let f = self.arrays.len() - 1;
-                    let i = self.arrays[f].len();
+                    let i = self.arrays[f].length();
                     Some(JaggedIndex::new(f, i))
                 }
             },
@@ -199,13 +199,13 @@ where
             // drop elements
             if let Some(begin) = self.jagged_index(num_taken) {
                 let s = &self.arrays[begin.f];
-                for p in begin.i..s.len() {
+                for p in begin.i..s.length() {
                     unsafe { s.drop_in_place(p) };
                 }
 
                 for f in (begin.f + 1)..self.arrays.len() {
                     let s = &self.arrays[f];
-                    for p in 0..s.len() {
+                    for p in 0..s.length() {
                         unsafe { s.drop_in_place(p) };
                     }
                 }

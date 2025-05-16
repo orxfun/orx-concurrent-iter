@@ -1,10 +1,12 @@
+use alloc::vec::Vec;
+
 /// A type that can be represented as a slice.
 pub trait AsSlice<T> {
     /// Beginning of the slice.
     fn ptr(&self) -> *const T;
 
     /// Length of the slice.
-    fn len(&self) -> usize;
+    fn length(&self) -> usize;
 
     /// Creates a slice from this slice with `len` elements starting from the `begin`.
     fn slice(&self, begin: usize, len: usize) -> &[T];
@@ -13,14 +15,14 @@ pub trait AsSlice<T> {
 
     /// True if length is zero; false otherwise.
     fn is_empty(&self) -> bool {
-        self.len() == 0
+        self.length() == 0
     }
 
     /// Returns pointers to the first and last, (len-1)-th, element of the slice.
     ///
     /// If the slice is empty, both pointers are null.
     fn first_and_last_ptrs(&self) -> [*const T; 2] {
-        match self.len() {
+        match self.length() {
             0 => [core::ptr::null(), core::ptr::null()],
             n => [self.ptr(), unsafe { self.ptr_at(n - 1) }],
         }
@@ -33,7 +35,7 @@ pub trait AsSlice<T> {
     /// Must ensure that `position` is in bounds; otherwise,
     /// the method accesses out of bounds memory if `position >= self.len()`.
     unsafe fn ptr_at(&self, position: usize) -> *const T {
-        debug_assert!(position < self.len());
+        debug_assert!(position < self.length());
         unsafe { self.ptr().add(position) }
     }
 }
@@ -67,5 +69,41 @@ pub trait AsOwningSlice<T>: AsSlice<T> {
     /// `capacity`, since the memory that the pointers point to does not belong to the slice now.
     unsafe fn drop_allocation(&self) {
         let _vec_to_drop = unsafe { Vec::from_raw_parts(self.ptr() as *mut T, 0, self.capacity()) };
+    }
+}
+
+// implementations
+
+impl<T> AsSlice<T> for &[T] {
+    fn ptr(&self) -> *const T {
+        self.as_ptr()
+    }
+
+    fn length(&self) -> usize {
+        self.len()
+    }
+
+    fn slice(&self, begin: usize, len: usize) -> &[T] {
+        &self[begin..(begin + len)]
+    }
+}
+
+impl<T> AsSlice<T> for Vec<T> {
+    fn ptr(&self) -> *const T {
+        self.as_ptr()
+    }
+
+    fn length(&self) -> usize {
+        self.len()
+    }
+
+    fn slice(&self, begin: usize, len: usize) -> &[T] {
+        &self[begin..(begin + len)]
+    }
+}
+
+impl<T> AsOwningSlice<T> for Vec<T> {
+    fn capacity(&self) -> usize {
+        Vec::capacity(self)
     }
 }
