@@ -1,3 +1,4 @@
+use super::raw_vec::RawVec;
 use crate::implementations::{
     jagged_arrays::{
         as_slice::{AsOwningSlice, AsSlice},
@@ -7,7 +8,7 @@ use crate::implementations::{
     },
     ptr_utils::take,
 };
-use std::{cmp::Ordering, marker::PhantomData};
+use std::cmp::Ordering;
 
 /// Raw representation of a jagged array.
 /// Internally, the jagged array is stored as a vector of `S` that can
@@ -19,22 +20,19 @@ use std::{cmp::Ordering, marker::PhantomData};
 ///
 /// Once dropped, the owned raw jagged array will drop the elements and
 /// allocation of its raw vectors.
-pub struct RawJagged<S, T, X>
+pub struct RawJagged<T, X>
 where
     X: JaggedIndexer,
-    S: AsOwningSlice<T>,
 {
-    arrays: Vec<S>,
+    arrays: Vec<RawVec<T>>,
     len: usize,
     indexer: X,
     num_taken: Option<usize>,
-    phantom: PhantomData<T>,
 }
 
-impl<S, T, X> RawJagged<S, T, X>
+impl<T, X> RawJagged<T, X>
 where
     X: JaggedIndexer,
-    S: AsOwningSlice<T>,
 {
     /// Creates the raw jagged array for the given `arrays` and `indexer`.
     ///
@@ -44,14 +42,14 @@ where
     ///
     /// Once the jagged array is dropped, the elements and allocation of the vectors
     /// will also be dropped.
-    pub fn new(arrays: Vec<S>, indexer: X, total_len: Option<usize>) -> Self {
+    pub fn new(arrays: Vec<RawVec<T>>, indexer: X, total_len: Option<usize>) -> Self {
         let len = total_len.unwrap_or_else(|| arrays.iter().map(|v| v.length()).sum());
+        let arrays = arrays.into_iter().map(RawVec::from).collect();
         Self {
             arrays,
             len,
             indexer,
             num_taken: Some(0),
-            phantom: PhantomData,
         }
     }
 
@@ -71,7 +69,6 @@ where
             len: self.len,
             indexer: self.indexer.clone(),
             num_taken: Some(num_taken),
-            phantom: PhantomData,
         };
 
         self.arrays = Vec::new();
@@ -201,7 +198,7 @@ where
     }
 
     /// Returns a reference to the `f`-th slice, returns None iF `f >= self.num_arrays()`.
-    pub fn get(&self, f: usize) -> Option<&S> {
+    pub fn get(&self, f: usize) -> Option<&RawVec<T>> {
         self.arrays.get(f)
     }
 
@@ -210,7 +207,7 @@ where
     /// # SAFETY
     ///
     /// `f` must be within bounds; i.e., `f < self.num_arrays()`.
-    pub unsafe fn get_unchecked(&self, f: usize) -> &S {
+    pub unsafe fn get_unchecked(&self, f: usize) -> &RawVec<T> {
         debug_assert!(f < self.arrays.len());
         unsafe { self.arrays.get_unchecked(f) }
     }
@@ -219,7 +216,7 @@ where
     /// of the flattened jagged array.
     ///
     /// Returns an empty slice if any of the indices are out of bounds or if `flat_end <= flat_begin`.
-    pub fn slice(&self, flat_begin: usize, flat_end: usize) -> RawJaggedSlice<S, T> {
+    pub fn slice(&self, flat_begin: usize, flat_end: usize) -> RawJaggedSlice<RawVec<T>, T> {
         match flat_end.saturating_sub(flat_begin) {
             0 => Default::default(),
             len => {
@@ -233,15 +230,14 @@ where
     }
 
     /// Returns the raw jagged array slice for the flattened positions within range `flat_begin..self.len()`.
-    pub fn slice_from(&self, flat_begin: usize) -> RawJaggedSlice<S, T> {
+    pub fn slice_from(&self, flat_begin: usize) -> RawJaggedSlice<RawVec<T>, T> {
         self.slice(flat_begin, self.len)
     }
 }
 
-impl<S, T, X> Drop for RawJagged<S, T, X>
+impl<T, X> Drop for RawJagged<T, X>
 where
     X: JaggedIndexer,
-    S: AsOwningSlice<T>,
 {
     fn drop(&mut self) {
         if let Some(num_taken) = self.num_taken {

@@ -1,3 +1,6 @@
+use core::slice;
+use std::mem::ManuallyDrop;
+
 use alloc::vec::Vec;
 
 /// A type that can be represented as a slice.
@@ -69,6 +72,32 @@ pub trait AsOwningSlice<T>: AsSlice<T> {
     /// `capacity`, since the memory that the pointers point to does not belong to the slice now.
     unsafe fn drop_allocation(&self) {
         let _vec_to_drop = unsafe { Vec::from_raw_parts(self.ptr() as *mut T, 0, self.capacity()) };
+    }
+
+    unsafe fn drop_elements_in_place(&self, begin: usize) {
+        for i in begin..self.length() {
+            let ptr = unsafe { self.ptr_at(i) as *mut T };
+            unsafe { ptr.drop_in_place() };
+        }
+    }
+}
+
+// implementations - ManuallyDrop
+
+impl<T, S> AsSlice<T> for ManuallyDrop<S>
+where
+    S: AsSlice<T>,
+{
+    fn ptr(&self) -> *const T {
+        <S as AsSlice<_>>::ptr(self)
+    }
+
+    fn length(&self) -> usize {
+        <S as AsSlice<_>>::length(self)
+    }
+
+    fn slice(&self, begin: usize, len: usize) -> &[T] {
+        <S as AsSlice<_>>::slice(self, begin, len)
     }
 }
 

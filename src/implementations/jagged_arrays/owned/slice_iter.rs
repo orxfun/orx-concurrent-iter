@@ -6,6 +6,8 @@ use crate::implementations::{
     ptr_utils::take,
 };
 
+use super::raw_vec::RawVec;
+
 /// An iterator over owned elements of a slice of a raw jagged array;
 /// i.e., a [`RawJaggedSlice`].
 ///
@@ -18,21 +20,15 @@ use crate::implementations::{
 ///   it belongs to and will be dropped by the caller side.
 /// * If not elements of the iterator are visited, an unvisited element will be dropped in
 ///   place while this iterator is being dropped.
-pub struct RawJaggedSliceIterOwned<'a, S, T>
-where
-    S: AsOwningSlice<T>,
-{
-    slice: RawJaggedSlice<'a, S, T>,
+pub struct RawJaggedSliceIterOwned<'a, T> {
+    slice: RawJaggedSlice<'a, RawVec<T>, T>,
     len_of_remaining_slices: usize,
     f: usize,
     current_ptr: *const T,
     current_last: *const T,
 }
 
-impl<'a, S, T> Default for RawJaggedSliceIterOwned<'a, S, T>
-where
-    S: AsOwningSlice<T>,
-{
+impl<'a, T> Default for RawJaggedSliceIterOwned<'a, T> {
     fn default() -> Self {
         Self {
             slice: Default::default(),
@@ -44,11 +40,8 @@ where
     }
 }
 
-impl<'a, S, T> RawJaggedSliceIterOwned<'a, S, T>
-where
-    S: AsOwningSlice<T>,
-{
-    pub(crate) fn new(slice: RawJaggedSlice<'a, S, T>) -> Self {
+impl<'a, T> RawJaggedSliceIterOwned<'a, T> {
+    pub(crate) fn new(slice: RawJaggedSlice<'a, RawVec<T>, T>) -> Self {
         Self {
             len_of_remaining_slices: slice.len(),
             slice,
@@ -115,10 +108,7 @@ where
     }
 }
 
-impl<'a, S, T> Iterator for RawJaggedSliceIterOwned<'a, S, T>
-where
-    S: AsOwningSlice<T>,
-{
+impl<'a, T> Iterator for RawJaggedSliceIterOwned<'a, T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -148,19 +138,13 @@ where
     }
 }
 
-impl<'a, S, T> ExactSizeIterator for RawJaggedSliceIterOwned<'a, S, T>
-where
-    S: AsOwningSlice<T>,
-{
+impl<'a, T> ExactSizeIterator for RawJaggedSliceIterOwned<'a, T> {
     fn len(&self) -> usize {
         self.remaining()
     }
 }
 
-impl<'a, S, T> Drop for RawJaggedSliceIterOwned<'a, S, T>
-where
-    S: AsOwningSlice<T>,
-{
+impl<'a, T> Drop for RawJaggedSliceIterOwned<'a, T> {
     fn drop(&mut self) {
         while self.drop_next() {}
     }

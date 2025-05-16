@@ -1,10 +1,9 @@
 use super::{
     chunk_puller::ChunkPullerJaggedOwned, into_iter::RawJaggedIterOwned, jagged_owned::RawJagged,
-    slice_iter::RawJaggedSliceIterOwned,
+    raw_vec::RawVec, slice_iter::RawJaggedSliceIterOwned,
 };
 use crate::{
-    ConcurrentIter, ExactSizeConcurrentIter,
-    implementations::jagged_arrays::{as_slice::AsOwningSlice, indexer::JaggedIndexer},
+    ConcurrentIter, ExactSizeConcurrentIter, implementations::jagged_arrays::indexer::JaggedIndexer,
 };
 use core::sync::atomic::{AtomicUsize, Ordering};
 
@@ -12,39 +11,35 @@ use core::sync::atomic::{AtomicUsize, Ordering};
 ///
 /// Ensures that all elements are dropped regardless of whether they are iterated over or skipped.
 /// Further, cleans up the allocations of the jagged array.
-pub struct ConIterJaggedOwned<S, T, X>
+pub struct ConIterJaggedOwned<T, X>
 where
     T: Send + Sync,
-    S: AsOwningSlice<T>,
     X: JaggedIndexer + Send + Sync,
 {
-    jagged: RawJagged<S, T, X>,
+    jagged: RawJagged<T, X>,
     counter: AtomicUsize,
 }
 
-unsafe impl<S, T, X> Sync for ConIterJaggedOwned<S, T, X>
+unsafe impl<T, X> Sync for ConIterJaggedOwned<T, X>
 where
     T: Send + Sync,
-    S: AsOwningSlice<T>,
     X: JaggedIndexer + Send + Sync,
 {
 }
 
-unsafe impl<S, T, X> Send for ConIterJaggedOwned<S, T, X>
+unsafe impl<T, X> Send for ConIterJaggedOwned<T, X>
 where
     T: Send + Sync,
-    S: AsOwningSlice<T>,
     X: JaggedIndexer + Send + Sync,
 {
 }
 
-impl<S, T, X> ConIterJaggedOwned<S, T, X>
+impl<T, X> ConIterJaggedOwned<T, X>
 where
     T: Send + Sync,
-    S: AsOwningSlice<T>,
     X: JaggedIndexer + Send + Sync,
 {
-    pub(crate) fn new(jagged: RawJagged<S, T, X>, begin: usize) -> Self {
+    pub(crate) fn new(jagged: RawJagged<T, X>, begin: usize) -> Self {
         Self {
             jagged,
             counter: begin.into(),
@@ -62,7 +57,7 @@ where
     pub(super) fn progress_and_get_iter(
         &self,
         chunk_size: usize,
-    ) -> Option<(usize, RawJaggedSliceIterOwned<S, T>)> {
+    ) -> Option<(usize, RawJaggedSliceIterOwned<T>)> {
         self.progress_and_get_begin_idx(chunk_size)
             .map(|begin_idx| {
                 let end_idx = (begin_idx + chunk_size)
@@ -75,18 +70,17 @@ where
     }
 }
 
-impl<S, T, X> ConcurrentIter for ConIterJaggedOwned<S, T, X>
+impl<T, X> ConcurrentIter for ConIterJaggedOwned<T, X>
 where
     T: Send + Sync,
-    S: AsOwningSlice<T>,
     X: JaggedIndexer + Send + Sync,
 {
     type Item = T;
 
-    type SequentialIter = RawJaggedIterOwned<S, T, X>;
+    type SequentialIter = RawJaggedIterOwned<T, X>;
 
     type ChunkPuller<'i>
-        = ChunkPullerJaggedOwned<'i, S, T, X>
+        = ChunkPullerJaggedOwned<'i, T, X>
     where
         Self: 'i;
 
@@ -130,10 +124,9 @@ where
     }
 }
 
-impl<S, T, X> ExactSizeConcurrentIter for ConIterJaggedOwned<S, T, X>
+impl<T, X> ExactSizeConcurrentIter for ConIterJaggedOwned<T, X>
 where
     T: Send + Sync,
-    S: AsOwningSlice<T>,
     X: JaggedIndexer + Send + Sync,
 {
     fn len(&self) -> usize {
@@ -142,10 +135,9 @@ where
     }
 }
 
-impl<S, T, X> Drop for ConIterJaggedOwned<S, T, X>
+impl<T, X> Drop for ConIterJaggedOwned<T, X>
 where
     T: Send + Sync,
-    S: AsOwningSlice<T>,
     X: JaggedIndexer + Send + Sync,
 {
     fn drop(&mut self) {

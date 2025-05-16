@@ -1,6 +1,6 @@
 use super::jagged_owned::RawJagged;
 use crate::implementations::{
-    jagged_arrays::{as_slice::AsOwningSlice, indexer::JaggedIndexer},
+    jagged_arrays::{as_slice::AsSlice, indexer::JaggedIndexer},
     ptr_utils::take,
 };
 
@@ -12,23 +12,21 @@ use crate::implementations::{
 /// dropping remaining element in place.
 ///
 /// Furthermore, it is responsible from releasing the allocation of arrays of the jagged array on drop.
-pub struct RawJaggedIterOwned<S, T, X>
+pub struct RawJaggedIterOwned<T, X>
 where
     X: JaggedIndexer,
-    S: AsOwningSlice<T>,
 {
-    jagged: RawJagged<S, T, X>,
+    jagged: RawJagged<T, X>,
     f: usize,
     current_ptr: *const T,
     current_last: *const T,
 }
 
-impl<S, T, X> RawJaggedIterOwned<S, T, X>
+impl<T, X> RawJaggedIterOwned<T, X>
 where
     X: JaggedIndexer,
-    S: AsOwningSlice<T>,
 {
-    pub(crate) fn new(mut jagged: RawJagged<S, T, X>) -> Self {
+    pub(crate) fn new(mut jagged: RawJagged<T, X>) -> Self {
         let num_taken = match jagged.num_taken() {
             Some(num_taken) => {
                 // SAFETY: we assume all elements are taken out.
@@ -126,10 +124,9 @@ where
     }
 }
 
-impl<S, T, X> Iterator for RawJaggedIterOwned<S, T, X>
+impl<T, X> Iterator for RawJaggedIterOwned<T, X>
 where
     X: JaggedIndexer,
-    S: AsOwningSlice<T>,
 {
     type Item = T;
 
@@ -155,10 +152,9 @@ where
     }
 }
 
-impl<S, T, X> Drop for RawJaggedIterOwned<S, T, X>
+impl<T, X> Drop for RawJaggedIterOwned<T, X>
 where
     X: JaggedIndexer,
-    S: AsOwningSlice<T>,
 {
     fn drop(&mut self) {
         while self.drop_next() {}

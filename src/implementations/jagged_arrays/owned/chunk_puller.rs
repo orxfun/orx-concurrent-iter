@@ -1,26 +1,21 @@
-use super::{con_iter::ConIterJaggedOwned, slice_iter::RawJaggedSliceIterOwned};
-use crate::{
-    ChunkPuller,
-    implementations::jagged_arrays::{as_slice::AsOwningSlice, indexer::JaggedIndexer},
-};
+use super::{con_iter::ConIterJaggedOwned, raw_vec::RawVec, slice_iter::RawJaggedSliceIterOwned};
+use crate::{ChunkPuller, implementations::jagged_arrays::indexer::JaggedIndexer};
 
-pub struct ChunkPullerJaggedOwned<'i, S, T, X>
+pub struct ChunkPullerJaggedOwned<'i, T, X>
 where
     T: Send + Sync,
-    S: AsOwningSlice<T>,
     X: JaggedIndexer + Send + Sync,
 {
-    con_iter: &'i ConIterJaggedOwned<S, T, X>,
+    con_iter: &'i ConIterJaggedOwned<T, X>,
     chunk_size: usize,
 }
 
-impl<'i, S, T, X> ChunkPullerJaggedOwned<'i, S, T, X>
+impl<'i, T, X> ChunkPullerJaggedOwned<'i, T, X>
 where
     T: Send + Sync,
-    S: AsOwningSlice<T>,
     X: JaggedIndexer + Send + Sync,
 {
-    pub(super) fn new(con_iter: &'i ConIterJaggedOwned<S, T, X>, chunk_size: usize) -> Self {
+    pub(super) fn new(con_iter: &'i ConIterJaggedOwned<T, X>, chunk_size: usize) -> Self {
         Self {
             con_iter,
             chunk_size,
@@ -28,16 +23,15 @@ where
     }
 }
 
-impl<'i, S, T, X> ChunkPuller for ChunkPullerJaggedOwned<'i, S, T, X>
+impl<'i, T, X> ChunkPuller for ChunkPullerJaggedOwned<'i, T, X>
 where
     T: Send + Sync,
-    S: AsOwningSlice<T>,
     X: JaggedIndexer + Send + Sync,
 {
     type ChunkItem = T;
 
     type Chunk<'c>
-        = RawJaggedSliceIterOwned<'c, S, T>
+        = RawJaggedSliceIterOwned<'c, T>
     where
         Self: 'c;
 
