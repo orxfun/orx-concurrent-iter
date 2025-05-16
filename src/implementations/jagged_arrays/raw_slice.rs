@@ -1,17 +1,23 @@
 use super::as_slice::AsSlice;
+use std::marker::PhantomData;
 
-pub struct RawSlice<T> {
+pub struct RawSlice<'a, T> {
     ptr: *const T,
     len: usize,
+    phantom: PhantomData<&'a ()>,
 }
 
-impl<T> RawSlice<T> {
+impl<T> RawSlice<'_, T> {
     pub fn new(ptr: *const T, len: usize) -> Self {
-        Self { ptr, len }
+        Self {
+            ptr,
+            len,
+            phantom: PhantomData,
+        }
     }
 }
 
-impl<T> AsSlice<T> for RawSlice<T> {
+impl<T> AsSlice<T> for RawSlice<'_, T> {
     fn ptr(&self) -> *const T {
         self.ptr
     }
