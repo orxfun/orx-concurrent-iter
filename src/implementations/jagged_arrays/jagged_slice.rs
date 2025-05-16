@@ -103,4 +103,36 @@ where
             false => None,
         }
     }
+
+    /// # SAFETY
+    ///
+    /// The caller must ensure that the slice does not overlive the data source jagged array.
+    pub(super) unsafe fn get_slice<'b>(&self, s: usize) -> Option<&'b [T]> {
+        match s < self.num_slices {
+            true => {
+                let f = self.begin.f + s;
+                let vec = &self.vectors[f];
+
+                let start = match s == 0 {
+                    true => self.begin.i,
+                    false => 0,
+                };
+
+                let end_exc = match s == self.num_slices - 1 {
+                    false => vec.length(),
+                    true => match self.end.i {
+                        0 => vec.length(),
+                        end => end,
+                    },
+                };
+
+                let len = end_exc - start;
+                debug_assert!(len > 0);
+
+                let raw_slice = vec.raw_slice(start, len);
+                Some(unsafe { raw_slice.as_slice() })
+            }
+            false => None,
+        }
+    }
 }
