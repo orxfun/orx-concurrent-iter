@@ -23,6 +23,10 @@ where
     X: JaggedIndexer,
 {
     /// Creates the raw jagged array reference for the given `arrays` and `indexer`.
+    ///
+    /// If the total number of elements in all `arrays` is known, it can be passed in as `total_len`,
+    /// which will be assumed to be correct.
+    /// If `None` is passed as the total length, it will be computed as sum of all vectors.
     pub fn new(arrays: Vec<RawSlice<'a, T>>, indexer: X, total_len: Option<usize>) -> Self {
         let len = total_len.unwrap_or_else(|| arrays.iter().map(|v| v.length()).sum());
         Self {
