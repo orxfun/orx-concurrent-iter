@@ -6,6 +6,7 @@ use crate::{
 };
 use alloc::vec;
 use alloc::vec::Vec;
+use core::iter::Skip;
 use orx_pseudo_default::PseudoDefault;
 use std::collections::VecDeque;
 
@@ -42,6 +43,7 @@ pub struct ConIterVecDequeRef<'a, T>
 where
     T: Send + Sync,
 {
+    vec_deque: &'a VecDeque<T>,
     _slices_vec: Vec<&'a [T]>,
     con_iter: ConIterCore<'a, T>,
 }
@@ -58,6 +60,7 @@ where
         let con_iter = ConIterCore::new(jagged, 0);
 
         ConIterVecDequeRef {
+            vec_deque,
             _slices_vec: slices_vec,
             con_iter,
         }
@@ -65,8 +68,6 @@ where
 }
 
 type ConIterCore<'a, T> = ConIterJaggedRef<'a, T, &'a [T], VecDequeSlicesIndexer>;
-
-// pub struct VecDequeSlices<'a, T>(Vec<&'a [T]>);
 
 #[derive(Clone)]
 pub struct VecDequeSlicesIndexer;
@@ -100,27 +101,13 @@ impl JaggedIndexer for VecDequeSlicesIndexer {
     }
 }
 
-impl<'a, T> Default for ConIterVecDequeRef<'a, T>
-where
-    T: Send + Sync,
-{
-    fn default() -> Self {
-        let slices_vec = vec![Default::default(), Default::default()];
-        let con_iter = ConIterJaggedRef::new(Default::default(), 0);
-        Self {
-            _slices_vec: slices_vec,
-            con_iter,
-        }
-    }
-}
-
 impl<'a, T> ConcurrentIter for ConIterVecDequeRef<'a, T>
 where
     T: Send + Sync,
 {
     type Item = <ConIterCore<'a, T> as ConcurrentIter>::Item;
 
-    type SequentialIter = <ConIterCore<'a, T> as ConcurrentIter>::SequentialIter;
+    type SequentialIter = Skip<std::collections::vec_deque::Iter<'a, T>>;
 
     type ChunkPuller<'i>
         = <ConIterCore<'a, T> as ConcurrentIter>::ChunkPuller<'i>
@@ -128,7 +115,9 @@ where
         Self: 'i;
 
     fn into_seq_iter(self) -> Self::SequentialIter {
-        self.con_iter.into_seq_iter()
+        let num_remaining = self.len();
+        let skip = self.vec_deque.len().saturating_sub(num_remaining);
+        self.vec_deque.iter().skip(skip)
     }
 
     fn skip_to_end(&self) {
