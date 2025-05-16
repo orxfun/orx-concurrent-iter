@@ -1,20 +1,23 @@
+use super::{as_raw_jagged_ref::AsRawJaggedRef, slice_iter::RawJaggedSliceIterRef};
 use crate::{ChunkPuller, implementations::jagged_arrays::JaggedIndexer};
 
-pub struct ChunkPullerJaggedRef<'i, 'a, T, X>
+pub struct ChunkPullerJaggedRef<'i, 'a, J, X, T>
 where
-    T: Send + Sync,
-    X: JaggedIndexer + Send + Sync,
+    T: Send + Sync + 'a,
+    X: JaggedIndexer + Send + Sync + 'a,
+    J: AsRawJaggedRef<'a, T, X>,
 {
-    con_iter: &'i ConIterJaggedRef<'a, T, X>,
+    con_iter: &'i ConIterJaggedRef<'a, J, X, T>,
     chunk_size: usize,
 }
 
-impl<'i, 'a, T, X> ChunkPullerJaggedRef<'i, 'a, T, X>
+impl<'i, 'a, J, X, T> ChunkPullerJaggedRef<'i, 'a, J, X, T>
 where
-    T: Send + Sync,
-    X: JaggedIndexer + Send + Sync,
+    T: Send + Sync + 'a,
+    X: JaggedIndexer + Send + Sync + 'a,
+    J: AsRawJaggedRef<'a, T, X>,
 {
-    pub(super) fn new(con_iter: &'i ConIterJaggedRef<'a, T, X>, chunk_size: usize) -> Self {
+    pub(super) fn new(con_iter: &'i ConIterJaggedRef<'a, J, X, T>, chunk_size: usize) -> Self {
         Self {
             con_iter,
             chunk_size,
@@ -22,15 +25,16 @@ where
     }
 }
 
-impl<'i, 'a, T, X> ChunkPuller for ChunkPullerJaggedRef<'i, 'a, T, X>
+impl<'i, 'a, J, X, T> ChunkPuller for ChunkPullerJaggedRef<'i, 'a, J, X, T>
 where
-    T: Send + Sync,
-    X: JaggedIndexer + Send + Sync,
+    T: Send + Sync + 'a,
+    X: JaggedIndexer + Send + Sync + 'a,
+    J: AsRawJaggedRef<'a, T, X>,
 {
     type ChunkItem = &'a T;
 
     type Chunk<'c>
-        = RawJaggedSliceIterRef<'a, T>
+        = RawJaggedSliceIterRef<'a, J, X, T>
     where
         Self: 'c;
 

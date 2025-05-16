@@ -1,43 +1,49 @@
+use super::{as_raw_jagged_ref::AsRawJaggedRef, slice_iter::RawJaggedSliceIterRef};
 use crate::{
     ConcurrentIter, ExactSizeConcurrentIter, implementations::jagged_arrays::JaggedIndexer,
 };
 use core::sync::atomic::{AtomicUsize, Ordering};
-
-use super::{RawJaggedRef, slice_iter::RawJaggedSliceIterRef};
+use std::marker::PhantomData;
 
 /// Flattened concurrent iterator of a raw jagged array yielding references to elements.
-pub struct ConIterJaggedRef<'a, T, X>
+pub struct ConIterJaggedRef<'a, J, X, T>
 where
     T: Send + Sync,
     X: JaggedIndexer + Send + Sync,
+    J: AsRawJaggedRef<'a, T, X>,
 {
-    jagged: RawJaggedRef<'a, T, X>,
+    jagged: J,
     counter: AtomicUsize,
+    phantom: PhantomData<&'a (X, T)>,
 }
 
-unsafe impl<'a, T, X> Sync for ConIterJaggedRef<'a, T, X>
+unsafe impl<'a, J, X, T> Sync for ConIterJaggedRef<'a, J, X, T>
 where
     T: Send + Sync,
     X: JaggedIndexer + Send + Sync,
+    J: AsRawJaggedRef<'a, T, X>,
 {
 }
 
-unsafe impl<'a, T, X> Send for ConIterJaggedRef<'a, T, X>
+unsafe impl<'a, J, X, T> Send for ConIterJaggedRef<'a, J, X, T>
 where
     T: Send + Sync,
     X: JaggedIndexer + Send + Sync,
+    J: AsRawJaggedRef<'a, T, X>,
 {
 }
 
-impl<'a, T, X> ConIterJaggedRef<'a, T, X>
+impl<'a, J, X, T> ConIterJaggedRef<'a, J, X, T>
 where
     T: Send + Sync,
     X: JaggedIndexer + Send + Sync,
+    J: AsRawJaggedRef<'a, T, X>,
 {
-    pub(crate) fn new(jagged: RawJaggedRef<'a, T, X>, begin: usize) -> Self {
+    pub(crate) fn new(jagged: J, begin: usize) -> Self {
         Self {
             jagged,
             counter: begin.into(),
+            phantom: PhantomData,
         }
     }
 
@@ -52,13 +58,13 @@ where
     pub(super) fn progress_and_get_iter(
         &self,
         chunk_size: usize,
-    ) -> Option<(usize, RawJaggedSliceIterRef<'a, T>)> {
+    ) -> Option<(usize, RawJaggedSliceIterRef<'a, J, X, T>)> {
         self.progress_and_get_begin_idx(chunk_size)
             .map(|begin_idx| {
                 let end_idx = (begin_idx + chunk_size)
                     .min(self.jagged.len())
                     .max(begin_idx);
-                let slice = self.jagged.slice(begin_idx, end_idx);
+                let slice = self.jagged.jagged_slice(begin_idx, end_idx);
                 let iter = RawJaggedSliceIterRef::new(slice);
                 (begin_idx, iter)
             })
