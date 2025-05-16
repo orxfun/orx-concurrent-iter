@@ -1,9 +1,12 @@
 use super::AsRawSlice;
 use core::cmp::Ordering;
 
+/// Index of an element in a jagged array.
 #[derive(Default, PartialEq, Debug, Clone)]
 pub struct JaggedIndex {
+    /// Index of the array containing the element.
     pub f: usize,
+    /// Index of the element within the array containing it.
     pub i: usize,
 }
 
@@ -20,21 +23,18 @@ impl From<[usize; 2]> for JaggedIndex {
 }
 
 impl JaggedIndex {
+    /// Creates a new jagged index:
+    ///
+    /// * `f`: index of the array containing the element.
+    /// * `i`: index of the element within the array containing it.
     pub fn new(f: usize, i: usize) -> Self {
         Self { f, i }
     }
 
-    pub fn is_in_exc_bounds_of<T>(&self, slices: &[impl AsRawSlice<T>]) -> bool {
+    pub(super) fn is_in_exc_bounds_of<T>(&self, slices: &[impl AsRawSlice<T>]) -> bool {
         match slices.is_empty() {
             true => self.f == 0 && self.i == 0,
             false => self.f < slices.len() && self.i <= slices[self.f].length(),
-        }
-    }
-
-    pub fn is_in_inc_bounds_of<T>(&self, slices: &[impl AsRawSlice<T>]) -> bool {
-        match slices.is_empty() {
-            true => self.f == 0 && self.i == 0,
-            false => self.f < slices.len() && self.i < slices[self.f].length(),
         }
     }
 }
