@@ -7,6 +7,7 @@ mod into_con_iter;
 mod into_iter;
 mod raw_jagged;
 mod raw_vec;
+mod slice;
 mod slice_iter;
 
 pub use con_iter::ConIterJaggedOwned;

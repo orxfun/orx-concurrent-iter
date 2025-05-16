@@ -1,13 +1,11 @@
-use super::{as_slice::AsSlice, index::JaggedIndex, raw_slice::RawSlice};
+use super::RawVec;
+use crate::implementations::jagged_arrays::{AsSlice, JaggedIndex, RawSlice};
 use std::marker::PhantomData;
 
 /// A slice of a jagged array which might be empty, a slice of a single vector,
 /// or a series of slices of subsequent arrays of the jagged array.
-pub struct RawJaggedSlice<'a, S, T>
-where
-    S: AsSlice<T>,
-{
-    vectors: &'a [S],
+pub struct RawJaggedSlice<'a, T> {
+    vectors: &'a [RawVec<T>],
     begin: JaggedIndex,
     end: JaggedIndex,
     len: usize,
@@ -15,10 +13,7 @@ where
     phantom: PhantomData<T>,
 }
 
-impl<S, T> Default for RawJaggedSlice<'_, S, T>
-where
-    S: AsSlice<T>,
-{
+impl<T> Default for RawJaggedSlice<'_, T> {
     fn default() -> Self {
         Self {
             vectors: Default::default(),
@@ -31,12 +26,14 @@ where
     }
 }
 
-impl<'a, S, T> RawJaggedSlice<'a, S, T>
-where
-    S: AsSlice<T>,
-{
+impl<'a, T> RawJaggedSlice<'a, T> {
     /// Constructs a non-empty raw jagged slice.
-    pub(super) fn new(arrays: &'a [S], begin: JaggedIndex, end: JaggedIndex, len: usize) -> Self {
+    pub(super) fn new(
+        arrays: &'a [RawVec<T>],
+        begin: JaggedIndex,
+        end: JaggedIndex,
+        len: usize,
+    ) -> Self {
         debug_assert!(begin.is_in_exc_bounds_of(&arrays));
         debug_assert!(end.is_in_exc_bounds_of(&arrays));
         debug_assert!(begin <= end);

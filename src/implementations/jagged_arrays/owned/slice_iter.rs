@@ -1,8 +1,5 @@
-use super::raw_vec::RawVec;
-use crate::implementations::{
-    jagged_arrays::{as_slice::AsSlice, jagged_slice::RawJaggedSlice},
-    ptr_utils::take,
-};
+use super::slice::RawJaggedSlice;
+use crate::implementations::{jagged_arrays::as_slice::AsSlice, ptr_utils::take};
 
 /// An iterator over owned elements of a slice of a raw jagged array;
 /// i.e., a [`RawJaggedSlice`].
@@ -17,7 +14,7 @@ use crate::implementations::{
 /// * If not elements of the iterator are visited, an unvisited element will be dropped in
 ///   place while this iterator is being dropped.
 pub struct RawJaggedSliceIterOwned<'a, T> {
-    slice: RawJaggedSlice<'a, RawVec<T>, T>,
+    slice: RawJaggedSlice<'a, T>,
     len_of_remaining_slices: usize,
     f: usize,
     current_ptr: *const T,
@@ -37,7 +34,7 @@ impl<'a, T> Default for RawJaggedSliceIterOwned<'a, T> {
 }
 
 impl<'a, T> RawJaggedSliceIterOwned<'a, T> {
-    pub(crate) fn new(slice: RawJaggedSlice<'a, RawVec<T>, T>) -> Self {
+    pub(crate) fn new(slice: RawJaggedSlice<'a, T>) -> Self {
         Self {
             len_of_remaining_slices: slice.len(),
             slice,

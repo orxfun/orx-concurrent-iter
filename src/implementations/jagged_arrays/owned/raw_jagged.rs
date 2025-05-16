@@ -1,10 +1,9 @@
-use super::raw_vec::RawVec;
+use super::{raw_vec::RawVec, slice::RawJaggedSlice};
 use crate::implementations::{
     jagged_arrays::{
         as_slice::{AsOwningSlice, AsSlice},
         index::JaggedIndex,
         indexer::JaggedIndexer,
-        jagged_slice::RawJaggedSlice,
     },
     ptr_utils::take,
 };
@@ -204,7 +203,7 @@ where
     /// of the flattened jagged array.
     ///
     /// Returns an empty slice if any of the indices are out of bounds or if `flat_end <= flat_begin`.
-    pub fn slice(&self, flat_begin: usize, flat_end: usize) -> RawJaggedSlice<RawVec<T>, T> {
+    pub fn slice(&self, flat_begin: usize, flat_end: usize) -> RawJaggedSlice<T> {
         match flat_end.saturating_sub(flat_begin) {
             0 => Default::default(),
             len => {
@@ -218,7 +217,7 @@ where
     }
 
     /// Returns the raw jagged array slice for the flattened positions within range `flat_begin..self.len()`.
-    pub fn slice_from(&self, flat_begin: usize) -> RawJaggedSlice<RawVec<T>, T> {
+    pub fn slice_from(&self, flat_begin: usize) -> RawJaggedSlice<T> {
         self.slice(flat_begin, self.len)
     }
 }
