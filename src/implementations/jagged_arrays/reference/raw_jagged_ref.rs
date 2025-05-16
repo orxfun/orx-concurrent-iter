@@ -32,4 +32,9 @@ where
             indexer,
         }
     }
+
+    /// Total number of elements in the jagged array (`O(1)`).
+    pub fn len(&self) -> usize {
+        self.len
+    }
 }

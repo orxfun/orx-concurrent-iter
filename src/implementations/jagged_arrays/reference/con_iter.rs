@@ -1,4 +1,4 @@
-use super::{RawJaggedRef, chunk_puller::ChunkPullerJaggedRef};
+use super::{RawJaggedRef, chunk_puller::ChunkPullerJaggedRef, slice_iter::RawJaggedSliceIterRef};
 use crate::{
     ConcurrentIter, ExactSizeConcurrentIter, implementations::jagged_arrays::JaggedIndexer,
 };
@@ -66,7 +66,7 @@ where
 
 impl<'a, T, X> ConcurrentIter for ConIterJaggedRef<'a, T, X>
 where
-    T: Send + Sync,
+    T: Send + Sync + 'a,
     X: JaggedIndexer + Send + Sync,
 {
     type Item = &'a T;
@@ -111,7 +111,7 @@ where
 
 impl<'a, T, X> ExactSizeConcurrentIter for ConIterJaggedRef<'a, T, X>
 where
-    T: Send + Sync,
+    T: Send + Sync + 'a,
     X: JaggedIndexer + Send + Sync,
 {
     fn len(&self) -> usize {
