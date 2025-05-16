@@ -1,11 +1,11 @@
-use super::{as_slice::AsOwningSlice, index::JaggedIndex};
+use super::{as_slice::AsSlice, index::JaggedIndex};
 use std::marker::PhantomData;
 
 /// A slice of a jagged array which might be empty, a slice of a single vector,
 /// or a series of slices of subsequent arrays of the jagged array.
 pub struct RawJaggedSlice<'a, S, T>
 where
-    S: AsOwningSlice<T>,
+    S: AsSlice<T>,
 {
     vectors: &'a [S],
     begin: JaggedIndex,
@@ -17,7 +17,7 @@ where
 
 impl<S, T> Default for RawJaggedSlice<'_, S, T>
 where
-    S: AsOwningSlice<T>,
+    S: AsSlice<T>,
 {
     fn default() -> Self {
         Self {
@@ -33,7 +33,7 @@ where
 
 impl<'a, S, T> RawJaggedSlice<'a, S, T>
 where
-    S: AsOwningSlice<T>,
+    S: AsSlice<T>,
 {
     /// Constructs a non-empty raw jagged slice.
     pub(super) fn new(arrays: &'a [S], begin: JaggedIndex, end: JaggedIndex, len: usize) -> Self {

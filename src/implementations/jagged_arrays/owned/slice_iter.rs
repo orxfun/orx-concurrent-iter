@@ -134,6 +134,8 @@ where
                     true => core::ptr::null_mut(),
                 };
 
+                // SAFETY: ptr is valid and its value can be taken.
+                // Drop will skip this position which is now uninitialized.
                 Some(unsafe { take(ptr) })
             }
             true => self.next_slice(),

@@ -3,6 +3,7 @@ use crate::implementations::{
         as_slice::{AsOwningSlice, AsSlice},
         index::JaggedIndex,
         indexer::JaggedIndexer,
+        jagged_slice::RawJaggedSlice,
     },
     ptr_utils::take,
 };
@@ -186,6 +187,28 @@ where
     pub unsafe fn get_unchecked(&self, f: usize) -> &S {
         debug_assert!(f < self.arrays.len());
         unsafe { self.arrays.get_unchecked(f) }
+    }
+
+    /// Returns the raw jagged array slice containing all elements having positions in range `flat_begin..flat_end`
+    /// of the flattened jagged array.
+    ///
+    /// Returns an empty slice if any of the indices are out of bounds or if `flat_end <= flat_begin`.
+    pub fn slice(&self, flat_begin: usize, flat_end: usize) -> RawJaggedSlice<S, T> {
+        match flat_end.saturating_sub(flat_begin) {
+            0 => Default::default(),
+            len => {
+                let [begin, end] = [flat_begin, flat_end].map(|i| self.jagged_index(i));
+                match (begin, end) {
+                    (Some(begin), Some(end)) => RawJaggedSlice::new(&self.arrays, begin, end, len),
+                    _ => Default::default(),
+                }
+            }
+        }
+    }
+
+    /// Returns the raw jagged array slice for the flattened positions within range `flat_begin..self.len()`.
+    pub fn slice_from(&self, flat_begin: usize) -> RawJaggedSlice<S, T> {
+        self.slice(flat_begin, self.len)
     }
 }
 
