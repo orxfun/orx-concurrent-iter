@@ -17,6 +17,23 @@ where
     phantom: PhantomData<&'a (X, T)>,
 }
 
+impl<'a, J, X, T> Default for RawJaggedSlice<'a, J, X, T>
+where
+    X: JaggedIndexer,
+    J: AsRawJaggedRef<'a, T, X>,
+{
+    fn default() -> Self {
+        Self {
+            jagged: Default::default(),
+            begin: Default::default(),
+            end: Default::default(),
+            len: Default::default(),
+            num_slices: Default::default(),
+            phantom: Default::default(),
+        }
+    }
+}
+
 impl<'a, J, X, T> RawJaggedSlice<'a, J, X, T>
 where
     X: JaggedIndexer,

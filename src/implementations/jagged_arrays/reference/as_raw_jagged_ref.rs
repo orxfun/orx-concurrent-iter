@@ -1,6 +1,6 @@
 use crate::implementations::jagged_arrays::JaggedIndexer;
 
-pub trait AsRawJaggedRef<'a, T, X>
+pub trait AsRawJaggedRef<'a, T, X>: Default
 where
     X: JaggedIndexer,
 {

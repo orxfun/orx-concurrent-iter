@@ -14,20 +14,20 @@ where
     current: core::slice::Iter<'a, T>,
 }
 
-// impl<'a, J, X, T> Default for RawJaggedSliceIterRef<'a, J, X, T>
-// where
-//     X: JaggedIndexer,
-//     J: AsRawJaggedRef<'a, T, X>,
-// {
-//     fn default() -> Self {
-//         Self {
-//             slice: Default::default(),
-//             len_of_remaining_slices: 0,
-//             f: 0,
-//             current: Default::default(),
-//         }
-//     }
-// }
+impl<'a, J, X, T> Default for RawJaggedSliceIterRef<'a, J, X, T>
+where
+    X: JaggedIndexer,
+    J: AsRawJaggedRef<'a, T, X>,
+{
+    fn default() -> Self {
+        Self {
+            slice: Default::default(),
+            len_of_remaining_slices: 0,
+            f: 0,
+            current: Default::default(),
+        }
+    }
+}
 
 impl<'a, J, X, T> RawJaggedSliceIterRef<'a, J, X, T>
 where
