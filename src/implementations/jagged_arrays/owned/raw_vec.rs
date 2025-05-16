@@ -5,6 +5,14 @@ use crate::implementations::jagged_arrays::{
 use alloc::vec::Vec;
 use std::mem::ManuallyDrop;
 
+/// Raw representation of a vector defined by a pointer, capacity and length.
+///
+/// All elements within the length of the vector are assumed to be initialized;
+/// elements between length and capacity are assumed to be uninitialized.
+///
+/// # SAFETY
+///
+/// Does not release memory on Drop.
 pub struct RawVec<T> {
     ptr: *const T,
     len: usize,
