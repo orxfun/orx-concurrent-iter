@@ -3,6 +3,10 @@ use crate::{
     implementations::slice::con_iter::ConIterSlice, pullers::ChunkPuller,
 };
 use orx_concurrent_bag::ConcurrentBag;
+use std::{
+    string::{String, ToString},
+    vec::Vec,
+};
 use test_case::test_matrix;
 
 #[cfg(miri)]

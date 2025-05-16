@@ -3,7 +3,7 @@ use crate::implementations::jagged_arrays::{
     raw_slice::RawSlice,
 };
 use alloc::vec::Vec;
-use std::mem::ManuallyDrop;
+use core::mem::ManuallyDrop;
 
 /// Raw representation of a vector defined by a pointer, capacity and length.
 ///

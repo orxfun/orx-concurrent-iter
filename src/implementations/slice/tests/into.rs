@@ -2,6 +2,7 @@ use crate::{
     IntoConcurrentIter, concurrent_iter::ConcurrentIter, concurrent_iterable::ConcurrentIterable,
 };
 use orx_concurrent_bag::ConcurrentBag;
+use std::vec::Vec;
 
 #[test]
 fn slice_as_into_concurrent_iter() {

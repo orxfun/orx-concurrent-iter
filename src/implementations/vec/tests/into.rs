@@ -3,6 +3,7 @@ use crate::{
     concurrent_iter::ConcurrentIter,
 };
 use orx_concurrent_bag::ConcurrentBag;
+use std::{string::ToString, vec::Vec};
 
 #[test]
 fn vec_as_into_concurrent_iter() {

@@ -2,6 +2,11 @@ use super::indexers::{GeneralJaggedIndexer, MatrixIndexer};
 use crate::implementations::jagged_arrays::reference::{
     raw_jagged_ref::RawJaggedRef, slice_iter::RawJaggedSliceIterRef,
 };
+use std::{
+    string::{String, ToString},
+    vec,
+    vec::Vec,
+};
 use test_case::test_matrix;
 
 // matrix
@@ -18,7 +23,7 @@ fn get_matrix(n: usize) -> Vec<Vec<String>> {
     [true, false],
     [true, false]
 )]
-fn abc_raw_jagged_iter_ref_matrix(consume_taken: bool, consume_remaining: bool) {
+fn raw_jagged_iter_ref_matrix(consume_taken: bool, consume_remaining: bool) {
     let n = 4;
     let len = n * n;
     let data = get_matrix(n);
@@ -58,7 +63,7 @@ fn get_jagged() -> Vec<Vec<String>> {
     [true, false],
     [true, false]
 )]
-fn abc_raw_jagged_iter_ref_jagged(consume_taken: bool, consume_remaining: bool) {
+fn raw_jagged_iter_ref_jagged(consume_taken: bool, consume_remaining: bool) {
     let len = 10;
     let data = get_jagged();
 

@@ -3,6 +3,11 @@ use crate::implementations::jagged_arrays::owned::{
     into_iter::RawJaggedIterOwned, raw_jagged::RawJagged, raw_vec::RawVec,
     slice_iter::RawJaggedSliceIterOwned,
 };
+use std::{
+    string::{String, ToString},
+    vec,
+    vec::Vec,
+};
 use test_case::test_matrix;
 
 // matrix
@@ -19,7 +24,7 @@ fn get_matrix(n: usize) -> Vec<Vec<String>> {
     [true, false],
     [true, false]
 )]
-fn abc_raw_jagged_iter_owned_matrix(consume_taken: bool, consume_remaining: bool) {
+fn raw_jagged_iter_owned_matrix(consume_taken: bool, consume_remaining: bool) {
     let n = 4;
     let len = n * n;
 
@@ -62,7 +67,7 @@ fn get_jagged() -> Vec<Vec<String>> {
     [true, false],
     [true, false]
 )]
-fn abc_raw_jagged_iter_owned_jagged(consume_taken: bool, consume_remaining: bool) {
+fn raw_jagged_iter_owned_jagged(consume_taken: bool, consume_remaining: bool) {
     let len = 10;
 
     let jagged = || {

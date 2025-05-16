@@ -7,6 +7,9 @@ mod range;
 mod slice;
 mod vec;
 
+#[cfg(feature = "std")]
+mod vec_deque;
+
 pub use empty::ConIterEmpty;
 pub use iter::ConIterOfIter;
 pub use range::ConIterRange;

@@ -7,7 +7,8 @@ use crate::implementations::{
     },
     ptr_utils::take,
 };
-use std::cmp::Ordering;
+use alloc::vec::Vec;
+use core::cmp::Ordering;
 
 /// Raw representation of a jagged array.
 /// Internally, the jagged array is stored as a vector of `RawVec<T>`.

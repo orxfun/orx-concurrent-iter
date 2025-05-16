@@ -8,6 +8,10 @@ use crate::{
     },
 };
 use orx_concurrent_bag::ConcurrentBag;
+use std::{
+    string::{String, ToString},
+    vec::Vec,
+};
 use test_case::test_matrix;
 
 #[cfg(miri)]
@@ -28,7 +32,7 @@ fn get_matrix(n: usize) -> Vec<Vec<String>> {
 }
 
 #[test]
-fn abc_enumeration() {
+fn enumeration() {
     let n = 2;
     let matrix = get_matrix(n);
     let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
@@ -47,7 +51,7 @@ fn abc_enumeration() {
 }
 
 #[test]
-fn abc_size_hint() {
+fn size_hint() {
     let n = 5;
     let matrix = get_matrix(n);
     let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
@@ -88,7 +92,7 @@ fn abc_size_hint() {
 }
 
 #[test]
-fn abc_size_hint_skip_to_end() {
+fn size_hint_skip_to_end() {
     let n = 5;
     let matrix = get_matrix(n);
     let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
@@ -108,7 +112,7 @@ fn abc_size_hint_skip_to_end() {
 }
 
 #[test_matrix([1, 2, 4])]
-fn abc_empty(nt: usize) {
+fn empty(nt: usize) {
     let n = 0;
     let matrix = get_matrix(n);
     let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
@@ -134,7 +138,7 @@ fn abc_empty(nt: usize) {
 }
 
 #[test_matrix([0, 2, N], [1, 2, 4])]
-fn abc_next(n: usize, nt: usize) {
+fn next(n: usize, nt: usize) {
     let matrix = get_matrix(n);
     let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
@@ -165,7 +169,7 @@ fn abc_next(n: usize, nt: usize) {
 }
 
 #[test_matrix([0, 2, N], [1, 2, 4])]
-fn abc_next_with_idx(n: usize, nt: usize) {
+fn next_with_idx(n: usize, nt: usize) {
     let matrix = get_matrix(n);
     let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
@@ -196,7 +200,7 @@ fn abc_next_with_idx(n: usize, nt: usize) {
 }
 
 #[test_matrix([0, 2, N], [1, 2, 4])]
-fn abc_item_puller(n: usize, nt: usize) {
+fn item_puller(n: usize, nt: usize) {
     let matrix = get_matrix(n);
     let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
@@ -227,7 +231,7 @@ fn abc_item_puller(n: usize, nt: usize) {
 }
 
 #[test_matrix( [0, 2, N], [1, 2, 4])]
-fn abc_item_puller_with_idx(n: usize, nt: usize) {
+fn item_puller_with_idx(n: usize, nt: usize) {
     let matrix = get_matrix(n);
     let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
@@ -258,7 +262,7 @@ fn abc_item_puller_with_idx(n: usize, nt: usize) {
 }
 
 #[test_matrix([0, 2, N], [1, 2, 4])]
-fn abc_chunk_puller(n: usize, nt: usize) {
+fn chunk_puller(n: usize, nt: usize) {
     let matrix = get_matrix(n);
     let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
@@ -293,7 +297,7 @@ fn abc_chunk_puller(n: usize, nt: usize) {
 }
 
 #[test_matrix([0, 2, N], [1, 2, 4])]
-fn abc_chunk_puller_with_idx(n: usize, nt: usize) {
+fn chunk_puller_with_idx(n: usize, nt: usize) {
     let matrix = get_matrix(n);
     let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
@@ -328,7 +332,7 @@ fn abc_chunk_puller_with_idx(n: usize, nt: usize) {
 }
 
 #[test_matrix([0, 2, N], [1, 2, 4])]
-fn abc_flattened_chunk_puller(n: usize, nt: usize) {
+fn flattened_chunk_puller(n: usize, nt: usize) {
     let matrix = get_matrix(n);
     let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
@@ -358,7 +362,7 @@ fn abc_flattened_chunk_puller(n: usize, nt: usize) {
 }
 
 #[test_matrix([0, 2, N], [1, 2, 4])]
-fn abc_flattened_chunk_puller_with_idx(n: usize, nt: usize) {
+fn flattened_chunk_puller_with_idx(n: usize, nt: usize) {
     let matrix = get_matrix(n);
     let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
@@ -388,7 +392,7 @@ fn abc_flattened_chunk_puller_with_idx(n: usize, nt: usize) {
 }
 
 #[test_matrix([0, 2, N], [1, 2, 4])]
-fn abc_skip_to_end(n: usize, nt: usize) {
+fn skip_to_end(n: usize, nt: usize) {
     let matrix = get_matrix(n);
     let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
@@ -438,7 +442,7 @@ fn abc_skip_to_end(n: usize, nt: usize) {
 }
 
 #[test_matrix([0, 2, N], [1, 2, 4], [0, N * N / 2, N * N])]
-fn abc_into_seq_iter(n: usize, nt: usize, until: usize) {
+fn into_seq_iter(n: usize, nt: usize, until: usize) {
     let matrix = get_matrix(n);
     let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
