@@ -68,38 +68,6 @@ impl<'a, T> RawJaggedSlice<'a, T> {
         self.len
     }
 
-    /// Returns the `s`-th raw slice among the slices of this jagged array slice.
-    ///
-    /// Returns None if `f` is out of bounds, or the corresponding slice is empty.
-    /// Therefore, if this method returns Some, returned slice always have at least one element.
-    pub fn get_raw_slice(&self, s: usize) -> Option<RawSlice<T>> {
-        match s < self.num_slices {
-            true => {
-                let f = self.begin.f + s;
-                let vec = &self.vectors[f];
-
-                let start = match s == 0 {
-                    true => self.begin.i,
-                    false => 0,
-                };
-
-                let end_exc = match s == self.num_slices - 1 {
-                    false => vec.length(),
-                    true => match self.end.i {
-                        0 => vec.length(),
-                        end => end,
-                    },
-                };
-
-                let len = end_exc - start;
-                debug_assert!(len > 0);
-
-                Some(vec.raw_slice(start, len))
-            }
-            false => None,
-        }
-    }
-
     /// # SAFETY
     ///
     /// The caller must ensure that the slice does not overlive the data source jagged array.
