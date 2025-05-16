@@ -21,7 +21,7 @@ pub struct RawJaggedSliceIterOwned<'a, T> {
     current_last: *const T,
 }
 
-impl<'a, T> Default for RawJaggedSliceIterOwned<'a, T> {
+impl<T> Default for RawJaggedSliceIterOwned<'_, T> {
     fn default() -> Self {
         Self {
             slice: Default::default(),
@@ -83,7 +83,7 @@ impl<'a, T> RawJaggedSliceIterOwned<'a, T> {
     fn drop_next(&mut self) -> bool {
         match self.current_ptr.is_null() {
             false => {
-                let is_last_of_slice = self.current_ptr as *const T == self.current_last;
+                let is_last_of_slice = self.current_ptr == self.current_last;
 
                 // SAFETY: current pointer is not null
                 unsafe { (self.current_ptr as *mut T).drop_in_place() };
@@ -101,7 +101,7 @@ impl<'a, T> RawJaggedSliceIterOwned<'a, T> {
     }
 }
 
-impl<'a, T> Iterator for RawJaggedSliceIterOwned<'a, T> {
+impl<T> Iterator for RawJaggedSliceIterOwned<'_, T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -131,13 +131,13 @@ impl<'a, T> Iterator for RawJaggedSliceIterOwned<'a, T> {
     }
 }
 
-impl<'a, T> ExactSizeIterator for RawJaggedSliceIterOwned<'a, T> {
+impl<T> ExactSizeIterator for RawJaggedSliceIterOwned<'_, T> {
     fn len(&self) -> usize {
         self.remaining()
     }
 }
 
-impl<'a, T> Drop for RawJaggedSliceIterOwned<'a, T> {
+impl<T> Drop for RawJaggedSliceIterOwned<'_, T> {
     fn drop(&mut self) {
         while self.drop_next() {}
     }

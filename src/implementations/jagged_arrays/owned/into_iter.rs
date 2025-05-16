@@ -106,7 +106,7 @@ where
     fn drop_next(&mut self) -> bool {
         match self.current_ptr.is_null() {
             false => {
-                let is_last_of_slice = self.current_ptr as *const T == self.current_last;
+                let is_last_of_slice = self.current_ptr == self.current_last;
 
                 // SAFETY: current pointer is not null
                 unsafe { (self.current_ptr as *mut T).drop_in_place() };

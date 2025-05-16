@@ -44,10 +44,6 @@ where
     con_iter: ConIterCore<'a, T>,
 }
 
-unsafe impl<'a, T: Send + Sync> Sync for ConIterVecDequeRef<'a, T> {}
-
-unsafe impl<'a, T: Send + Sync> Send for ConIterVecDequeRef<'a, T> {}
-
 impl<'a, T> ConIterVecDequeRef<'a, T>
 where
     T: Send + Sync,

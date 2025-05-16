@@ -34,8 +34,8 @@ impl<'a, T> RawJaggedSlice<'a, T> {
         end: JaggedIndex,
         len: usize,
     ) -> Self {
-        debug_assert!(begin.is_in_exc_bounds_of(&arrays));
-        debug_assert!(end.is_in_exc_bounds_of(&arrays));
+        debug_assert!(begin.is_in_exc_bounds_of(arrays));
+        debug_assert!(end.is_in_exc_bounds_of(arrays));
         debug_assert!(begin <= end);
 
         let num_slices = match begin.f == end.f {

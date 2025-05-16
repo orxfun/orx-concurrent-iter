@@ -45,9 +45,9 @@ where
     fn clone(&self) -> Self {
         Self {
             arrays: self.arrays.clone(),
-            len: self.len.clone(),
+            len: self.len,
             indexer: self.indexer.clone(),
-            phantom: self.phantom.clone(),
+            phantom: PhantomData,
         }
     }
 }

@@ -23,7 +23,7 @@ where
     }
 }
 
-impl<'i, T, X> ChunkPuller for ChunkPullerJaggedOwned<'i, T, X>
+impl<T, X> ChunkPuller for ChunkPullerJaggedOwned<'_, T, X>
 where
     T: Send + Sync,
     X: JaggedIndexer + Send + Sync,

@@ -56,7 +56,7 @@ where
     /// The remaining elements with respect to `num_taken` together with the allocation, and hence,
     /// the responsibility to drop, are transferred to the returned raw jagged array.
     pub(super) fn move_into_new(&mut self, num_taken: usize) -> Self {
-        let arrays = core::mem::replace(&mut self.arrays, Vec::new());
+        let arrays = core::mem::take(&mut self.arrays);
 
         let jagged_to_drop = Self {
             arrays,
@@ -72,12 +72,12 @@ where
     }
 
     /// Total number of elements in the jagged array (`O(1)`).
-    pub fn len(&self) -> usize {
+    pub(super) fn len(&self) -> usize {
         self.len
     }
 
     /// Returns number of arrays of the jagged array.
-    pub fn num_arrays(&self) -> usize {
+    pub(super) fn num_arrays(&self) -> usize {
         self.arrays.len()
     }
 
@@ -95,7 +95,7 @@ where
     /// * `Some([f*, i*])` if `flat_index = self.len()` such that `f* = self.len() - 1` and `i* = self.arrays()[f*].len()`.
     ///   In other words, this is the exclusive end of the jagged index range of the jagged array.
     /// * `None` if `flat_index > self.len()`.
-    pub fn jagged_index(&self, flat_index: usize) -> Option<JaggedIndex> {
+    pub(super) fn jagged_index(&self, flat_index: usize) -> Option<JaggedIndex> {
         match flat_index.cmp(&self.len) {
             Ordering::Less => Some(unsafe {
                 // SAFETY: flat_index is within bounds
@@ -149,7 +149,7 @@ where
     /// * `jagged.take(1)`
     /// * `jagged.set_num_taken(3)`
     /// * `drop(jagged)`
-    pub unsafe fn set_num_taken(&mut self, num_taken: Option<usize>) {
+    pub(super) unsafe fn set_num_taken(&mut self, num_taken: Option<usize>) {
         self.num_taken = num_taken;
     }
 
@@ -163,7 +163,7 @@ where
     /// This method returns currently value of `num_taken`.
     ///
     /// [`set_num_taken`]: Self::set_num_taken
-    pub fn num_taken(&self) -> Option<usize> {
+    pub(super) fn num_taken(&self) -> Option<usize> {
         self.num_taken
     }
 
@@ -177,7 +177,7 @@ where
     /// This can be controlled using the [`set_num_taken`] method.
     ///
     /// [`set_num_taken`]: Self::set_num_taken
-    pub unsafe fn take(&self, flat_index: usize) -> Option<T> {
+    pub(super) unsafe fn take(&self, flat_index: usize) -> Option<T> {
         self.jagged_index(flat_index).map(|idx| {
             let vec = &self.arrays[idx.f];
             let ptr = unsafe { vec.ptr_at(idx.i) as *mut T }; // index is in bounds
@@ -186,7 +186,7 @@ where
     }
 
     /// Returns a reference to the `f`-th slice, returns None iF `f >= self.num_arrays()`.
-    pub fn get(&self, f: usize) -> Option<&RawVec<T>> {
+    pub(super) fn get(&self, f: usize) -> Option<&RawVec<T>> {
         self.arrays.get(f)
     }
 
@@ -195,7 +195,7 @@ where
     /// # SAFETY
     ///
     /// `f` must be within bounds; i.e., `f < self.num_arrays()`.
-    pub unsafe fn get_unchecked(&self, f: usize) -> &RawVec<T> {
+    pub(super) unsafe fn get_unchecked(&self, f: usize) -> &RawVec<T> {
         debug_assert!(f < self.arrays.len());
         unsafe { self.arrays.get_unchecked(f) }
     }
@@ -204,7 +204,7 @@ where
     /// of the flattened jagged array.
     ///
     /// Returns an empty slice if any of the indices are out of bounds or if `flat_end <= flat_begin`.
-    pub fn slice(&self, flat_begin: usize, flat_end: usize) -> RawJaggedSlice<T> {
+    pub(super) fn slice(&self, flat_begin: usize, flat_end: usize) -> RawJaggedSlice<T> {
         match flat_end.saturating_sub(flat_begin) {
             0 => Default::default(),
             len => {
@@ -218,7 +218,7 @@ where
     }
 
     /// Returns the raw jagged array slice for the flattened positions within range `flat_begin..self.len()`.
-    pub fn slice_from(&self, flat_begin: usize) -> RawJaggedSlice<T> {
+    pub(super) fn slice_from(&self, flat_begin: usize) -> RawJaggedSlice<T> {
         self.slice(flat_begin, self.len)
     }
 }

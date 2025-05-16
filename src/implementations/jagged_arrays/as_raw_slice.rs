@@ -75,7 +75,7 @@ pub trait AsOwningSlice<T>: AsRawSlice<T> {
 
 // implementations
 
-impl<'a, T> AsRawSlice<T> for &'a [T] {
+impl<T> AsRawSlice<T> for &[T] {
     fn ptr(&self) -> *const T {
         self.as_ptr()
     }

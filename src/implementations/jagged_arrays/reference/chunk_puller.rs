@@ -28,7 +28,7 @@ where
     }
 }
 
-impl<'i, 'a, T, S, X> ChunkPuller for ChunkPullerJaggedRef<'i, 'a, T, S, X>
+impl<'a, T, S, X> ChunkPuller for ChunkPullerJaggedRef<'_, 'a, T, S, X>
 where
     T: Send + Sync + 'a,
     X: JaggedIndexer + Send + Sync,
@@ -52,8 +52,6 @@ where
     }
 
     fn pull_with_idx(&mut self) -> Option<(usize, Self::Chunk<'_>)> {
-        self.con_iter
-            .progress_and_get_iter(self.chunk_size)
-            .map(|(begin_idx, iter)| (begin_idx, iter))
+        self.con_iter.progress_and_get_iter(self.chunk_size)
     }
 }
