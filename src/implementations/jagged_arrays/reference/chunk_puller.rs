@@ -1,14 +1,14 @@
 use super::{con_iter::ConIterJaggedRef, slice_iter::RawJaggedSliceIterRef};
 use crate::{
     ChunkPuller,
-    implementations::jagged_arrays::{JaggedIndexer, as_slice::AsSlice},
+    implementations::jagged_arrays::{JaggedIndexer, Slices},
 };
 
 pub struct ChunkPullerJaggedRef<'i, 'a, T, S, X>
 where
     T: Send + Sync,
     X: JaggedIndexer + Send + Sync,
-    S: AsSlice<T> + Send + Sync,
+    S: Slices<'a, T> + Send + Sync,
 {
     con_iter: &'i ConIterJaggedRef<'a, T, S, X>,
     chunk_size: usize,
@@ -18,7 +18,7 @@ impl<'i, 'a, T, S, X> ChunkPullerJaggedRef<'i, 'a, T, S, X>
 where
     T: Send + Sync,
     X: JaggedIndexer + Send + Sync,
-    S: AsSlice<T> + Send + Sync,
+    S: Slices<'a, T> + Send + Sync,
 {
     pub(super) fn new(con_iter: &'i ConIterJaggedRef<'a, T, S, X>, chunk_size: usize) -> Self {
         Self {
@@ -32,7 +32,7 @@ impl<'i, 'a, T, S, X> ChunkPuller for ChunkPullerJaggedRef<'i, 'a, T, S, X>
 where
     T: Send + Sync + 'a,
     X: JaggedIndexer + Send + Sync,
-    S: AsSlice<T> + Send + Sync,
+    S: Slices<'a, T> + Send + Sync,
 {
     type ChunkItem = &'a T;
 

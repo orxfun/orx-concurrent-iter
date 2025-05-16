@@ -28,7 +28,7 @@ fn raw_jagged_iter_ref_matrix(consume_taken: bool, consume_remaining: bool) {
     let len = n * n;
     let data = get_matrix(n);
 
-    let jagged = || RawJaggedRef::new(&data, MatrixIndexer::new(n), Some(n * n));
+    let jagged = || RawJaggedRef::new(data.as_slice(), MatrixIndexer::new(n), Some(n * n));
 
     for num_taken in 0..len {
         let jagged = jagged();
@@ -67,7 +67,7 @@ fn raw_jagged_iter_ref_jagged(consume_taken: bool, consume_remaining: bool) {
     let len = 10;
     let data = get_jagged();
 
-    let jagged = || RawJaggedRef::new(&data, GeneralJaggedIndexer, Some(10));
+    let jagged = || RawJaggedRef::new(data.as_slice(), GeneralJaggedIndexer, Some(10));
 
     for num_taken in 0..len {
         let jagged = jagged();

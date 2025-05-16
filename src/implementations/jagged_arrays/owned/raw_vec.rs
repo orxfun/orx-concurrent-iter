@@ -19,6 +19,16 @@ pub struct RawVec<T> {
     capacity: usize,
 }
 
+impl<T> Clone for RawVec<T> {
+    fn clone(&self) -> Self {
+        Self {
+            ptr: self.ptr,
+            len: self.len,
+            capacity: self.capacity,
+        }
+    }
+}
+
 impl<T> From<Vec<T>> for RawVec<T> {
     fn from(value: Vec<T>) -> Self {
         let raw = Self {

@@ -100,7 +100,7 @@ where
             Ordering::Less => Some(unsafe {
                 // SAFETY: flat_index is within bounds
                 self.indexer
-                    .jagged_index_unchecked(&self.arrays, flat_index)
+                    .jagged_index_unchecked_from_slice(&self.arrays, flat_index)
             }),
             Ordering::Equal => match self.arrays.is_empty() {
                 true => None,

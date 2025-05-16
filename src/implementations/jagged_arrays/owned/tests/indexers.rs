@@ -1,5 +1,5 @@
 use crate::implementations::jagged_arrays::{
-    as_raw_slice::AsRawSlice, index::JaggedIndex, indexer::JaggedIndexer,
+    Slices, as_raw_slice::AsRawSlice, index::JaggedIndex, indexer::JaggedIndexer,
 };
 use orx_pseudo_default::PseudoDefault;
 
@@ -21,21 +21,19 @@ impl PseudoDefault for MatrixIndexer {
 }
 
 impl JaggedIndexer for MatrixIndexer {
-    fn jagged_index<T>(
+    unsafe fn jagged_index_unchecked<'a, T: 'a>(
         &self,
-        total_len: usize,
-        arrays: &[impl AsRawSlice<T>],
+        _: &impl Slices<'a, T>,
         flat_index: usize,
-    ) -> Option<JaggedIndex> {
-        match flat_index <= total_len {
-            true => Some(unsafe { self.jagged_index_unchecked(arrays, flat_index) }),
-            false => None,
-        }
+    ) -> JaggedIndex {
+        let f = flat_index / self.n;
+        let i = flat_index % self.n;
+        JaggedIndex::new(f, i)
     }
 
-    unsafe fn jagged_index_unchecked<T>(
+    unsafe fn jagged_index_unchecked_from_slice<'a, T: 'a>(
         &self,
-        _arrays: &[impl AsRawSlice<T>],
+        _: &[impl AsRawSlice<T>],
         flat_index: usize,
     ) -> JaggedIndex {
         let f = flat_index / self.n;
@@ -54,19 +52,32 @@ impl PseudoDefault for GeneralJaggedIndexer {
 }
 
 impl JaggedIndexer for GeneralJaggedIndexer {
-    fn jagged_index<T>(
+    unsafe fn jagged_index_unchecked<'a, T: 'a>(
         &self,
-        total_len: usize,
-        arrays: &[impl AsRawSlice<T>],
+        arrays: &impl Slices<'a, T>,
         flat_index: usize,
-    ) -> Option<JaggedIndex> {
-        match flat_index <= total_len {
-            true => Some(unsafe { self.jagged_index_unchecked(arrays, flat_index) }),
-            false => None,
+    ) -> JaggedIndex {
+        let mut idx = flat_index;
+        let [mut f, mut i] = [0, 0];
+        let mut current_f = 0;
+        while idx > 0 {
+            let current_len = unsafe { arrays.slice_at_unchecked(current_f) }.len();
+            match current_len > idx {
+                true => {
+                    i = idx;
+                    idx = 0;
+                }
+                false => {
+                    f += 1;
+                    idx -= current_len;
+                }
+            }
+            current_f += 1;
         }
+        JaggedIndex::new(f, i)
     }
 
-    unsafe fn jagged_index_unchecked<T>(
+    unsafe fn jagged_index_unchecked_from_slice<'a, T: 'a>(
         &self,
         arrays: &[impl AsRawSlice<T>],
         flat_index: usize,

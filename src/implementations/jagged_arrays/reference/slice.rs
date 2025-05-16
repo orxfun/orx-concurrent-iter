@@ -1,12 +1,12 @@
 use super::raw_jagged_ref::RawJaggedRef;
-use crate::implementations::jagged_arrays::{JaggedIndex, JaggedIndexer, as_slice::AsSlice};
+use crate::implementations::jagged_arrays::{JaggedIndex, JaggedIndexer, Slices};
 
 /// A slice of a jagged array which might be empty, a slice of a single vector,
 /// or a series of slices of subsequent arrays of the jagged array.
 pub struct RawJaggedSlice<'a, T, S, X>
 where
     X: JaggedIndexer,
-    S: AsSlice<T>,
+    S: Slices<'a, T>,
 {
     jagged: RawJaggedRef<'a, T, S, X>,
     begin: JaggedIndex,
@@ -18,7 +18,7 @@ where
 impl<'a, T, S, X> Default for RawJaggedSlice<'a, T, S, X>
 where
     X: JaggedIndexer,
-    S: AsSlice<T>,
+    S: Slices<'a, T>,
 {
     fn default() -> Self {
         Self {
@@ -34,7 +34,7 @@ where
 impl<'a, T, S, X> RawJaggedSlice<'a, T, S, X>
 where
     X: JaggedIndexer,
-    S: AsSlice<T>,
+    S: Slices<'a, T>,
 {
     pub(super) fn new(
         jagged: RawJaggedRef<'a, T, S, X>,

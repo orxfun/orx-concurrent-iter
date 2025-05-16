@@ -1,6 +1,6 @@
 use super::slice::RawJaggedSlice;
 use crate::implementations::jagged_arrays::{
-    as_slice::AsSlice, index::JaggedIndex, indexer::JaggedIndexer,
+    AsRawSlice, Slices, as_slice::AsSlice, index::JaggedIndex, indexer::JaggedIndexer,
 };
 use core::{cmp::Ordering, marker::PhantomData};
 use orx_pseudo_default::PseudoDefault;
@@ -12,23 +12,24 @@ use orx_pseudo_default::PseudoDefault;
 /// the second is the position of the element within this array.
 pub struct RawJaggedRef<'a, T, S, X>
 where
+    T: 'a,
     X: JaggedIndexer,
-    S: AsSlice<T>,
+    S: Slices<'a, T>,
 {
-    arrays: &'a [S],
+    arrays: S,
     len: usize,
     indexer: X,
-    phantom: PhantomData<T>,
+    phantom: PhantomData<&'a T>,
 }
 
 impl<'a, T, S, X> Default for RawJaggedRef<'a, T, S, X>
 where
     X: JaggedIndexer,
-    S: AsSlice<T>,
+    S: Slices<'a, T>,
 {
     fn default() -> Self {
         Self {
-            arrays: Default::default(),
+            arrays: S::empty(),
             len: Default::default(),
             indexer: PseudoDefault::pseudo_default(),
             phantom: Default::default(),
@@ -39,11 +40,11 @@ where
 impl<'a, T, S, X> Clone for RawJaggedRef<'a, T, S, X>
 where
     X: JaggedIndexer,
-    S: AsSlice<T>,
+    S: Slices<'a, T>,
 {
     fn clone(&self) -> Self {
         Self {
-            arrays: self.arrays,
+            arrays: self.arrays.clone(),
             len: self.len.clone(),
             indexer: self.indexer.clone(),
             phantom: self.phantom.clone(),
@@ -54,11 +55,11 @@ where
 impl<'a, T, S, X> RawJaggedRef<'a, T, S, X>
 where
     X: JaggedIndexer,
-    S: AsSlice<T>,
+    S: Slices<'a, T>,
 {
     /// Creates a new raw jagged array of references.
-    pub fn new(arrays: &'a [S], indexer: X, total_len: Option<usize>) -> Self {
-        let len = total_len.unwrap_or_else(|| arrays.iter().map(|v| v.length()).sum());
+    pub fn new(arrays: S, indexer: X, total_len: Option<usize>) -> Self {
+        let len = total_len.unwrap_or_else(|| arrays.lengths().sum());
         Self {
             arrays,
             len,
@@ -67,21 +68,16 @@ where
         }
     }
 
-    pub(super) fn clear(&mut self) {
-        self.arrays = Default::default();
-        self.len = 0;
-    }
-
     pub(super) fn len(&self) -> usize {
         self.len
     }
 
     pub(super) fn num_slices(&self) -> usize {
-        self.arrays.len()
+        self.arrays.num_slices()
     }
 
     pub(super) fn len_of(&self, f: usize) -> Option<usize> {
-        self.arrays.get(f).map(|x| x.as_slice().len())
+        self.arrays.slice_at(f).map(|x| x.as_slice().len())
     }
 
     /// Returns the [`JaggedIndex`] of the element at the given `flat_index` position of the flattened
@@ -102,13 +98,15 @@ where
         match flat_index.cmp(&self.len) {
             Ordering::Less => Some(unsafe {
                 // SAFETY: flat_index is within bounds
-                self.indexer.jagged_index_unchecked(self.arrays, flat_index)
+                self.indexer
+                    .jagged_index_unchecked(&self.arrays, flat_index)
             }),
-            Ordering::Equal => match self.arrays.is_empty() {
+            Ordering::Equal => match self.arrays.num_slices() == 0 {
                 true => None,
                 false => {
-                    let f = self.arrays.len() - 1;
-                    let i = self.arrays[f].length();
+                    let f = self.arrays.num_slices() - 1;
+                    // SAFETY: f is in bounds since arrays is not empty
+                    let i = unsafe { self.arrays.slice_at_unchecked(f) }.length();
                     Some(JaggedIndex::new(f, i))
                 }
             },
@@ -117,7 +115,7 @@ where
     }
 
     pub(super) fn slice(&self, f: usize, begin_within_slice: usize, len: usize) -> Option<&'a [T]> {
-        self.arrays.get(f).and_then(|array| {
+        self.arrays.slice_at(f).and_then(|array| {
             let array = array.as_slice();
             (begin_within_slice < array.len()).then(|| {
                 let ptr = unsafe { array.as_ptr().add(begin_within_slice) };
@@ -144,7 +142,9 @@ where
     }
 
     pub(super) fn get(&self, flat_index: usize) -> Option<&'a T> {
-        self.jagged_index(flat_index)
-            .and_then(|x| self.arrays[x.f].as_slice().get(x.i))
+        self.jagged_index(flat_index).map(|x| {
+            // SAFETY: both f and i are in bounds
+            unsafe { self.arrays.slice_at_unchecked(x.f).get_unchecked(x.i) }
+        })
     }
 }

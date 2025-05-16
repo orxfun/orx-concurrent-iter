@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
     ConcurrentIter, ExactSizeConcurrentIter,
-    implementations::jagged_arrays::{JaggedIndexer, as_slice::AsSlice},
+    implementations::jagged_arrays::{JaggedIndexer, Slices},
 };
 use core::sync::atomic::{AtomicUsize, Ordering};
 
@@ -13,7 +13,7 @@ pub struct ConIterJaggedRef<'a, T, S, X>
 where
     T: Send + Sync + 'a,
     X: JaggedIndexer,
-    S: AsSlice<T> + Send + Sync,
+    S: Slices<'a, T> + Send + Sync,
 {
     jagged: RawJaggedRef<'a, T, S, X>,
     counter: AtomicUsize,
@@ -23,17 +23,13 @@ impl<'a, T, S, X> ConIterJaggedRef<'a, T, S, X>
 where
     T: Send + Sync + 'a,
     X: JaggedIndexer + Send + Sync,
-    S: AsSlice<T> + Send + Sync,
+    S: Slices<'a, T> + Send + Sync,
 {
     pub(crate) fn new(jagged: RawJaggedRef<'a, T, S, X>, begin: usize) -> Self {
         Self {
             jagged,
             counter: begin.into(),
         }
-    }
-
-    pub(crate) fn clear(&mut self) {
-        self.jagged.clear();
     }
 
     fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
@@ -64,7 +60,7 @@ impl<'a, T, S, X> ConcurrentIter for ConIterJaggedRef<'a, T, S, X>
 where
     T: Send + Sync + 'a,
     X: JaggedIndexer,
-    S: AsSlice<T> + Send + Sync,
+    S: Slices<'a, T> + Send + Sync,
 {
     type Item = &'a T;
 
@@ -111,7 +107,7 @@ impl<'a, T, S, X> ExactSizeConcurrentIter for ConIterJaggedRef<'a, T, S, X>
 where
     T: Send + Sync + 'a,
     X: JaggedIndexer,
-    S: AsSlice<T> + Send + Sync,
+    S: Slices<'a, T> + Send + Sync,
 {
     fn len(&self) -> usize {
         let num_taken = self.counter.load(Ordering::Acquire);

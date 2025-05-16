@@ -1,12 +1,12 @@
 use super::slice::RawJaggedSlice;
-use crate::implementations::jagged_arrays::{JaggedIndexer, as_slice::AsSlice};
+use crate::implementations::jagged_arrays::{JaggedIndexer, Slices};
 
 /// An iterator over references to elements of a slice of a raw jagged array;
 /// i.e., a [`RawJaggedSlice`].
 pub struct RawJaggedSliceIterRef<'a, T, S, X>
 where
     X: JaggedIndexer,
-    S: AsSlice<T>,
+    S: Slices<'a, T>,
 {
     slice: RawJaggedSlice<'a, T, S, X>,
     len_of_remaining_slices: usize,
@@ -17,7 +17,7 @@ where
 impl<'a, T, S, X> Default for RawJaggedSliceIterRef<'a, T, S, X>
 where
     X: JaggedIndexer,
-    S: AsSlice<T>,
+    S: Slices<'a, T>,
 {
     fn default() -> Self {
         Self {
@@ -32,7 +32,7 @@ where
 impl<'a, T, S, X> RawJaggedSliceIterRef<'a, T, S, X>
 where
     X: JaggedIndexer,
-    S: AsSlice<T>,
+    S: Slices<'a, T>,
 {
     pub(crate) fn new(slice: RawJaggedSlice<'a, T, S, X>) -> Self {
         Self {
@@ -70,7 +70,7 @@ where
 impl<'a, T, S, X> Iterator for RawJaggedSliceIterRef<'a, T, S, X>
 where
     X: JaggedIndexer,
-    S: AsSlice<T>,
+    S: Slices<'a, T>,
 {
     type Item = &'a T;
 
@@ -91,7 +91,7 @@ where
 impl<'a, T, S, X> ExactSizeIterator for RawJaggedSliceIterRef<'a, T, S, X>
 where
     X: JaggedIndexer,
-    S: AsSlice<T>,
+    S: Slices<'a, T>,
 {
     fn len(&self) -> usize {
         self.remaining()
