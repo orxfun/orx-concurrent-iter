@@ -1,4 +1,7 @@
-use super::{as_raw_jagged_ref::AsRawJaggedRef, slice_iter::RawJaggedSliceIterRef};
+use super::{
+    as_raw_jagged_ref::AsRawJaggedRef, chunk_puller::ChunkPullerJaggedRef,
+    slice_iter::RawJaggedSliceIterRef,
+};
 use crate::{
     ConcurrentIter, ExactSizeConcurrentIter, implementations::jagged_arrays::JaggedIndexer,
 };
@@ -71,50 +74,53 @@ where
     }
 }
 
-// impl<'a, T, X> ConcurrentIter for ConIterJaggedRef<'a, T, X>
-// where
-//     T: Send + Sync,
-//     X: JaggedIndexer + Send + Sync,
-// {
-//     type Item = &'a T;
+impl<'a, J, X, T> ConcurrentIter for ConIterJaggedRef<'a, J, X, T>
+where
+    T: Send + Sync,
+    X: JaggedIndexer + Send + Sync,
+    J: AsRawJaggedRef<'a, T, X>,
+{
+    type Item = &'a T;
 
-//     type SequentialIter = RawJaggedSliceIterRef<'a, T>;
+    // type SequentialIter = RawJaggedSliceIterRef<'a, T>;
+    type SequentialIter = core::iter::Empty<&'a T>;
 
-//     type ChunkPuller<'i>
-//         = ChunkPullerJaggedRef<'i, 'a, T, X>
-//     where
-//         Self: 'i;
+    type ChunkPuller<'i>
+        = ChunkPullerJaggedRef<'i, 'a, J, X, T>
+    where
+        Self: 'i;
 
-//     fn into_seq_iter(self) -> Self::SequentialIter {
-//         let num_taken = self.counter.load(Ordering::Acquire).min(self.jagged.len());
-//         let slice = self.jagged.slice_from(num_taken);
-//         slice.into_iter_ref()
-//     }
+    fn into_seq_iter(self) -> Self::SequentialIter {
+        let num_taken = self.counter.load(Ordering::Acquire).min(self.jagged.len());
+        // let slice = self.jagged.slice_from(num_taken);
+        // slice.into_iter_ref()
+        todo!()
+    }
 
-//     fn skip_to_end(&self) {
-//         let _ = self.counter.fetch_max(self.jagged.len(), Ordering::Acquire);
-//     }
+    fn skip_to_end(&self) {
+        let _ = self.counter.fetch_max(self.jagged.len(), Ordering::Acquire);
+    }
 
-//     fn next(&self) -> Option<Self::Item> {
-//         self.progress_and_get_begin_idx(1)
-//             .and_then(|idx| self.jagged.get(idx))
-//     }
+    fn next(&self) -> Option<Self::Item> {
+        self.progress_and_get_begin_idx(1)
+            .and_then(|idx| self.jagged.get(idx))
+    }
 
-//     fn next_with_idx(&self) -> Option<(usize, Self::Item)> {
-//         self.progress_and_get_begin_idx(1)
-//             .and_then(|idx| self.jagged.get(idx).map(|value| (idx, value)))
-//     }
+    fn next_with_idx(&self) -> Option<(usize, Self::Item)> {
+        self.progress_and_get_begin_idx(1)
+            .and_then(|idx| self.jagged.get(idx).map(|value| (idx, value)))
+    }
 
-//     fn size_hint(&self) -> (usize, Option<usize>) {
-//         let num_taken = self.counter.load(Ordering::Acquire);
-//         let remaining = self.jagged.len().saturating_sub(num_taken);
-//         (remaining, Some(remaining))
-//     }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let num_taken = self.counter.load(Ordering::Acquire);
+        let remaining = self.jagged.len().saturating_sub(num_taken);
+        (remaining, Some(remaining))
+    }
 
-//     fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
-//         Self::ChunkPuller::new(self, chunk_size)
-//     }
-// }
+    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+        Self::ChunkPuller::new(self, chunk_size)
+    }
+}
 
 // impl<'a, T, X> ExactSizeConcurrentIter for ConIterJaggedRef<'a, T, X>
 // where

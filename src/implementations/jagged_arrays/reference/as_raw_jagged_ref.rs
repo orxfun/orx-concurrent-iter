@@ -16,4 +16,6 @@ where
     fn len(&self) -> usize;
 
     fn len_of(&self, f: usize) -> usize;
+
+    fn get(&self, flat_idx: usize) -> Option<&'a T>;
 }
