@@ -1,6 +1,7 @@
+use super::AsRawSlice;
 use alloc::vec::Vec;
 
-pub trait AsSlice<T> {
+pub trait AsSlice<T>: AsRawSlice<T> {
     fn as_slice(&self) -> &[T];
 }
 

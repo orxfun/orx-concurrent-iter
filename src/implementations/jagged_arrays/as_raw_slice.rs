@@ -72,3 +72,37 @@ pub trait AsOwningSlice<T>: AsRawSlice<T> {
         let _vec_to_drop = unsafe { Vec::from_raw_parts(self.ptr() as *mut T, 0, self.capacity()) };
     }
 }
+
+// implementations
+
+impl<'a, T> AsRawSlice<T> for &'a [T] {
+    fn ptr(&self) -> *const T {
+        self.as_ptr()
+    }
+
+    fn length(&self) -> usize {
+        self.len()
+    }
+
+    fn raw_slice(&self, begin: usize, len: usize) -> RawSlice<T> {
+        debug_assert!(begin < self.len());
+        let ptr = unsafe { self.as_ptr().add(begin) };
+        RawSlice::new(ptr, len)
+    }
+}
+
+impl<T> AsRawSlice<T> for Vec<T> {
+    fn ptr(&self) -> *const T {
+        self.as_ptr()
+    }
+
+    fn length(&self) -> usize {
+        self.len()
+    }
+
+    fn raw_slice(&self, begin: usize, len: usize) -> RawSlice<T> {
+        debug_assert!(begin < self.len());
+        let ptr = unsafe { self.as_ptr().add(begin) };
+        RawSlice::new(ptr, len)
+    }
+}
