@@ -1,8 +1,5 @@
 use crate::implementations::{
-    jagged_arrays::{
-        as_slice::{AsOwningSlice, AsSlice},
-        jagged_slice::RawJaggedSlice,
-    },
+    jagged_arrays::{as_slice::AsSlice, jagged_slice::RawJaggedSlice},
     ptr_utils::take,
 };
 
@@ -64,7 +61,7 @@ impl<'a, T> RawJaggedSliceIterOwned<'a, T> {
         match self.slice.get_raw_slice(self.f) {
             Some(slice) if slice.is_empty() => self.next_slice(),
             Some(slice) => {
-                self.len_of_remaining_slices -= slice.len();
+                self.len_of_remaining_slices -= slice.length();
                 // SAFETY: pointers are not null since slice is not empty
                 [self.current_ptr, self.current_last] = slice.first_and_last_ptrs();
                 self.f += 1;

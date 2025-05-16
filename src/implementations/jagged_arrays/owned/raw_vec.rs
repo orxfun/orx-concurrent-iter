@@ -1,4 +1,7 @@
-use crate::implementations::jagged_arrays::as_slice::{AsOwningSlice, AsSlice};
+use crate::implementations::jagged_arrays::{
+    as_slice::{AsOwningSlice, AsSlice},
+    raw_slice::RawSlice,
+};
 use alloc::vec::Vec;
 use std::mem::ManuallyDrop;
 
@@ -29,10 +32,10 @@ impl<T> AsSlice<T> for RawVec<T> {
         self.len
     }
 
-    fn slice(&self, begin: usize, len: usize) -> &[T] {
+    fn raw_slice(&self, begin: usize, len: usize) -> RawSlice<T> {
         debug_assert!(begin + len <= self.len);
         let ptr = unsafe { self.ptr.add(begin) };
-        unsafe { core::slice::from_raw_parts(ptr, len) }
+        RawSlice::new(ptr, len)
     }
 }
 

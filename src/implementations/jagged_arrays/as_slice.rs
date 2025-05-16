@@ -1,3 +1,4 @@
+use super::raw_slice::RawSlice;
 use alloc::vec::Vec;
 
 /// A type that can be represented as a slice.
@@ -9,7 +10,7 @@ pub trait AsSlice<T> {
     fn length(&self) -> usize;
 
     /// Creates a slice from this slice with `len` elements starting from the `begin`.
-    fn slice(&self, begin: usize, len: usize) -> &[T];
+    fn raw_slice(&self, begin: usize, len: usize) -> RawSlice<T>;
 
     // provided
 
@@ -69,21 +70,5 @@ pub trait AsOwningSlice<T>: AsSlice<T> {
     /// `capacity`, since the memory that the pointers point to does not belong to the slice now.
     unsafe fn drop_allocation(&self) {
         let _vec_to_drop = unsafe { Vec::from_raw_parts(self.ptr() as *mut T, 0, self.capacity()) };
-    }
-}
-
-// implementations
-
-impl<T> AsSlice<T> for &[T] {
-    fn ptr(&self) -> *const T {
-        self.as_ptr()
-    }
-
-    fn length(&self) -> usize {
-        self.len()
-    }
-
-    fn slice(&self, begin: usize, len: usize) -> &[T] {
-        &self[begin..(begin + len)]
     }
 }

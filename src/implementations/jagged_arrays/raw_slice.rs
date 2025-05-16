@@ -5,6 +5,12 @@ pub struct RawSlice<T> {
     len: usize,
 }
 
+impl<T> RawSlice<T> {
+    pub fn new(ptr: *const T, len: usize) -> Self {
+        Self { ptr, len }
+    }
+}
+
 impl<T> AsSlice<T> for RawSlice<T> {
     fn ptr(&self) -> *const T {
         self.ptr
@@ -14,9 +20,9 @@ impl<T> AsSlice<T> for RawSlice<T> {
         self.len
     }
 
-    fn slice(&self, begin: usize, len: usize) -> &[T] {
+    fn raw_slice(&self, begin: usize, len: usize) -> RawSlice<T> {
         debug_assert!(begin + len <= self.len);
-        let data = unsafe { self.ptr.add(begin) };
-        unsafe { core::slice::from_raw_parts(data, len) }
+        let ptr = unsafe { self.ptr.add(begin) };
+        Self::new(ptr, len)
     }
 }

@@ -1,4 +1,4 @@
-use super::{as_slice::AsSlice, index::JaggedIndex};
+use super::{as_slice::AsSlice, index::JaggedIndex, raw_slice::RawSlice};
 use std::marker::PhantomData;
 
 /// A slice of a jagged array which might be empty, a slice of a single vector,
@@ -76,7 +76,7 @@ where
     ///
     /// Returns None if `f` is out of bounds, or the corresponding slice is empty.
     /// Therefore, if this method returns Some, returned slice always have at least one element.
-    pub fn get_raw_slice(&self, s: usize) -> Option<&[T]> {
+    pub fn get_raw_slice(&self, s: usize) -> Option<RawSlice<T>> {
         match s < self.num_slices {
             true => {
                 let f = self.begin.f + s;
@@ -98,7 +98,7 @@ where
                 let len = end_exc - start;
                 debug_assert!(len > 0);
 
-                Some(vec.slice(start, len))
+                Some(vec.raw_slice(start, len))
             }
             false => None,
         }
