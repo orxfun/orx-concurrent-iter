@@ -1,5 +1,8 @@
 use super::{con_iter::ConIterJaggedRef, slice_iter::RawJaggedSliceIterRef};
-use crate::{ChunkPuller, implementations::jagged_arrays::JaggedIndexer};
+use crate::{
+    ChunkPuller,
+    implementations::jagged_arrays::{JaggedIndexer, RawSlice},
+};
 
 pub struct ChunkPullerJaggedRef<'i, 'a, T, X>
 where
@@ -31,7 +34,7 @@ where
     type ChunkItem = &'a T;
 
     type Chunk<'c>
-        = RawJaggedSliceIterRef<'a, T>
+        = RawJaggedSliceIterRef<'a, &'a Vec<RawSlice<T>>, T>
     where
         Self: 'c;
 

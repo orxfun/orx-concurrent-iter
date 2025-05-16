@@ -1,8 +1,13 @@
-use super::{RawJaggedRef, chunk_puller::ChunkPullerJaggedRef, slice_iter::RawJaggedSliceIterRef};
+use super::{
+    chunk_puller::ChunkPullerJaggedRef, raw_jagged_ref::RawJaggedRef,
+    slice_iter::RawJaggedSliceIterRef,
+};
 use crate::{
-    ConcurrentIter, ExactSizeConcurrentIter, implementations::jagged_arrays::JaggedIndexer,
+    ConcurrentIter, ExactSizeConcurrentIter,
+    implementations::jagged_arrays::{JaggedIndexer, RawSlice},
 };
 use core::sync::atomic::{AtomicUsize, Ordering};
+use std::marker::PhantomData;
 
 /// Flattened concurrent iterator of a raw jagged array yielding references to elements.
 pub struct ConIterJaggedRef<'a, T, X>
@@ -10,8 +15,9 @@ where
     T: Send + Sync,
     X: JaggedIndexer + Send + Sync,
 {
-    jagged: RawJaggedRef<'a, T, X>,
+    jagged: RawJaggedRef<T, X>,
     counter: AtomicUsize,
+    phantom: PhantomData<&'a ()>,
 }
 
 unsafe impl<'a, T, X> Sync for ConIterJaggedRef<'a, T, X>
@@ -24,7 +30,7 @@ where
 unsafe impl<'a, T, X> Send for ConIterJaggedRef<'a, T, X>
 where
     T: Send + Sync,
-    X: JaggedIndexer + Send + Sync,
+    X: JaggedIndexer + Send + Sync + 'a,
 {
 }
 
@@ -33,10 +39,11 @@ where
     T: Send + Sync,
     X: JaggedIndexer + Send + Sync,
 {
-    pub(crate) fn new(jagged: RawJaggedRef<'a, T, X>, begin: usize) -> Self {
+    pub(crate) fn new(jagged: RawJaggedRef<T, X>, begin: usize) -> Self {
         Self {
             jagged,
             counter: begin.into(),
+            phantom: PhantomData,
         }
     }
 
@@ -51,15 +58,17 @@ where
     pub(super) fn progress_and_get_iter(
         &self,
         chunk_size: usize,
-    ) -> Option<(usize, RawJaggedSliceIterRef<'a, T>)> {
+    ) -> Option<(usize, RawJaggedSliceIterRef<'a, &'a Vec<RawSlice<T>>, T>)> {
         self.progress_and_get_begin_idx(chunk_size)
             .map(|begin_idx| {
                 let end_idx = (begin_idx + chunk_size)
                     .min(self.jagged.len())
                     .max(begin_idx);
                 let slice = self.jagged.slice(begin_idx, end_idx);
-                let iter = slice.into_iter_ref();
-                (begin_idx, iter)
+                let iter = RawJaggedSliceIterRef::new(slice);
+                // (begin_idx, Default::default())
+                // (begin_idx, iter)
+                todo!()
             })
     }
 }
@@ -67,11 +76,11 @@ where
 impl<'a, T, X> ConcurrentIter for ConIterJaggedRef<'a, T, X>
 where
     T: Send + Sync + 'a,
-    X: JaggedIndexer + Send + Sync,
+    X: JaggedIndexer + Send + Sync + 'a,
 {
     type Item = &'a T;
 
-    type SequentialIter = RawJaggedSliceIterRef<'a, T>;
+    type SequentialIter = RawJaggedSliceIterRef<'a, Vec<RawSlice<T>>, T>;
 
     type ChunkPuller<'i>
         = ChunkPullerJaggedRef<'i, 'a, T, X>
@@ -80,8 +89,9 @@ where
 
     fn into_seq_iter(self) -> Self::SequentialIter {
         let num_taken = self.counter.load(Ordering::Acquire).min(self.jagged.len());
-        let slice = self.jagged.slice_from(num_taken);
-        slice.into_iter_ref()
+        // let slice = self.jagged.into_slice_from(num_taken);
+        // RawJaggedSliceIterRef::new(slice)
+        todo!()
     }
 
     fn skip_to_end(&self) {
@@ -112,7 +122,7 @@ where
 impl<'a, T, X> ExactSizeConcurrentIter for ConIterJaggedRef<'a, T, X>
 where
     T: Send + Sync + 'a,
-    X: JaggedIndexer + Send + Sync,
+    X: JaggedIndexer + Send + Sync + 'a,
 {
     fn len(&self) -> usize {
         let num_taken = self.counter.load(Ordering::Acquire);

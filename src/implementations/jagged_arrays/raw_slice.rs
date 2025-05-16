@@ -1,55 +1,25 @@
 use super::as_slice::AsSlice;
-use std::marker::PhantomData;
 
 /// Raw representation of a slice defined by a pointer and length.
 ///
 /// All elements in the slice are assumed to be initialized.
-pub struct RawSlice<'a, T> {
+pub struct RawSlice<T> {
     ptr: *const T,
     len: usize,
-    phantom: PhantomData<&'a ()>,
 }
 
-impl<'a, T> From<&'a [T]> for RawSlice<'a, T> {
+impl<'a, T> From<&'a [T]> for RawSlice<T> {
     fn from(value: &'a [T]) -> Self {
         Self {
             ptr: value.as_ptr(),
             len: value.len(),
-            phantom: PhantomData,
         }
     }
 }
 
-impl<'a, T> IntoIterator for RawSlice<'a, T>
-where
-    T: 'a,
-{
-    type Item = &'a T;
-
-    type IntoIter = core::slice::Iter<'a, T>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        todo!()
-    }
-}
-
-impl<'a, T> Clone for RawSlice<'a, T> {
-    fn clone(&self) -> Self {
-        Self {
-            ptr: self.ptr.clone(),
-            len: self.len.clone(),
-            phantom: self.phantom.clone(),
-        }
-    }
-}
-
-impl<T> RawSlice<'_, T> {
+impl<T> RawSlice<T> {
     pub(super) fn new(ptr: *const T, len: usize) -> Self {
-        Self {
-            ptr,
-            len,
-            phantom: PhantomData,
-        }
+        Self { ptr, len }
     }
 
     /// # SAFETY
@@ -58,9 +28,17 @@ impl<T> RawSlice<'_, T> {
     pub(super) unsafe fn as_slice<'b>(self) -> &'b [T] {
         unsafe { core::slice::from_raw_parts(self.ptr, self.len) }
     }
+
+    /// # SAFETY
+    ///
+    /// The caller must ensure that the reference does not outlive the data source jagged array.
+    pub(super) unsafe fn get_unchecked<'b>(&self, i: usize) -> &'b T {
+        debug_assert!(i < self.len);
+        unsafe { &*self.ptr.add(i) }
+    }
 }
 
-impl<T> AsSlice<T> for RawSlice<'_, T> {
+impl<T> AsSlice<T> for RawSlice<T> {
     fn ptr(&self) -> *const T {
         self.ptr
     }
