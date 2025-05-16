@@ -1,6 +1,6 @@
 use super::{
     chunk_puller::ChunkPullerJaggedOwned, into_iter::RawJaggedIterOwned, raw_jagged::RawJagged,
-    raw_vec::RawVec, slice_iter::RawJaggedSliceIterOwned,
+    slice_iter::RawJaggedSliceIterOwned,
 };
 use crate::{
     ConcurrentIter, ExactSizeConcurrentIter, implementations::jagged_arrays::indexer::JaggedIndexer,
