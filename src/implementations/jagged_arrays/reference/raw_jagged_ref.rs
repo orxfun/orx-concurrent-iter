@@ -1,13 +1,9 @@
+use super::slice::RawJaggedSlice;
 use crate::implementations::jagged_arrays::{
-    as_raw_slice::{AsOwningSlice, AsRawSlice},
-    as_slice::AsSlice,
-    index::JaggedIndex,
-    indexer::JaggedIndexer,
+    as_slice::AsSlice, index::JaggedIndex, indexer::JaggedIndexer,
 };
 use orx_pseudo_default::PseudoDefault;
 use std::{cmp::Ordering, marker::PhantomData};
-
-use super::slice::RawJaggedSlice;
 
 /// Raw representation of a reference to a jagged array.
 ///

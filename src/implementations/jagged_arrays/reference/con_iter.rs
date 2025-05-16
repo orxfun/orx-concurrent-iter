@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
     ConcurrentIter, ExactSizeConcurrentIter,
-    implementations::jagged_arrays::{JaggedIndexer, RawSlice, as_slice::AsSlice},
+    implementations::jagged_arrays::{JaggedIndexer, as_slice::AsSlice},
 };
 use core::sync::atomic::{AtomicUsize, Ordering};
 
