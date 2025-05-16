@@ -68,10 +68,6 @@ where
         }
     }
 
-    pub(crate) fn into_inner(self) -> S {
-        self.arrays
-    }
-
     pub(super) fn len(&self) -> usize {
         self.len
     }
