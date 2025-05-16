@@ -73,9 +73,9 @@ where
 
     fn into_seq_iter(self) -> Self::SequentialIter {
         let num_taken = self.counter.load(Ordering::Acquire).min(self.jagged.len());
-        // let slice = self.jagged.into_slice_from(num_taken);
-        // RawJaggedSliceIterRef::new(slice)
-        todo!()
+        let flat_end = self.jagged.len();
+        let slice = self.jagged.jagged_slice(num_taken, flat_end);
+        RawJaggedSliceIterRef::new(slice)
     }
 
     fn skip_to_end(&self) {
