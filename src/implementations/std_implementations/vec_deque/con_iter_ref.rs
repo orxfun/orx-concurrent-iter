@@ -6,7 +6,7 @@ use crate::{
 };
 use alloc::vec;
 use alloc::vec::Vec;
-use core::{iter::Skip, mem::ManuallyDrop};
+use core::{iter::Skip, mem::ManuallyDrop, ptr::drop_in_place};
 use orx_pseudo_default::PseudoDefault;
 use std::{collections::VecDeque, time::UNIX_EPOCH};
 
@@ -43,6 +43,7 @@ pub struct ConIterVecDequeRef<'a, T>
 where
     T: Send + Sync,
 {
+    vec_deque: &'a VecDeque<T>,
     slices: *const &'a [T],
     con_iter: ConIterCore<'a, T>,
 }
@@ -50,6 +51,19 @@ where
 unsafe impl<'a, T: Send + Sync> Sync for ConIterVecDequeRef<'a, T> {}
 
 unsafe impl<'a, T: Send + Sync> Send for ConIterVecDequeRef<'a, T> {}
+
+// impl<'a, T> Drop for ConIterVecDequeRef<'a, T>
+// where
+//     T: Send + Sync,
+// {
+//     fn drop(&mut self) {
+//         let ptr = self.slices as *mut &'a [T];
+//         unsafe { ptr.write(Default::default()) };
+//         unsafe { ptr.add(1).write(Default::default()) };
+
+//         let _vec_to_drop = unsafe { Vec::from_raw_parts(self.slices as *mut &'a [T], 0, 2) };
+//     }
+// }
 
 impl<'a, T> ConIterVecDequeRef<'a, T>
 where
@@ -59,6 +73,7 @@ where
         let (a, b) = vec_deque.as_slices();
 
         let mut x = Self {
+            vec_deque,
             slices: core::ptr::null(),
             con_iter: ConIterCore::new(Default::default(), 0),
         };
@@ -129,41 +144,49 @@ where
 {
     type Item = <ConIterCore<'a, T> as ConcurrentIter>::Item;
 
-    // type SequentialIter = Skip<std::collections::vec_deque::Iter<'a, T>>;
-    type SequentialIter = <ConIterCore<'a, T> as ConcurrentIter>::SequentialIter;
+    type SequentialIter = Skip<std::collections::vec_deque::Iter<'a, T>>;
 
     type ChunkPuller<'i>
         = <ConIterCore<'a, T> as ConcurrentIter>::ChunkPuller<'i>
     where
         Self: 'i;
 
-    fn into_seq_iter(self) -> Self::SequentialIter {
-        self.con_iter.into_seq_iter()
-        // let num_remaining = self.len();
+    fn into_seq_iter(mut self) -> Self::SequentialIter {
+        let num_remaining = self.len();
+
+        let (vec_deque, mut con_iter, slices) = (self.vec_deque, self.con_iter, self.slices);
+        let slices = slices as *mut &'a [T];
+        con_iter.clear();
+        // let _vec_to_drop = unsafe { Vec::from_raw_parts(slices as *mut &'a [T], 0, 2) };
+        for i in 0..2 {
+            let p = unsafe { slices.add(i) };
+            unsafe { p.drop_in_place() };
+        }
+        unsafe { drop_in_place(slices) };
 
         // let empty = ManuallyDrop::new(Vec::new());
         // let empty_ptr = empty.as_ptr();
         // let x = core::mem::replace(&mut self.slices, empty_ptr) as *mut &'a [T];
         // let _vec_to_drop = unsafe { Vec::from_raw_parts(x, 0, 2) };
 
-        // // self.slices_arr.clear();
-        // // let ptr = self.slices as *mut &'a [T];
-        // // unsafe { ptr.write(Default::default()) };
-        // // unsafe { ptr.add(1).write(Default::default()) };
-        // // let _vec_to_drop = unsafe { Vec::from_raw_parts(self.slices as *mut &'a [T], 2, 2) };
-        // // _vec_to_drop.leak();
+        // self.slices_arr.clear();
+        // let ptr = self.slices as *mut &'a [T];
+        // unsafe { ptr.write(Default::default()) };
+        // unsafe { ptr.add(1).write(Default::default()) };
+        // let _vec_to_drop = unsafe { Vec::from_raw_parts(self.slices as *mut &'a [T], 2, 2) };
+        // _vec_to_drop.leak();
 
-        // // let _ = ManuallyDrop::new(self.con_iter);
+        // let _ = ManuallyDrop::new(self.con_iter);
 
-        // // self.slices_arr[0] = Default::default();
-        // // self.slices_arr[1] = Default::default();
-        // // unsafe { self.slices_arr.set_len(0) };
-        // // let mut empty = vec![Default::default(), Default::default()];
-        // // core::mem::swap(&mut self._slices_arr, &mut empty);
-        // // drop(empty);
-        // // let _ = ManuallyDrop::new(self._slices_vec);
-        // let skip = self.vec_deque.len().saturating_sub(num_remaining);
-        // self.vec_deque.iter().skip(skip)
+        // self.slices_arr[0] = Default::default();
+        // self.slices_arr[1] = Default::default();
+        // unsafe { self.slices_arr.set_len(0) };
+        // let mut empty = vec![Default::default(), Default::default()];
+        // core::mem::swap(&mut self._slices_arr, &mut empty);
+        // drop(empty);
+        // let _ = ManuallyDrop::new(self._slices_vec);
+        let skip = vec_deque.len().saturating_sub(num_remaining);
+        vec_deque.iter().skip(skip)
     }
 
     fn skip_to_end(&self) {

@@ -67,6 +67,11 @@ where
         }
     }
 
+    pub(super) fn clear(&mut self) {
+        self.arrays = Default::default();
+        self.len = 0;
+    }
+
     pub(super) fn len(&self) -> usize {
         self.len
     }
