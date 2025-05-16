@@ -1,5 +1,5 @@
 use super::slice::RawJaggedSlice;
-use crate::implementations::{jagged_arrays::as_slice::AsSlice, ptr_utils::take};
+use crate::implementations::{jagged_arrays::as_raw_slice::AsRawSlice, ptr_utils::take};
 
 /// An iterator over owned elements of a slice of a raw jagged array;
 /// i.e., a [`RawJaggedSlice`].

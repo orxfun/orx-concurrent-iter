@@ -1,7 +1,7 @@
 use super::{raw_vec::RawVec, slice::RawJaggedSlice};
 use crate::implementations::{
     jagged_arrays::{
-        as_slice::{AsOwningSlice, AsSlice},
+        as_raw_slice::{AsOwningSlice, AsRawSlice},
         index::JaggedIndex,
         indexer::JaggedIndexer,
     },

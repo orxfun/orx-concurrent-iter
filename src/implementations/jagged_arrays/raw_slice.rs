@@ -1,4 +1,4 @@
-use super::as_slice::AsSlice;
+use super::as_raw_slice::AsRawSlice;
 
 /// Raw representation of a slice defined by a pointer and length.
 ///
@@ -38,7 +38,7 @@ impl<T> RawSlice<T> {
     }
 }
 
-impl<T> AsSlice<T> for RawSlice<T> {
+impl<T> AsRawSlice<T> for RawSlice<T> {
     fn ptr(&self) -> *const T {
         self.ptr
     }

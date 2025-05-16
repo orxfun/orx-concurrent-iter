@@ -1,6 +1,6 @@
 use super::raw_jagged::RawJagged;
 use crate::implementations::{
-    jagged_arrays::{as_slice::AsSlice, indexer::JaggedIndexer},
+    jagged_arrays::{as_raw_slice::AsRawSlice, indexer::JaggedIndexer},
     ptr_utils::take,
 };
 

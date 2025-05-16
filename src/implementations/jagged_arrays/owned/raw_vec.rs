@@ -1,5 +1,5 @@
 use crate::implementations::jagged_arrays::{
-    as_slice::{AsOwningSlice, AsSlice},
+    as_raw_slice::{AsOwningSlice, AsRawSlice},
     raw_slice::RawSlice,
 };
 use alloc::vec::Vec;
@@ -31,7 +31,7 @@ impl<T> From<Vec<T>> for RawVec<T> {
     }
 }
 
-impl<T> AsSlice<T> for RawVec<T> {
+impl<T> AsRawSlice<T> for RawVec<T> {
     fn ptr(&self) -> *const T {
         self.ptr
     }

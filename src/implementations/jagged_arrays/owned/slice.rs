@@ -1,5 +1,5 @@
 use super::RawVec;
-use crate::implementations::jagged_arrays::{AsSlice, JaggedIndex, RawSlice};
+use crate::implementations::jagged_arrays::{AsRawSlice, JaggedIndex, RawSlice};
 use std::marker::PhantomData;
 
 /// A slice of a jagged array which might be empty, a slice of a single vector,

@@ -32,7 +32,7 @@ impl<'i, 'a, J, X, T> ChunkPuller for ChunkPullerJaggedRef<'i, 'a, J, X, T>
 where
     T: Send + Sync + 'a,
     X: JaggedIndexer + Send + Sync + 'a,
-    J: AsRawJaggedRef<'a, T, X>,
+    J: AsRawJaggedRef<'a, T, X> + 'a,
 {
     type ChunkItem = &'a T;
 

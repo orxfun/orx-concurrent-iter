@@ -78,7 +78,7 @@ impl<'a, J, X, T> ConcurrentIter for ConIterJaggedRef<'a, J, X, T>
 where
     T: Send + Sync,
     X: JaggedIndexer + Send + Sync,
-    J: AsRawJaggedRef<'a, T, X>,
+    J: AsRawJaggedRef<'a, T, X> + 'a,
 {
     type Item = &'a T;
 
@@ -101,12 +101,12 @@ where
 
     fn next(&self) -> Option<Self::Item> {
         self.progress_and_get_begin_idx(1)
-            .and_then(|idx| self.jagged.get(idx))
+            .and_then(|idx| self.jagged.element(idx))
     }
 
     fn next_with_idx(&self) -> Option<(usize, Self::Item)> {
         self.progress_and_get_begin_idx(1)
-            .and_then(|idx| self.jagged.get(idx).map(|value| (idx, value)))
+            .and_then(|idx| self.jagged.element(idx).map(|value| (idx, value)))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -124,7 +124,7 @@ impl<'a, J, X, T> ExactSizeConcurrentIter for ConIterJaggedRef<'a, J, X, T>
 where
     T: Send + Sync,
     X: JaggedIndexer + Send + Sync,
-    J: AsRawJaggedRef<'a, T, X>,
+    J: AsRawJaggedRef<'a, T, X> + 'a,
 {
     fn len(&self) -> usize {
         let num_taken = self.counter.load(Ordering::Acquire);

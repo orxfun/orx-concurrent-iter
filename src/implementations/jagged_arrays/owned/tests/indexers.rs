@@ -1,6 +1,7 @@
 use crate::implementations::jagged_arrays::{
-    as_slice::AsSlice, index::JaggedIndex, indexer::JaggedIndexer,
+    as_raw_slice::AsRawSlice, index::JaggedIndex, indexer::JaggedIndexer,
 };
+use orx_pseudo_default::PseudoDefault;
 
 #[derive(Clone)]
 pub struct MatrixIndexer {
@@ -19,7 +20,7 @@ impl MatrixIndexer {
         jagged_index: &JaggedIndex,
     ) -> Option<usize>
     where
-        S: AsSlice<T>,
+        S: AsRawSlice<T>,
     {
         let flat_index = unsafe { self.flat_index_unchecked(arrays, jagged_index) };
         (flat_index <= total_len).then_some(flat_index)
@@ -27,14 +28,14 @@ impl MatrixIndexer {
 
     unsafe fn flat_index_unchecked<S, T>(&self, _arrays: &[S], jagged_index: &JaggedIndex) -> usize
     where
-        S: AsSlice<T>,
+        S: AsRawSlice<T>,
     {
         jagged_index.f * self.n + jagged_index.i
     }
 
     pub fn slice_len<S, T>(&self, arrays: &[S], begin: &JaggedIndex, end: &JaggedIndex) -> usize
     where
-        S: AsSlice<T>,
+        S: AsRawSlice<T>,
     {
         let total_len = arrays.iter().map(|x| x.length()).sum();
         let [begin, end] = [begin, end].map(|x| self.flat_index(total_len, arrays, x));
@@ -45,11 +46,17 @@ impl MatrixIndexer {
     }
 }
 
+impl PseudoDefault for MatrixIndexer {
+    fn pseudo_default() -> Self {
+        Self::new(1)
+    }
+}
+
 impl JaggedIndexer for MatrixIndexer {
     fn jagged_index<T>(
         &self,
         total_len: usize,
-        arrays: &[impl AsSlice<T>],
+        arrays: &[impl AsRawSlice<T>],
         flat_index: usize,
     ) -> Option<JaggedIndex> {
         match flat_index <= total_len {
@@ -60,7 +67,7 @@ impl JaggedIndexer for MatrixIndexer {
 
     unsafe fn jagged_index_unchecked<T>(
         &self,
-        _arrays: &[impl AsSlice<T>],
+        _arrays: &[impl AsRawSlice<T>],
         flat_index: usize,
     ) -> JaggedIndex {
         let f = flat_index / self.n;
@@ -72,11 +79,17 @@ impl JaggedIndexer for MatrixIndexer {
 #[derive(Clone)]
 pub struct GeneralJaggedIndexer;
 
+impl PseudoDefault for GeneralJaggedIndexer {
+    fn pseudo_default() -> Self {
+        Self
+    }
+}
+
 impl JaggedIndexer for GeneralJaggedIndexer {
     fn jagged_index<T>(
         &self,
         total_len: usize,
-        arrays: &[impl AsSlice<T>],
+        arrays: &[impl AsRawSlice<T>],
         flat_index: usize,
     ) -> Option<JaggedIndex> {
         match flat_index <= total_len {
@@ -87,7 +100,7 @@ impl JaggedIndexer for GeneralJaggedIndexer {
 
     unsafe fn jagged_index_unchecked<T>(
         &self,
-        arrays: &[impl AsSlice<T>],
+        arrays: &[impl AsRawSlice<T>],
         flat_index: usize,
     ) -> JaggedIndex {
         let mut idx = flat_index;

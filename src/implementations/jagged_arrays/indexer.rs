@@ -1,7 +1,8 @@
-use super::{as_slice::AsSlice, index::JaggedIndex};
+use super::{as_raw_slice::AsRawSlice, index::JaggedIndex};
+use orx_pseudo_default::PseudoDefault;
 
 /// An indexer for the raw jagged arrays.
-pub trait JaggedIndexer: Clone + Send + Sync {
+pub trait JaggedIndexer: Clone + PseudoDefault + Send + Sync {
     /// Returns the jagged index of the element `flat_index`-th position if the raw jagged array
     /// defined by the `arrays` collection would have been flattened.
     ///
@@ -14,7 +15,7 @@ pub trait JaggedIndexer: Clone + Send + Sync {
     fn jagged_index<T>(
         &self,
         total_len: usize,
-        arrays: &[impl AsSlice<T>],
+        arrays: &[impl AsRawSlice<T>],
         flat_index: usize,
     ) -> Option<JaggedIndex>;
 
@@ -30,7 +31,7 @@ pub trait JaggedIndexer: Clone + Send + Sync {
     /// possibly lead to undefined behavior.
     unsafe fn jagged_index_unchecked<T>(
         &self,
-        arrays: &[impl AsSlice<T>],
+        arrays: &[impl AsRawSlice<T>],
         flat_index: usize,
     ) -> JaggedIndex;
 }
