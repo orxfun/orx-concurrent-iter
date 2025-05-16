@@ -11,3 +11,4 @@ pub use index::JaggedIndex;
 pub use indexer::JaggedIndexer;
 pub use owned::{ConIterJaggedOwned, RawJagged, RawVec};
 pub use raw_slice::RawSlice;
+pub use reference::RawJaggedRef;

@@ -1,7 +1,4 @@
-use crate::implementations::{
-    jagged::JaggedIndexer,
-    jagged_arrays::{AsSlice, raw_slice::RawSlice},
-};
+use crate::implementations::jagged_arrays::{AsSlice, JaggedIndexer, raw_slice::RawSlice};
 
 /// Raw representation of a reference to a jagged array.
 /// Internally, the jagged array is stored as a vector of `RawSlice<T>`
@@ -11,7 +8,7 @@ use crate::implementations::{
 /// the second is the position of the element within this array.
 pub struct RawJaggedRef<'a, T, X>
 where
-    X: JaggedIndexer,
+    X:,
 {
     arrays: Vec<RawSlice<'a, T>>,
     len: usize,
