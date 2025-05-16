@@ -49,11 +49,9 @@ where
                 let end_idx = (begin_idx + chunk_size)
                     .min(self.jagged.len())
                     .max(begin_idx);
-                // let slice = self.jagged.slice(begin_idx, end_idx);
-                // let iter = RawJaggedSliceIterRef::new(slice);
-                // (begin_idx, Default::default())
-                // (begin_idx, iter)
-                todo!()
+                let slice = self.jagged.jagged_slice(begin_idx, end_idx);
+                let iter = RawJaggedSliceIterRef::new(slice);
+                (begin_idx, iter)
             })
     }
 }
