@@ -73,8 +73,12 @@ where
     }
 
     /// Returns total number of elements within the jagged arrays slice (`O(1)`).
-    pub fn len(&self) -> usize {
+    pub(super) fn len(&self) -> usize {
         self.len
+    }
+
+    pub(super) fn num_slices(&self) -> usize {
+        self.jagged.num_slices()
     }
 
     pub(super) fn get_slice(&self, s: usize) -> Option<&'a [T]> {

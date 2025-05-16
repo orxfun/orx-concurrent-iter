@@ -50,9 +50,18 @@ where
 
     fn next_slice(&mut self) -> Option<&'a T> {
         self.slice.get_slice(self.f).and_then(|slice| {
-            self.len_of_remaining_slices -= slice.len();
+            match self.len_of_remaining_slices > slice.len() {
+                true => {
+                    self.len_of_remaining_slices -= slice.len();
+                    self.f += 1;
+                }
+                false => {
+                    self.len_of_remaining_slices = 0;
+                    self.f = self.slice.num_slices();
+                }
+            }
+
             self.current = slice.iter();
-            self.f += 1;
             self.next()
         })
     }

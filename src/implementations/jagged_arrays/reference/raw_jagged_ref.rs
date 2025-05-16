@@ -70,6 +70,10 @@ where
         self.len
     }
 
+    pub(super) fn num_slices(&self) -> usize {
+        self.arrays.len()
+    }
+
     pub(super) fn len_of(&self, f: usize) -> Option<usize> {
         self.arrays.get(f).map(|x| x.as_slice().len())
     }
