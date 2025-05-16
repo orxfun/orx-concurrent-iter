@@ -30,7 +30,7 @@ fn new_vec(n: usize, elem: impl Fn(usize) -> String) -> VecDeque<String> {
 }
 
 #[test]
-fn abc_enumeration() {
+fn enumeration() {
     let vec: VecDeque<_> = (0..6).collect();
     let iter = ConIterVecDequeRef::new(&vec);
 
@@ -47,7 +47,7 @@ fn abc_enumeration() {
 }
 
 #[test]
-fn abc_size_hint() {
+fn size_hint() {
     let mut n = 26;
     let vec = new_vec(n, |x| (x + 10).to_string());
     let iter = ConIterVecDequeRef::new(&vec);
@@ -84,7 +84,7 @@ fn abc_size_hint() {
 }
 
 #[test]
-fn abc_size_hint_skip_to_end() {
+fn size_hint_skip_to_end() {
     let n = 26;
     let vec = new_vec(n, |x| (x + 10).to_string());
     let iter = ConIterVecDequeRef::new(&vec);
@@ -102,7 +102,7 @@ fn abc_size_hint_skip_to_end() {
 }
 
 #[test_matrix([1, 2, 4])]
-fn abc_empty(nt: usize) {
+fn empty(nt: usize) {
     let vec = VecDeque::<String>::new();
     let iter = ConIterVecDequeRef::new(&vec);
 
@@ -125,7 +125,7 @@ fn abc_empty(nt: usize) {
 }
 
 #[test_matrix([0, 6, N], [1, 2, 4])]
-fn abc_next(n: usize, nt: usize) {
+fn next(n: usize, nt: usize) {
     let vec = new_vec(n, |x| (x + 10).to_string());
     let iter = ConIterVecDequeRef::new(&vec);
 
@@ -154,7 +154,7 @@ fn abc_next(n: usize, nt: usize) {
 }
 
 #[test_matrix([0, 6, N], [1, 2, 4])]
-fn abc_next_with_idx(n: usize, nt: usize) {
+fn next_with_idx(n: usize, nt: usize) {
     let vec = new_vec(n, |x| (x + 10).to_string());
     let iter = ConIterVecDequeRef::new(&vec);
 
@@ -183,7 +183,7 @@ fn abc_next_with_idx(n: usize, nt: usize) {
 }
 
 #[test_matrix([0, 6, N], [1, 2, 4])]
-fn abc_item_puller(n: usize, nt: usize) {
+fn item_puller(n: usize, nt: usize) {
     let vec = new_vec(n, |x| (x + 10).to_string());
     let iter = ConIterVecDequeRef::new(&vec);
 
@@ -212,7 +212,7 @@ fn abc_item_puller(n: usize, nt: usize) {
 }
 
 #[test_matrix( [0, 6, N], [1, 2, 4])]
-fn abc_item_puller_with_idx(n: usize, nt: usize) {
+fn item_puller_with_idx(n: usize, nt: usize) {
     let vec = new_vec(n, |x| (x + 10).to_string());
     let iter = ConIterVecDequeRef::new(&vec);
 
@@ -241,7 +241,7 @@ fn abc_item_puller_with_idx(n: usize, nt: usize) {
 }
 
 #[test_matrix([0, 6, N], [1, 2, 4])]
-fn abc_chunk_puller(n: usize, nt: usize) {
+fn chunk_puller(n: usize, nt: usize) {
     let vec = new_vec(n, |x| (x + 10).to_string());
     let iter = ConIterVecDequeRef::new(&vec);
 
@@ -274,7 +274,7 @@ fn abc_chunk_puller(n: usize, nt: usize) {
 }
 
 #[test_matrix([0, 6, N], [1, 2, 4])]
-fn abc_chunk_puller_with_idx(n: usize, nt: usize) {
+fn chunk_puller_with_idx(n: usize, nt: usize) {
     let vec = new_vec(n, |x| (x + 10).to_string());
     let iter = ConIterVecDequeRef::new(&vec);
 
@@ -307,7 +307,7 @@ fn abc_chunk_puller_with_idx(n: usize, nt: usize) {
 }
 
 #[test_matrix([0, 6, N], [1, 2, 4])]
-fn abc_flattened_chunk_puller(n: usize, nt: usize) {
+fn flattened_chunk_puller(n: usize, nt: usize) {
     let vec = new_vec(n, |x| (x + 10).to_string());
     let iter = ConIterVecDequeRef::new(&vec);
 
@@ -335,7 +335,7 @@ fn abc_flattened_chunk_puller(n: usize, nt: usize) {
 }
 
 #[test_matrix([0, 6, N], [1, 2, 4])]
-fn abc_flattened_chunk_puller_with_idx(n: usize, nt: usize) {
+fn flattened_chunk_puller_with_idx(n: usize, nt: usize) {
     let vec = new_vec(n, |x| (x + 10).to_string());
     let iter = ConIterVecDequeRef::new(&vec);
 
@@ -363,7 +363,7 @@ fn abc_flattened_chunk_puller_with_idx(n: usize, nt: usize) {
 }
 
 #[test_matrix([0, 6, N], [1, 2, 4])]
-fn abc_skip_to_end(n: usize, nt: usize) {
+fn skip_to_end(n: usize, nt: usize) {
     let vec = new_vec(n, |x| (x + 10).to_string());
     let iter = ConIterVecDequeRef::new(&vec);
 
@@ -412,7 +412,7 @@ fn abc_skip_to_end(n: usize, nt: usize) {
 
 // #[test_matrix([0, 6, N], [1, 2, 4], [0, N / 2, N])]
 #[test_matrix([6], [1], [N / 2])]
-fn abc_into_seq_iter(n: usize, nt: usize, until: usize) {
+fn into_seq_iter(n: usize, nt: usize, until: usize) {
     let vec = new_vec(n, |x| (x + 10).to_string());
     let iter = ConIterVecDequeRef::new(&vec);
 
