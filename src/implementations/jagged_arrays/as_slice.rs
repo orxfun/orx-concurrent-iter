@@ -1,7 +1,9 @@
 use super::AsRawSlice;
 use alloc::vec::Vec;
 
+/// A type that can be represented as a contagious slice.
 pub trait AsSlice<T>: AsRawSlice<T> {
+    /// Returns the slice.
     fn as_slice(&self) -> &[T];
 }
 

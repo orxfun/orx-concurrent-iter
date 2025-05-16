@@ -56,6 +56,7 @@ where
     X: JaggedIndexer,
     S: AsSlice<T>,
 {
+    /// Creates a new raw jagged array of references.
     pub fn new(arrays: &'a [S], indexer: X, total_len: Option<usize>) -> Self {
         let len = total_len.unwrap_or_else(|| arrays.iter().map(|v| v.length()).sum());
         Self {
