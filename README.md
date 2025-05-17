@@ -8,7 +8,7 @@ A thread-safe and ergonomic concurrent iterator trait and efficient lock-free im
 
 This crate focuses on enabling **ergonomic** concurrent programs without sacrificing **efficiency**.
 
-> **no-std**: This crate supports **no-std**; however, *std* is added as a default feature. Please include with **no-default-features** for no-std use cases: `cargo add orx-concurrent-iter --no-default-features`.
+> **no-std**: This is a **no-std** crate.
 
 ## A. Ergonomics
 
