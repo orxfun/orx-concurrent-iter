@@ -6,12 +6,11 @@ mod ptr_utils;
 mod range;
 mod slice;
 mod vec;
+mod vec_deque;
 
 pub use empty::ConIterEmpty;
 pub use iter::ConIterOfIter;
 pub use range::ConIterRange;
 pub use slice::ConIterSlice;
 pub use vec::ConIterVec;
-
-mod std_implementations;
-pub use std_implementations::*;
+pub use vec_deque::ConIterVecDequeRef;
