@@ -2,11 +2,11 @@ use crate::{
     concurrent_iter::ConcurrentIter, exact_size_concurrent_iter::ExactSizeConcurrentIter,
     implementations::empty::con_iter::ConIterEmpty, pullers::ChunkPuller,
 };
-use orx_concurrent_bag::ConcurrentBag;
-use std::{
+use alloc::{
     string::{String, ToString},
     vec::Vec,
 };
+use orx_concurrent_bag::ConcurrentBag;
 use test_case::test_matrix;
 
 #[test]

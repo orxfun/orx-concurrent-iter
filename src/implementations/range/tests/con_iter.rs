@@ -3,9 +3,9 @@ use crate::{
     implementations::range::con_iter::ConIterRange, into_concurrent_iter::IntoConcurrentIter,
     pullers::ChunkPuller,
 };
+use alloc::vec::Vec;
 use core::ops::Range;
 use orx_concurrent_bag::ConcurrentBag;
-use std::vec::Vec;
 use test_case::test_matrix;
 
 #[cfg(miri)]

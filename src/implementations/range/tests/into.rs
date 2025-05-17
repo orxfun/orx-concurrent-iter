@@ -1,8 +1,8 @@
 use crate::{
     IntoConcurrentIter, concurrent_iter::ConcurrentIter, concurrent_iterable::ConcurrentIterable,
 };
+use alloc::vec::Vec;
 use orx_concurrent_bag::ConcurrentBag;
-use std::vec::Vec;
 
 #[test]
 fn range_as_into_concurrent_iter() {

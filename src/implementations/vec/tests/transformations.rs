@@ -1,7 +1,7 @@
 use crate::{
     ChunkPuller, ConcurrentIter, IntoConcurrentIter, concurrent_collection::ConcurrentCollection,
 };
-use std::vec::Vec;
+use alloc::vec::Vec;
 
 #[test]
 fn enumerate_item() {

@@ -12,9 +12,6 @@
 )]
 #![no_std]
 
-#[cfg(any(test, feature = "std"))]
-extern crate std;
-
 extern crate alloc;
 
 mod concurrent_collection;

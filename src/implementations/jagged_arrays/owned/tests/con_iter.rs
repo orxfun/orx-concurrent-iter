@@ -7,11 +7,11 @@ use crate::{
         tests::indexers::MatrixIndexer,
     },
 };
-use orx_concurrent_bag::ConcurrentBag;
-use std::{
+use alloc::{
     string::{String, ToString},
     vec::Vec,
 };
+use orx_concurrent_bag::ConcurrentBag;
 use test_case::test_matrix;
 
 #[cfg(miri)]

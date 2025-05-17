@@ -1,5 +1,5 @@
 use crate::implementations::jagged_arrays::Slices;
-use std::{collections::VecDeque, vec};
+use alloc::{collections::VecDeque, vec};
 
 pub struct VecDequeRef<'a, T>(Option<&'a VecDeque<T>>);
 

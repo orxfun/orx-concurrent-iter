@@ -8,6 +8,8 @@ A thread-safe and ergonomic concurrent iterator trait and efficient lock-free im
 
 This crate focuses on enabling **ergonomic** concurrent programs without sacrificing **efficiency**.
 
+> **no-std**: This crate supports **no-std**; however, *std* is added as a default feature. Please include with **no-default-features** for no-std use cases: `cargo add orx-concurrent-iter --no-default-features`.
+
 ## A. Ergonomics
 
 A [`ConcurrentIter`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ConcurrentIter.html) can be safely shared among threads using a shared reference; and multiple threads can iterate over it concurrently.
@@ -342,6 +344,7 @@ The following implementations of concurrent iterators are provided in this crate
 | `I: Iterator<Item = T>` |                               |                                    | `T`                                         |
 | `&[T]`                  | `&T`                          | `&T`                               |                                             |
 | `Vec<T>`                | `&T`                          | `T`                                |                                             |
+| `VecDeque<T>`                | `&T`                          | `T`                                |                                             |
 | `Range<T>`              | `T`                           | `T`                                |                                             |
 
 The following are in progress:

@@ -3,7 +3,7 @@ use crate::implementations::jagged_arrays::owned::{
     into_iter::RawJaggedIterOwned, raw_jagged::RawJagged, raw_vec::RawVec,
     slice_iter::RawJaggedSliceIterOwned,
 };
-use std::{
+use alloc::{
     string::{String, ToString},
     vec,
     vec::Vec,

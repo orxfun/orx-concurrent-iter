@@ -13,8 +13,5 @@ pub use range::ConIterRange;
 pub use slice::ConIterSlice;
 pub use vec::ConIterVec;
 
-#[cfg(feature = "std")]
 mod std_implementations;
-
-#[cfg(feature = "std")]
 pub use std_implementations::*;

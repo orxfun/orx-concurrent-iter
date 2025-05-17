@@ -1,6 +1,6 @@
 use super::con_iter_ref::ConIterVecDequeRef;
 use crate::{IntoConcurrentIter, implementations::ConIterVec};
-use std::{collections::VecDeque, vec::Vec};
+use alloc::{collections::VecDeque, vec::Vec};
 
 impl<'a, T> IntoConcurrentIter for &'a VecDeque<T>
 where

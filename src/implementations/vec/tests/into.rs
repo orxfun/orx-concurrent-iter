@@ -2,8 +2,8 @@ use crate::{
     IntoConcurrentIter, concurrent_collection::ConcurrentCollection,
     concurrent_iter::ConcurrentIter,
 };
+use alloc::{string::ToString, vec::Vec};
 use orx_concurrent_bag::ConcurrentBag;
-use std::{string::ToString, vec::Vec};
 
 #[test]
 fn vec_as_into_concurrent_iter() {

@@ -2,7 +2,7 @@ use super::indexers::{GeneralJaggedIndexer, MatrixIndexer};
 use crate::implementations::jagged_arrays::reference::{
     raw_jagged_ref::RawJaggedRef, slice_iter::RawJaggedSliceIterRef,
 };
-use std::{
+use alloc::{
     string::{String, ToString},
     vec,
     vec::Vec,

@@ -1,9 +1,8 @@
-use std::vec::Vec;
-
 use crate::{
     IterIntoConcurrentIter, concurrent_iter::ConcurrentIter,
     concurrent_iterable::ConcurrentIterable,
 };
+use alloc::vec::Vec;
 use orx_concurrent_bag::ConcurrentBag;
 use orx_iterable::IntoCloningIterable;
 

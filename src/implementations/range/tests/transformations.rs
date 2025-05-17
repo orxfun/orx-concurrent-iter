@@ -1,7 +1,7 @@
 use crate::concurrent_iterable::ConcurrentIterable;
 use crate::{ChunkPuller, ConcurrentIter};
+use alloc::vec::Vec;
 use core::ops::Range;
-use std::vec::Vec;
 
 #[test]
 fn enumerate_item() {

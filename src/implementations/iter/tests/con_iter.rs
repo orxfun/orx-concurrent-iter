@@ -2,12 +2,12 @@ use crate::{
     concurrent_iter::ConcurrentIter, exact_size_concurrent_iter::ExactSizeConcurrentIter,
     implementations::ConIterOfIter, pullers::ChunkPuller,
 };
-use orx_concurrent_bag::ConcurrentBag;
-use std::{
+use alloc::{
     format,
     string::{String, ToString},
     vec::Vec,
 };
+use orx_concurrent_bag::ConcurrentBag;
 use test_case::test_matrix;
 
 #[cfg(miri)]

@@ -5,8 +5,8 @@ use crate::{
         AsRawSlice, ConIterJaggedRef, JaggedIndex, JaggedIndexer, RawJaggedRef, Slices,
     },
 };
+use alloc::collections::VecDeque;
 use orx_pseudo_default::PseudoDefault;
-use std::collections::VecDeque;
 
 /// Concurrent iterator of a reference to a [`VecDeque`].
 ///

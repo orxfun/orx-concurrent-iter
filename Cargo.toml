@@ -1,6 +1,6 @@
 [package]
 name = "orx-concurrent-iter"
-version = "2.0.0"
+version = "2.1.0"
 edition = "2024"
 authors = ["orxfun <orx.ugur.arikan@gmail.com>"]
 description = "A thread-safe and ergonomic concurrent iterator trait and efficient lock-free implementations."
@@ -29,7 +29,3 @@ rayon = "1.10.0"
 [[bench]]
 name = "con_iter_of_iter"
 harness = false
-
-[features]
-default = ["std"]
-std = []
