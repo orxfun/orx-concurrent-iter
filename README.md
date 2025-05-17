@@ -337,7 +337,7 @@ Benchmarks [benches/con_iter_of_iter.rs](https://github.com/orxfun/orx-concurren
 
 ## D. Implementations
 
-The following implementations of concurrent iterators are provided in this crate.
+The following table lists current implementations of concurrent iterators provided in this crate.
 
 | Type                    | ConcurrentIterable `con_iter` | IntoConcurrentIter `into_con_iter` | IterIntoConcurrentIter `iter_into_con_iter` |
 |-------------------------|-------------------------------|------------------------------------|---------------------------------------------|
@@ -347,10 +347,12 @@ The following implementations of concurrent iterators are provided in this crate
 | `VecDeque<T>`                | `&T`                          | `T`                                |                                             |
 | `Range<T>`              | `T`                           | `T`                                |                                             |
 
-The following are in progress:
+The following are collections with known concurrent iterator implementations in their respective crates:
 
-* Implementing concurrent iterators for remaining standard collection types in this crate.
-* Implementing concurrent iterators for other collection types in the respective crates.
+| Type                    | ConcurrentIterable `con_iter` | IntoConcurrentIter `into_con_iter` |
+|-------------------------|-------------------------------|------------------------------------|
+| [`SplitVec<T, G>`](https://crates.io/crates/orx-split-vec)  | `&T`                          | `T`                                |
+| [`FixedVec<T>`](https://crates.io/crates/orx-fixed-vec)  | `&T`                          | `T`                                |
 
 ### Relation to orx_parallel
 
