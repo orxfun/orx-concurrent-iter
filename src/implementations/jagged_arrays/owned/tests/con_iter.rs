@@ -1,9 +1,13 @@
 use crate::{
-    concurrent_iter::ConcurrentIter, exact_size_concurrent_iter::ExactSizeConcurrentIter,
-    implementations::ConIterOfIter, pullers::ChunkPuller,
+    ChunkPuller,
+    concurrent_iter::ConcurrentIter,
+    exact_size_concurrent_iter::ExactSizeConcurrentIter,
+    implementations::jagged_arrays::owned::{
+        con_iter::ConIterJaggedOwned, raw_jagged::RawJagged, raw_vec::RawVec,
+        tests::indexers::MatrixIndexer,
+    },
 };
 use alloc::{
-    format,
     string::{String, ToString},
     vec::Vec,
 };
@@ -11,29 +15,35 @@ use orx_concurrent_bag::ConcurrentBag;
 use test_case::test_matrix;
 
 #[cfg(miri)]
-const N: usize = 125;
+const N: usize = 11;
 #[cfg(not(miri))]
-const N: usize = 4735;
+const N: usize = 66;
 
-fn new_vec(n: usize, elem: impl Fn(usize) -> String) -> Vec<String> {
-    let mut vec = Vec::with_capacity(n + 17);
+fn get_matrix(n: usize) -> Vec<Vec<String>> {
+    let mut matrix = Vec::new();
     for i in 0..n {
-        vec.push(elem(i));
+        matrix.push(
+            ((i * n)..((i + 1) * n))
+                .map(|x| (10 + x).to_string())
+                .collect(),
+        );
     }
-    vec
+    matrix
 }
 
 #[test]
 fn enumeration() {
-    let vec: Vec<_> = (0..6).collect();
-    let iter = ConIterOfIter::new(vec.into_iter().filter(|x| *x < 99));
+    let n = 2;
+    let matrix = get_matrix(n);
+    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
+    let iter = ConIterJaggedOwned::new(jagged, 0);
 
-    assert_eq!(iter.next(), Some(0));
-    assert_eq!(iter.next_with_idx(), Some((1, 1)));
-    assert_eq!(iter.next(), Some(2));
-    assert_eq!(iter.next_with_idx(), Some((3, 3)));
-    assert_eq!(iter.next(), Some(4));
-    assert_eq!(iter.next_with_idx(), Some((5, 5)));
+    assert_eq!(iter.next(), Some(10.to_string()));
+    assert_eq!(iter.next_with_idx(), Some((1, 11.to_string())));
+    assert_eq!(iter.next(), Some(12.to_string()));
+    assert_eq!(iter.next_with_idx(), Some((3, 13.to_string())));
+    assert_eq!(iter.next(), None);
     assert_eq!(iter.next(), None);
     assert_eq!(iter.next_with_idx(), None);
     assert_eq!(iter.next(), None);
@@ -42,9 +52,13 @@ fn enumeration() {
 
 #[test]
 fn size_hint() {
-    let mut n = 25;
-    let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = ConIterOfIter::new(vec.into_iter().map(|x| format!("{}!", x)));
+    let n = 5;
+    let matrix = get_matrix(n);
+    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
+    let iter = ConIterJaggedOwned::new(jagged, 0);
+
+    let mut n = n * n;
 
     for _ in 0..10 {
         assert_eq!(iter.size_hint(), (n, Some(n)));
@@ -78,38 +92,12 @@ fn size_hint() {
 }
 
 #[test]
-fn size_hint_unknown() {
-    let mut n = 25;
-    let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = ConIterOfIter::new(vec.into_iter().filter(|x| x.starts_with("1")));
-
-    for _ in 0..10 {
-        assert_eq!(iter.size_hint(), (0, Some(n)));
-        assert_eq!(iter.try_get_len(), None);
-        let _ = iter.next();
-        n -= 1;
-    }
-
-    let mut chunks_iter = iter.chunk_puller(7);
-
-    assert_eq!(iter.size_hint(), (0, Some(n)));
-    assert_eq!(iter.try_get_len(), None);
-    let _ = chunks_iter.pull();
-
-    assert_eq!(iter.size_hint(), (0, Some(0)));
-    assert_eq!(iter.try_get_len(), Some(0));
-
-    let chunk = chunks_iter.pull();
-    assert!(chunk.is_none());
-    assert_eq!(iter.size_hint(), (0, Some(0)));
-    assert_eq!(iter.try_get_len(), Some(0));
-}
-
-#[test]
 fn size_hint_skip_to_end() {
-    let n = 25;
-    let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = ConIterOfIter::new(vec.into_iter().map(|x| format!("{}!", x)));
+    let n = 5;
+    let matrix = get_matrix(n);
+    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
+    let iter = ConIterJaggedOwned::new(jagged, 0);
 
     for _ in 0..10 {
         let _ = iter.next();
@@ -125,28 +113,11 @@ fn size_hint_skip_to_end() {
 
 #[test_matrix([1, 2, 4])]
 fn empty(nt: usize) {
-    let vec = Vec::<String>::new();
-    let iter = ConIterOfIter::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
-
-    std::thread::scope(|s| {
-        for _ in 0..nt {
-            s.spawn(|| {
-                assert!(iter.next().is_none());
-                assert!(iter.next().is_none());
-
-                let mut puller = iter.chunk_puller(5);
-                assert!(puller.pull().is_none());
-                assert!(puller.pull().is_none());
-
-                let mut iter = iter.chunk_puller(5).flattened();
-                assert!(iter.next().is_none());
-                assert!(iter.next().is_none());
-            });
-        }
-    });
-
-    let vec = new_vec(1000, |x| (x + 10).to_string());
-    let iter = ConIterOfIter::new(vec.into_iter().filter(|x| x.as_str() == "abc"));
+    let n = 0;
+    let matrix = get_matrix(n);
+    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
+    let iter = ConIterJaggedOwned::new(jagged, 0);
 
     std::thread::scope(|s| {
         for _ in 0..nt {
@@ -166,10 +137,12 @@ fn empty(nt: usize) {
     });
 }
 
-#[test_matrix([0, 1, N], [1, 2, 4])]
+#[test_matrix([0, 2, N], [1, 2, 4])]
 fn next(n: usize, nt: usize) {
-    let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = ConIterOfIter::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
+    let matrix = get_matrix(n);
+    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
+    let iter = ConIterJaggedOwned::new(jagged, 0);
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -187,7 +160,7 @@ fn next(n: usize, nt: usize) {
         }
     });
 
-    let mut expected: Vec<_> = (0..n).map(|i| (i + 10).to_string()).collect();
+    let mut expected: Vec<_> = (0..(n * n)).map(|i| (i + 10).to_string()).collect();
     expected.sort();
     let mut collected = bag.into_inner().to_vec();
     collected.sort();
@@ -195,10 +168,12 @@ fn next(n: usize, nt: usize) {
     assert_eq!(expected, collected);
 }
 
-#[test_matrix([0, 1, N], [1, 2, 4])]
+#[test_matrix([0, 2, N], [1, 2, 4])]
 fn next_with_idx(n: usize, nt: usize) {
-    let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = ConIterOfIter::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
+    let matrix = get_matrix(n);
+    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
+    let iter = ConIterJaggedOwned::new(jagged, 0);
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -216,7 +191,7 @@ fn next_with_idx(n: usize, nt: usize) {
         }
     });
 
-    let mut expected: Vec<_> = (0..n).map(|i| (i, (i + 10).to_string())).collect();
+    let mut expected: Vec<_> = (0..(n * n)).map(|i| (i, (i + 10).to_string())).collect();
     expected.sort();
     let mut collected = bag.into_inner().to_vec();
     collected.sort();
@@ -224,10 +199,12 @@ fn next_with_idx(n: usize, nt: usize) {
     assert_eq!(expected, collected);
 }
 
-#[test_matrix([0, 1, N], [1, 2, 4])]
+#[test_matrix([0, 2, N], [1, 2, 4])]
 fn item_puller(n: usize, nt: usize) {
-    let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = ConIterOfIter::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
+    let matrix = get_matrix(n);
+    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
+    let iter = ConIterJaggedOwned::new(jagged, 0);
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -245,7 +222,7 @@ fn item_puller(n: usize, nt: usize) {
         }
     });
 
-    let mut expected: Vec<_> = (0..n).map(|i| (i + 10).to_string()).collect();
+    let mut expected: Vec<_> = (0..(n * n)).map(|i| (i + 10).to_string()).collect();
     expected.sort();
     let mut collected = bag.into_inner().to_vec();
     collected.sort();
@@ -253,10 +230,12 @@ fn item_puller(n: usize, nt: usize) {
     assert_eq!(expected, collected);
 }
 
-#[test_matrix( [0, 1, N], [1, 2, 4])]
+#[test_matrix( [0, 2, N], [1, 2, 4])]
 fn item_puller_with_idx(n: usize, nt: usize) {
-    let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = ConIterOfIter::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
+    let matrix = get_matrix(n);
+    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
+    let iter = ConIterJaggedOwned::new(jagged, 0);
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -274,7 +253,7 @@ fn item_puller_with_idx(n: usize, nt: usize) {
         }
     });
 
-    let mut expected: Vec<_> = (0..n).map(|i| (i, (i + 10).to_string())).collect();
+    let mut expected: Vec<_> = (0..(n * n)).map(|i| (i, (i + 10).to_string())).collect();
     expected.sort();
     let mut collected = bag.into_inner().to_vec();
     collected.sort();
@@ -282,10 +261,12 @@ fn item_puller_with_idx(n: usize, nt: usize) {
     assert_eq!(expected, collected);
 }
 
-#[test_matrix([0, 1, N], [1, 2, 4])]
+#[test_matrix([0, 2, N], [1, 2, 4])]
 fn chunk_puller(n: usize, nt: usize) {
-    let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = ConIterOfIter::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
+    let matrix = get_matrix(n);
+    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
+    let iter = ConIterJaggedOwned::new(jagged, 0);
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -307,7 +288,7 @@ fn chunk_puller(n: usize, nt: usize) {
         }
     });
 
-    let mut expected: Vec<_> = (0..n).map(|i| (i + 10).to_string()).collect();
+    let mut expected: Vec<_> = (0..(n * n)).map(|i| (i + 10).to_string()).collect();
     expected.sort();
     let mut collected = bag.into_inner().to_vec();
     collected.sort();
@@ -315,10 +296,12 @@ fn chunk_puller(n: usize, nt: usize) {
     assert_eq!(expected, collected);
 }
 
-#[test_matrix([0, 1, N], [1, 2, 4])]
+#[test_matrix([0, 2, N], [1, 2, 4])]
 fn chunk_puller_with_idx(n: usize, nt: usize) {
-    let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = ConIterOfIter::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
+    let matrix = get_matrix(n);
+    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
+    let iter = ConIterJaggedOwned::new(jagged, 0);
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -340,7 +323,7 @@ fn chunk_puller_with_idx(n: usize, nt: usize) {
         }
     });
 
-    let mut expected: Vec<_> = (0..n).map(|i| (i, (i + 10).to_string())).collect();
+    let mut expected: Vec<_> = (0..(n * n)).map(|i| (i, (i + 10).to_string())).collect();
     expected.sort();
     let mut collected = bag.into_inner().to_vec();
     collected.sort();
@@ -348,10 +331,12 @@ fn chunk_puller_with_idx(n: usize, nt: usize) {
     assert_eq!(expected, collected);
 }
 
-#[test_matrix([0, 1, N], [1, 2, 4])]
+#[test_matrix([0, 2, N], [1, 2, 4])]
 fn flattened_chunk_puller(n: usize, nt: usize) {
-    let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = ConIterOfIter::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
+    let matrix = get_matrix(n);
+    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
+    let iter = ConIterJaggedOwned::new(jagged, 0);
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -368,7 +353,7 @@ fn flattened_chunk_puller(n: usize, nt: usize) {
         }
     });
 
-    let mut expected: Vec<_> = (0..n).map(|i| (i + 10).to_string()).collect();
+    let mut expected: Vec<_> = (0..(n * n)).map(|i| (i + 10).to_string()).collect();
     expected.sort();
     let mut collected = bag.into_inner().to_vec();
     collected.sort();
@@ -376,10 +361,12 @@ fn flattened_chunk_puller(n: usize, nt: usize) {
     assert_eq!(expected, collected);
 }
 
-#[test_matrix([0, 1, N], [1, 2, 4])]
+#[test_matrix([0, 2, N], [1, 2, 4])]
 fn flattened_chunk_puller_with_idx(n: usize, nt: usize) {
-    let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = ConIterOfIter::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
+    let matrix = get_matrix(n);
+    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
+    let iter = ConIterJaggedOwned::new(jagged, 0);
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -396,7 +383,7 @@ fn flattened_chunk_puller_with_idx(n: usize, nt: usize) {
         }
     });
 
-    let mut expected: Vec<_> = (0..n).map(|i| (i, (i + 10).to_string())).collect();
+    let mut expected: Vec<_> = (0..(n * n)).map(|i| (i, (i + 10).to_string())).collect();
     expected.sort();
     let mut collected = bag.into_inner().to_vec();
     collected.sort();
@@ -404,11 +391,14 @@ fn flattened_chunk_puller_with_idx(n: usize, nt: usize) {
     assert_eq!(expected, collected);
 }
 
-#[test_matrix([0, 1, N], [1, 2, 4])]
+#[test_matrix([0, 2, N], [1, 2, 4])]
 fn skip_to_end(n: usize, nt: usize) {
-    let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = ConIterOfIter::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
-    let until = n / 2;
+    let matrix = get_matrix(n);
+    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
+    let iter = ConIterJaggedOwned::new(jagged, 0);
+
+    let until = (n * n) / 2;
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -451,10 +441,12 @@ fn skip_to_end(n: usize, nt: usize) {
     assert_eq!(expected, collected);
 }
 
-#[test_matrix([0, 1, N], [1, 2, 4], [0, N / 2, N])]
+#[test_matrix([0, 2, N], [1, 2, 4], [0, N * N / 2, N * N])]
 fn into_seq_iter(n: usize, nt: usize, until: usize) {
-    let vec = new_vec(n, |x| (x + 10).to_string());
-    let iter = ConIterOfIter::new(vec.into_iter().filter(|x| x.as_str() != "abc"));
+    let matrix = get_matrix(n);
+    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
+    let iter = ConIterJaggedOwned::new(jagged, 0);
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
@@ -504,7 +496,7 @@ fn into_seq_iter(n: usize, nt: usize, until: usize) {
     let mut all: Vec<_> = collected.into_iter().chain(remaining).collect();
     all.sort();
 
-    let mut expected: Vec<_> = (0..n).map(|i| (i + 10).to_string()).collect();
+    let mut expected: Vec<_> = (0..(n * n)).map(|i| (i + 10).to_string()).collect();
     expected.sort();
 
     assert_eq!(all, expected);

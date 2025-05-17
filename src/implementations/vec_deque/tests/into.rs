@@ -2,13 +2,13 @@ use crate::{
     IntoConcurrentIter, concurrent_collection::ConcurrentCollection,
     concurrent_iter::ConcurrentIter,
 };
-use alloc::{string::ToString, vec::Vec};
+use alloc::{collections::VecDeque, string::ToString, vec::Vec};
 use orx_concurrent_bag::ConcurrentBag;
 
 #[test]
-fn vec_as_into_concurrent_iter() {
+fn vec_deque_as_into_concurrent_iter() {
     let (nt, n) = (2, 177);
-    let vec: Vec<_> = (0..n).map(|i| (i + 10).to_string()).collect();
+    let vec: VecDeque<_> = (0..n).map(|i| (i + 10).to_string()).collect();
 
     let iter = vec.into_con_iter();
 
@@ -36,9 +36,9 @@ fn vec_as_into_concurrent_iter() {
 }
 
 #[test]
-fn vec_as_concurrent_iterable() {
+fn vec_deque_as_concurrent_iterable() {
     let (nt, n) = (2, 177);
-    let vec: Vec<_> = (0..n).map(|i| (i + 10).to_string()).collect();
+    let vec: VecDeque<_> = (0..n).map(|i| (i + 10).to_string()).collect();
 
     let iter = vec.con_iter();
 

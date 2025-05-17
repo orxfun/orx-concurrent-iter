@@ -1,11 +1,12 @@
 use crate::{
     ChunkPuller, ConcurrentIter, IntoConcurrentIter, concurrent_collection::ConcurrentCollection,
 };
+use alloc::collections::VecDeque;
 use alloc::vec::Vec;
 
 #[test]
 fn enumerate_item() {
-    let vec: Vec<_> = (2..6).collect();
+    let vec: VecDeque<_> = (2..6).collect();
     let iter = vec.into_con_iter().enumerate();
     let mut j = 0;
     while let Some((i, x)) = iter.next() {
@@ -13,7 +14,7 @@ fn enumerate_item() {
         j += 1;
     }
 
-    let vec: Vec<_> = (2..6).collect();
+    let vec: VecDeque<_> = (2..6).collect();
     let iter = vec.into_con_iter().enumerate();
     let mut j = 0;
     while let Some((i2, (i, x))) = iter.next_with_idx() {
@@ -25,13 +26,13 @@ fn enumerate_item() {
 
 #[test]
 fn enumerate_item_puller() {
-    let vec: Vec<_> = (2..6).collect();
+    let vec: VecDeque<_> = (2..6).collect();
     let iter = vec.into_con_iter().enumerate();
     let puller = iter.item_puller();
     let collected: Vec<_> = puller.collect();
     assert_eq!(collected, [0, 1, 2, 3].map(|x| (x, x + 2)));
 
-    let vec: Vec<_> = (2..6).collect();
+    let vec: VecDeque<_> = (2..6).collect();
     let iter = vec.into_con_iter().enumerate();
     let puller = iter.item_puller_with_idx();
     let collected: Vec<_> = puller.collect();
@@ -40,7 +41,7 @@ fn enumerate_item_puller() {
 
 #[test]
 fn enumerate_chunk_puller() {
-    let vec: Vec<_> = (2..6).collect();
+    let vec: VecDeque<_> = (2..6).collect();
     let iter = vec.into_con_iter().enumerate();
 
     let mut j = 0;
@@ -57,16 +58,16 @@ fn enumerate_chunk_puller() {
 
 #[test]
 fn copied() {
-    let vec: Vec<_> = (2..6).collect();
+    let vec: VecDeque<_> = (2..6).collect();
     let iter = vec.con_iter().copied();
-    let values: Vec<_> = iter.item_puller().collect();
+    let values: VecDeque<_> = iter.item_puller().collect();
     assert_eq!(values, vec);
 }
 
 #[test]
 fn cloned() {
-    let vec: Vec<_> = (2..6).collect();
+    let vec: VecDeque<_> = (2..6).collect();
     let iter = vec.con_iter().cloned();
-    let values: Vec<_> = iter.item_puller().collect();
+    let values: VecDeque<_> = iter.item_puller().collect();
     assert_eq!(values, vec);
 }

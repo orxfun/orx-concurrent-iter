@@ -24,7 +24,7 @@ impl<'a> MutHandle<'a> {
                     return Some(Self {
                         state,
                         final_state: AVAILABLE,
-                    })
+                    });
                 }
                 Err(COMPLETED) => return None,
                 _ => {}

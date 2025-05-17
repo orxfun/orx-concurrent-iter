@@ -8,6 +8,8 @@ A thread-safe and ergonomic concurrent iterator trait and efficient lock-free im
 
 This crate focuses on enabling **ergonomic** concurrent programs without sacrificing **efficiency**.
 
+> **no-std**: This is a **no-std** crate.
+
 ## A. Ergonomics
 
 A [`ConcurrentIter`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ConcurrentIter.html) can be safely shared among threads using a shared reference; and multiple threads can iterate over it concurrently.
@@ -335,19 +337,22 @@ Benchmarks [benches/con_iter_of_iter.rs](https://github.com/orxfun/orx-concurren
 
 ## D. Implementations
 
-The following implementations of concurrent iterators are provided in this crate.
+The following table lists current implementations of concurrent iterators provided in this crate.
 
 | Type                    | ConcurrentIterable `con_iter` | IntoConcurrentIter `into_con_iter` | IterIntoConcurrentIter `iter_into_con_iter` |
 |-------------------------|-------------------------------|------------------------------------|---------------------------------------------|
 | `I: Iterator<Item = T>` |                               |                                    | `T`                                         |
 | `&[T]`                  | `&T`                          | `&T`                               |                                             |
 | `Vec<T>`                | `&T`                          | `T`                                |                                             |
+| `VecDeque<T>`                | `&T`                          | `T`                                |                                             |
 | `Range<T>`              | `T`                           | `T`                                |                                             |
 
-The following are in progress:
+The following are collections with known concurrent iterator implementations in their respective crates:
 
-* Implementing concurrent iterators for remaining standard collection types in this crate.
-* Implementing concurrent iterators for other collection types in the respective crates.
+| Type                    | ConcurrentIterable `con_iter` | IntoConcurrentIter `into_con_iter` |
+|-------------------------|-------------------------------|------------------------------------|
+| [`SplitVec<T, G>`](https://crates.io/crates/orx-split-vec)  | `&T`                          | `T`                                |
+| [`FixedVec<T>`](https://crates.io/crates/orx-fixed-vec)  | `&T`                          | `T`                                |
 
 ### Relation to orx_parallel
 

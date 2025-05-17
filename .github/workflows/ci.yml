@@ -52,7 +52,7 @@ jobs:
       run: cargo clippy -- -D warnings --verbose
 
     - name: Miri
-      run: cargo +nightly miri test --verbose
+      run: cargo +nightly miri test --lib --bins --tests --verbose
 
     - name: NoStd
       run: cargo +nightly no-std-check
