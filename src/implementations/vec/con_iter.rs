@@ -2,7 +2,10 @@ use super::chunk_puller::ChunkPullerVec;
 use crate::{
     concurrent_iter::ConcurrentIter,
     exact_size_concurrent_iter::ExactSizeConcurrentIter,
-    implementations::{array_utils::ArrayIntoSeqIter, ptr_utils::take},
+    implementations::{
+        array_utils::{ArrayConIter, ArrayIntoSeqIter, ChunkPointers},
+        ptr_utils::take,
+    },
 };
 use alloc::vec::Vec;
 use core::{
@@ -130,6 +133,30 @@ where
         let allocation_to_drop = drop_vec.then_some((self.ptr, self.vec_cap));
 
         ArrayIntoSeqIter::new(current, last, allocation_to_drop)
+    }
+}
+
+impl<T> ArrayConIter for ConIterVec<T>
+where
+    T: Send + Sync,
+{
+    type Item = T;
+
+    fn progress_and_get_chunk_pointers2(
+        &self,
+        chunk_size: usize,
+    ) -> Option<ChunkPointers<Self::Item>> {
+        self.progress_and_get_begin_idx(chunk_size)
+            .map(|begin_idx| {
+                let end_idx = (begin_idx + chunk_size).min(self.vec_len).max(begin_idx);
+                let first = unsafe { self.ptr.add(begin_idx) }; // ptr + begin_idx is in bounds
+                let last = unsafe { self.ptr.add(end_idx - 1) }; // ptr + end_idx - 1 is in bounds
+                ChunkPointers {
+                    begin_idx,
+                    first,
+                    last,
+                }
+            })
     }
 }
 
