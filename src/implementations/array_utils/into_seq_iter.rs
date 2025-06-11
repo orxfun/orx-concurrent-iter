@@ -78,20 +78,24 @@ where
     T: Send + Sync,
 {
     fn drop(&mut self) {
-        while !self.current.is_null() {
-            // SAFETY: p is valid, not yat taken out or dropped
-            let p = self.current as *mut T;
-            unsafe { p.drop_in_place() };
+        // 1. drop remaining elements in place
+        if core::mem::needs_drop::<T>() {
+            while !self.current.is_null() {
+                // SAFETY: p is valid, not yat taken out or dropped
+                let p = self.current as *mut T;
+                unsafe { p.drop_in_place() };
 
-            let completed = self.current == self.last;
-            self.current = match completed {
-                true => core::ptr::null(),
-                // SAFETY: since current has not yet reached last,
-                // and since last is valid and inclusive, it is safe to add(1)
-                false => unsafe { self.current.add(1) },
-            };
+                let completed = self.current == self.last;
+                self.current = match completed {
+                    true => core::ptr::null(),
+                    // SAFETY: since current has not yet reached last,
+                    // and since last is valid and inclusive, it is safe to add(1)
+                    false => unsafe { self.current.add(1) },
+                };
+            }
         }
 
+        // 2. drop allocation
         if let Some((ptr, capacity)) = &self.allocation_to_drop {
             let _vec_to_drop =
                 unsafe { alloc::vec::Vec::from_raw_parts(*ptr as *mut T, 0, *capacity) };
