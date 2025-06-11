@@ -1,5 +1,4 @@
 use crate::implementations::ptr_utils::take;
-use alloc::boxed::Box;
 use core::iter::FusedIterator;
 
 /// A partially-taken contagious memory converted into sequential iterator which makes sure that
@@ -13,7 +12,7 @@ where
 {
     current: *const T,
     last: *const T,
-    drop_allocation: Option<Box<dyn Fn()>>,
+    allocation_to_drop: Option<(*const T, usize)>,
 }
 
 impl<T> ArrayIntoSeqIter<T>
@@ -23,8 +22,8 @@ where
     /// Creates the new iterator such that:
     /// * the first element to be returned is at `first` (inclusive)
     /// * the last element of allocation is at `last` (inclusive)
-    /// * when Some(drop_allocation) is provided, it will be called while dropping
-    ///   this iterator to clean up allocation, if required.
+    /// * when Some(allocation_to_drop) is provided, the contiguous memory starting from
+    ///   the given ptr and capacity will be dropped when this iterator is dropped.
     ///
     /// An iterator with only one element can be created by providing `first = last`.
     ///
@@ -35,20 +34,22 @@ where
     ///
     /// The caller must ensure that:
     /// * `first` and `last` are valid pointers,
-    /// * further, all addresses between `first` and `last` are valid pointers to the same contiguous allocation.
+    /// * further, all addresses between `first` and `last` are valid pointers to the same contiguous allocation,
+    /// * when `allocation_to_drop` is provided with pointer, say `p`, all elements within `p..first` must already
+    ///   be taken out or dropped.
     ///
-    /// Finally, when provided, `drop_allocation` is expected to drop the allocation for the completely or partially
+    /// Finally, when provided, `allocation_to_drop` is expected to drop the allocation for the completely or partially
     /// given contiguous memory; however, not the elements. This iterator will make sure that all elements between
     /// `first` and `last` are dropped, regardless of whether the iterator is completely traversed or not.
-    pub(super) fn new(
+    pub(crate) fn new(
         first: *const T,
         last: *const T,
-        drop_allocation: Option<Box<dyn Fn()>>,
+        allocation_to_drop: Option<(*const T, usize)>,
     ) -> Self {
         Self {
             current: first,
             last,
-            drop_allocation,
+            allocation_to_drop,
         }
     }
 
@@ -90,8 +91,9 @@ where
             };
         }
 
-        if let Some(drop_allocation) = &self.drop_allocation {
-            drop_allocation();
+        if let Some((ptr, capacity)) = &self.allocation_to_drop {
+            let _vec_to_drop =
+                unsafe { alloc::vec::Vec::from_raw_parts(*ptr as *mut T, 0, *capacity) };
         }
     }
 }
@@ -135,3 +137,22 @@ where
 }
 
 impl<T> FusedIterator for ArrayIntoSeqIter<T> where T: Send + Sync {}
+
+#[cfg(test)]
+mod tst {
+    use crate::*;
+    use alloc::vec::Vec;
+
+    #[test]
+    fn abc() {
+        let n = 4;
+        let m = 4;
+
+        let vec: Vec<_> = (0..n).map(|x| x.to_string()).collect();
+        let iter = vec.into_con_iter();
+
+        for _ in 0..m {
+            let _x = iter.next();
+        }
+    }
+}
