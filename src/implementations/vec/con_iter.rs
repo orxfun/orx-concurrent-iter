@@ -88,19 +88,6 @@ where
         }
     }
 
-    pub(super) fn progress_and_get_chunk_pointers(
-        &self,
-        chunk_size: usize,
-    ) -> Option<(usize, *const T, *const T)> {
-        self.progress_and_get_begin_idx(chunk_size)
-            .map(|begin_idx| {
-                let end_idx = (begin_idx + chunk_size).min(self.vec_len).max(begin_idx);
-                let first = unsafe { self.ptr.add(begin_idx) }; // ptr + begin_idx is in bounds
-                let last = unsafe { self.ptr.add(end_idx - 1) }; // ptr + end_idx - 1 is in bounds
-                (begin_idx, first, last)
-            })
-    }
-
     fn remaining_into_seq_iter(&mut self) -> ArrayIntoSeqIter<T> {
         // # SAFETY
         // null ptr indicates that the data is already taken out of this iterator
