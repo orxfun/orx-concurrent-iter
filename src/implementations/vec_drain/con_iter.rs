@@ -7,7 +7,10 @@ use crate::{
     },
 };
 use alloc::vec::Vec;
-use core::sync::atomic::{AtomicUsize, Ordering};
+use core::{
+    ops::{Bound, Range, RangeBounds},
+    sync::atomic::{AtomicUsize, Ordering},
+};
 
 /// Concurrent drain iterator of a [`Vec`]:
 ///
@@ -35,7 +38,8 @@ pub struct ConIterVecDrain<'a, T>
 where
     T: Send + Sync,
 {
-    _vec: &'a mut Vec<T>,
+    vec: &'a mut Vec<T>,
+    range: Range<usize>,
     vec_len: usize,
     ptr: *const T,
     counter: AtomicUsize,
@@ -51,6 +55,19 @@ where
 {
     fn drop(&mut self) {
         let _iter = self.remaining_into_seq_iter();
+
+        let right_start = self.range.end;
+        let right_len = self.vec_len - self.range.end;
+        let left_len = self.range.start;
+        let new_len = left_len + right_len;
+
+        if right_len > 0 {
+            let src = unsafe { self.ptr.add(right_start) };
+            let dst = unsafe { self.ptr.add(left_len) as *mut T };
+            unsafe { core::ptr::copy(src, dst, right_len) };
+        }
+
+        unsafe { self.vec.set_len(new_len) };
     }
 }
 
@@ -58,20 +75,40 @@ impl<'a, T> ConIterVecDrain<'a, T>
 where
     T: Send + Sync,
 {
-    pub(super) fn new(vec: &'a mut Vec<T>) -> Self {
-        let (vec_len, ptr) = (vec.len(), vec.as_ptr());
+    pub(super) fn new(vec: &'a mut Vec<T>, range: Range<usize>) -> Self {
+        let start = match range.start_bound() {
+            Bound::Excluded(x) => x + 1,
+            Bound::Included(x) => *x,
+            Bound::Unbounded => 0,
+        };
+        let end = match range.end_bound() {
+            Bound::Excluded(x) => *x,
+            Bound::Included(x) => x + 1,
+            Bound::Unbounded => vec.len(),
+        };
+        let range = start..end;
+
+        assert!(range.start <= range.end);
+        assert!(range.end <= vec.len());
+
+        let vec_len = vec.len();
+        let ptr = vec.as_ptr();
+        let counter = range.start.into();
+
         // TODO: write safety note here
-        unsafe { vec.set_len(0) };
+        unsafe { vec.set_len(range.start) };
+
         Self {
-            _vec: vec,
+            vec,
+            range,
             vec_len,
             ptr,
-            counter: 0.into(),
+            counter,
         }
     }
 
     pub(super) fn initial_len(&self) -> usize {
-        self.vec_len
+        self.range.len()
     }
 
     fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
@@ -89,7 +126,7 @@ where
         match self.ptr.is_null() {
             true => Default::default(),
             false => {
-                let num_taken = self.counter.load(Ordering::Acquire).min(self.vec_len);
+                let num_taken = self.counter.load(Ordering::Acquire).min(self.range.end);
                 let iter = self.slice_into_seq_iter(num_taken);
                 self.ptr = core::ptr::null();
                 iter
