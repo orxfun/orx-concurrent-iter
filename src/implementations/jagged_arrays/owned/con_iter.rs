@@ -57,7 +57,7 @@ where
     pub(super) fn progress_and_get_iter(
         &self,
         chunk_size: usize,
-    ) -> Option<(usize, RawJaggedSliceIterOwned<T>)> {
+    ) -> Option<(usize, RawJaggedSliceIterOwned<'_, T>)> {
         self.progress_and_get_begin_idx(chunk_size)
             .map(|begin_idx| {
                 let end_idx = (begin_idx + chunk_size)

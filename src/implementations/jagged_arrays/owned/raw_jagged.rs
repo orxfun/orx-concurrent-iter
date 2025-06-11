@@ -204,7 +204,7 @@ where
     /// of the flattened jagged array.
     ///
     /// Returns an empty slice if any of the indices are out of bounds or if `flat_end <= flat_begin`.
-    pub(super) fn slice(&self, flat_begin: usize, flat_end: usize) -> RawJaggedSlice<T> {
+    pub(super) fn slice(&self, flat_begin: usize, flat_end: usize) -> RawJaggedSlice<'_, T> {
         match flat_end.saturating_sub(flat_begin) {
             0 => Default::default(),
             len => {
@@ -218,7 +218,7 @@ where
     }
 
     /// Returns the raw jagged array slice for the flattened positions within range `flat_begin..self.len()`.
-    pub(super) fn slice_from(&self, flat_begin: usize) -> RawJaggedSlice<T> {
+    pub(super) fn slice_from(&self, flat_begin: usize) -> RawJaggedSlice<'_, T> {
         self.slice(flat_begin, self.len)
     }
 }

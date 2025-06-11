@@ -86,7 +86,8 @@ where
             let completed = self.current == self.last;
             self.current = match completed {
                 true => core::ptr::null(),
-                // SAFETY: since current is not yet last, and since last is valid and inclusive, it is safe to add(1)
+                // SAFETY: since current has not yet reached last,
+                // and since last is valid and inclusive, it is safe to add(1)
                 false => unsafe { self.current.add(1) },
             };
         }
@@ -137,22 +138,3 @@ where
 }
 
 impl<T> FusedIterator for ArrayIntoSeqIter<T> where T: Send + Sync {}
-
-#[cfg(test)]
-mod tst {
-    use crate::*;
-    use alloc::vec::Vec;
-
-    #[test]
-    fn abc() {
-        let n = 4;
-        let m = 4;
-
-        let vec: Vec<_> = (0..n).map(|x| x.to_string()).collect();
-        let iter = vec.into_con_iter();
-
-        for _ in 0..m {
-            let _x = iter.next();
-        }
-    }
-}
