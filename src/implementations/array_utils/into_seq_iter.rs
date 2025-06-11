@@ -68,8 +68,7 @@ where
     T: Send + Sync,
 {
     fn default() -> Self {
-        let p: *const T = core::ptr::null();
-        Self::new(p, p, None)
+        Self::new(core::ptr::null(), core::ptr::null(), None)
     }
 }
 

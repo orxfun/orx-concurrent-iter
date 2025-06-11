@@ -40,12 +40,12 @@ where
     fn pull(&mut self) -> Option<Self::Chunk<'_>> {
         self.con_iter
             .progress_and_get_chunk_pointers(self.chunk_size)
-            .map(|(_, first, last)| SeqChunksIterVec::new(false, first, last))
+            .map(|(_, first, last)| SeqChunksIterVec::new(first, last))
     }
 
     fn pull_with_idx(&mut self) -> Option<(usize, Self::Chunk<'_>)> {
         self.con_iter
             .progress_and_get_chunk_pointers(self.chunk_size)
-            .map(|(begin_idx, first, last)| (begin_idx, SeqChunksIterVec::new(false, first, last)))
+            .map(|(begin_idx, first, last)| (begin_idx, SeqChunksIterVec::new(first, last)))
     }
 }
