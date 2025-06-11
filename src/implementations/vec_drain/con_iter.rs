@@ -113,7 +113,7 @@ where
 
     fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
         let begin_idx = self.counter.fetch_add(number_to_fetch, Ordering::Relaxed);
-        match begin_idx < self.vec_len {
+        match begin_idx < self.range.end {
             true => Some(begin_idx),
             _ => None,
         }
@@ -135,12 +135,12 @@ where
     }
 
     fn slice_into_seq_iter(&self, num_taken: usize) -> ArrayIntoSeqIter<T> {
-        let completed = num_taken == self.vec_len;
+        let completed = num_taken == self.range.end;
         let (last, current) = match completed {
             true => (core::ptr::null(), core::ptr::null()),
             false => {
-                // SAFETY: self.vec_len is positive here, would be completed o/w
-                let last = unsafe { self.ptr.add(self.vec_len - 1) };
+                // SAFETY: self.range.end is positive here, would be completed o/w
+                let last = unsafe { self.ptr.add(self.range.end - 1) };
                 // SAFETY: first + num_taken is in bounds
                 let current = unsafe { self.ptr.add(num_taken) };
                 (last, current)
@@ -163,7 +163,7 @@ where
     ) -> Option<ChunkPointers<Self::Item>> {
         self.progress_and_get_begin_idx(chunk_size)
             .map(|begin_idx| {
-                let end_idx = (begin_idx + chunk_size).min(self.vec_len).max(begin_idx);
+                let end_idx = (begin_idx + chunk_size).min(self.range.end).max(begin_idx);
                 let first = unsafe { self.ptr.add(begin_idx) }; // ptr + begin_idx is in bounds
                 let last = unsafe { self.ptr.add(end_idx - 1) }; // ptr + end_idx - 1 is in bounds
                 ChunkPointers {
@@ -193,8 +193,8 @@ where
     }
 
     fn skip_to_end(&self) {
-        let current = self.counter.fetch_max(self.vec_len, Ordering::Acquire);
-        let num_taken_before = current.min(self.vec_len);
+        let current = self.counter.fetch_max(self.range.end, Ordering::Acquire);
+        let num_taken_before = current.min(self.range.end);
         let _iter = self.slice_into_seq_iter(num_taken_before);
     }
 
@@ -210,7 +210,7 @@ where
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         let num_taken = self.counter.load(Ordering::Acquire);
-        let remaining = self.vec_len.saturating_sub(num_taken);
+        let remaining = self.range.end.saturating_sub(num_taken);
         (remaining, Some(remaining))
     }
 
@@ -225,6 +225,32 @@ where
 {
     fn len(&self) -> usize {
         let num_taken = self.counter.load(Ordering::Acquire);
-        self.vec_len.saturating_sub(num_taken)
+        self.range.end.saturating_sub(num_taken)
+    }
+}
+
+#[cfg(test)]
+mod tst {
+    use super::*;
+    use crate::*;
+    use alloc::vec::Vec;
+
+    #[test]
+    fn abc() {
+        let n = 4;
+        let range = 1..n;
+
+        let mut vec: Vec<_> = (0..n).map(|x| x.to_string()).collect();
+
+        {
+            let iter = ConIterVecDrain::new(&mut vec, range);
+            while let Some(x) = iter.next() {
+                dbg!(x);
+            }
+        }
+
+        dbg!(&vec);
+
+        assert_eq!(vec.len(), 33);
     }
 }
