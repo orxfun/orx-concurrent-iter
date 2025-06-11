@@ -1,9 +1,8 @@
-use super::chunk_puller::ChunkPullerVec;
 use crate::{
     concurrent_iter::ConcurrentIter,
     exact_size_concurrent_iter::ExactSizeConcurrentIter,
     implementations::{
-        array_utils::{ArrayConIter, ArrayIntoSeqIter, ChunkPointers},
+        array_utils::{ArrayChunkPuller, ArrayConIter, ArrayIntoSeqIter, ChunkPointers},
         ptr_utils::take,
     },
 };
@@ -169,7 +168,7 @@ where
     type SequentialIter = ArrayIntoSeqIter<T>;
 
     type ChunkPuller<'i>
-        = ChunkPullerVec<'i, T>
+        = ArrayChunkPuller<'i, Self>
     where
         Self: 'i;
 

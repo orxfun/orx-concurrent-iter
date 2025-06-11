@@ -16,7 +16,7 @@ where
     C: ArrayConIter,
     C::Item: Send + Sync,
 {
-    pub(super) fn new(con_iter: &'i C, chunk_size: usize) -> Self {
+    pub(crate) fn new(con_iter: &'i C, chunk_size: usize) -> Self {
         Self {
             con_iter,
             chunk_size,
