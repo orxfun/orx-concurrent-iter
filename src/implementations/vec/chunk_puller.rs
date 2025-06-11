@@ -1,6 +1,5 @@
 use super::con_iter::ConIterVec;
-use super::seq_chunk_iter_vec::SeqChunksIterVec;
-use crate::pullers::ChunkPuller;
+use crate::{implementations::array_utils::ArrayChunkSeqIter, pullers::ChunkPuller};
 
 pub struct ChunkPullerVec<'i, T>
 where
@@ -29,7 +28,7 @@ where
     type ChunkItem = T;
 
     type Chunk<'c>
-        = SeqChunksIterVec<'i, T>
+        = ArrayChunkSeqIter<'i, T>
     where
         Self: 'c;
 
@@ -40,12 +39,12 @@ where
     fn pull(&mut self) -> Option<Self::Chunk<'_>> {
         self.con_iter
             .progress_and_get_chunk_pointers(self.chunk_size)
-            .map(|(_, first, last)| SeqChunksIterVec::new(first, last))
+            .map(|(_, first, last)| ArrayChunkSeqIter::new(first, last))
     }
 
     fn pull_with_idx(&mut self) -> Option<(usize, Self::Chunk<'_>)> {
         self.con_iter
             .progress_and_get_chunk_pointers(self.chunk_size)
-            .map(|(begin_idx, first, last)| (begin_idx, SeqChunksIterVec::new(first, last)))
+            .map(|(begin_idx, first, last)| (begin_idx, ArrayChunkSeqIter::new(first, last)))
     }
 }

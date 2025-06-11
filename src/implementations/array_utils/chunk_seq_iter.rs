@@ -13,7 +13,7 @@ impl<T> ArrayChunkSeqIter<'_, T>
 where
     T: Send + Sync,
 {
-    pub(super) fn new(first: *const T, last: *const T) -> Self {
+    pub(crate) fn new(first: *const T, last: *const T) -> Self {
         Self {
             iter: ArrayIntoSeqIter::new(first, last, None),
             parent_iter_lifetime: PhantomData,
