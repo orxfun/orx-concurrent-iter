@@ -54,7 +54,8 @@ where
     T: Send + Sync,
 {
     fn drop(&mut self) {
-        let _iter = self.remaining_into_seq_iter();
+        let iter = self.remaining_into_seq_iter();
+        drop(iter);
 
         let right_start = self.range.end;
         let right_len = self.vec_len - self.range.end;
@@ -245,20 +246,24 @@ where
 mod tst {
     use super::*;
     use crate::*;
+    use alloc::boxed::Box;
     use alloc::vec::Vec;
 
     #[test]
     fn abc() {
         let n = 4;
-        let range = 0..0;
+        let range = ..;
 
         let mut vec: Vec<_> = (0..n).map(|x| x.to_string()).collect();
 
         {
             let iter = ConIterVecDrain::new(&mut vec, range);
-            while let Some(x) = iter.next() {
-                dbg!(x);
-            }
+            // let iter = vec.drain(range);
+            let bx = Box::new(iter);
+            Box::leak(bx);
+            // while let Some(x) = iter.next() {
+            //     dbg!(x);
+            // }
         }
 
         dbg!(&vec);
