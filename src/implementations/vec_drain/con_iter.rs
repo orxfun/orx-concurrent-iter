@@ -76,7 +76,10 @@ impl<'a, T> ConIterVecDrain<'a, T>
 where
     T: Send + Sync,
 {
-    pub(super) fn new(vec: &'a mut Vec<T>, range: Range<usize>) -> Self {
+    pub(super) fn new<R>(vec: &'a mut Vec<T>, range: R) -> Self
+    where
+        R: RangeBounds<usize>,
+    {
         let start = match range.start_bound() {
             Bound::Excluded(x) => x + 1,
             Bound::Included(x) => *x,
@@ -239,7 +242,7 @@ mod tst {
     #[test]
     fn abc() {
         let n = 4;
-        let range = 1..3;
+        let range = ..;
 
         let mut vec: Vec<_> = (0..n).map(|x| x.to_string()).collect();
 
