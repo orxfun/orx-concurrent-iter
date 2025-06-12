@@ -61,9 +61,10 @@ where
         let left_len = self.range.start;
         let new_len = left_len + right_len;
 
+        let ptr = self.vec.as_ptr();
         if right_len > 0 {
-            let src = unsafe { self.ptr.add(right_start) };
-            let dst = unsafe { self.ptr.add(left_len) as *mut T };
+            let src = unsafe { ptr.add(right_start) };
+            let dst = unsafe { ptr.add(left_len) as *mut T };
             unsafe { core::ptr::copy(src, dst, right_len) };
         }
 
@@ -238,7 +239,7 @@ mod tst {
     #[test]
     fn abc() {
         let n = 4;
-        let range = 1..n;
+        let range = 1..3;
 
         let mut vec: Vec<_> = (0..n).map(|x| x.to_string()).collect();
 
