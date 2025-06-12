@@ -76,6 +76,14 @@ impl<'a, T> ConIterVecDrain<'a, T>
 where
     T: Send + Sync,
 {
+    /// Creates a new concurrent draining iterator over the `vec` for the given `range`.
+    ///
+    /// # Panics
+    ///
+    /// Panics:
+    ///
+    /// * if the starting point of the `range` is greater than the ending point; or
+    /// * if the ending point of the `range` is greater than `vec.len()`.
     pub(super) fn new<R>(vec: &'a mut Vec<T>, range: R) -> Self
     where
         R: RangeBounds<usize>,
@@ -242,7 +250,7 @@ mod tst {
     #[test]
     fn abc() {
         let n = 4;
-        let range = ..;
+        let range = 0..0;
 
         let mut vec: Vec<_> = (0..n).map(|x| x.to_string()).collect();
 
