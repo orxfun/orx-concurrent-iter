@@ -1,3 +1,4 @@
+mod array_utils;
 mod empty;
 mod iter;
 /// Generic implementations of jagged arrays or slice of slices, etc.
@@ -7,6 +8,7 @@ mod range;
 mod slice;
 mod vec;
 mod vec_deque;
+mod vec_drain;
 
 pub use empty::ConIterEmpty;
 pub use iter::ConIterOfIter;

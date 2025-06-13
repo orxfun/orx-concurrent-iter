@@ -1,7 +1,10 @@
-use super::{chunk_puller::ChunkPullerVec, vec_into_seq_iter::VecIntoSeqIter};
 use crate::{
-    concurrent_iter::ConcurrentIter, exact_size_concurrent_iter::ExactSizeConcurrentIter,
-    implementations::ptr_utils::take,
+    concurrent_iter::ConcurrentIter,
+    exact_size_concurrent_iter::ExactSizeConcurrentIter,
+    implementations::{
+        array_utils::{ArrayChunkPuller, ArrayConIter, ArrayIntoSeqIter, ChunkPointers},
+        ptr_utils::take,
+    },
 };
 use alloc::vec::Vec;
 use core::{
@@ -85,20 +88,7 @@ where
         }
     }
 
-    pub(super) fn progress_and_get_chunk_pointers(
-        &self,
-        chunk_size: usize,
-    ) -> Option<(usize, *const T, *const T)> {
-        self.progress_and_get_begin_idx(chunk_size)
-            .map(|begin_idx| {
-                let end_idx = (begin_idx + chunk_size).min(self.vec_len).max(begin_idx);
-                let first = unsafe { self.ptr.add(begin_idx) }; // ptr + begin_idx is in bounds
-                let last = unsafe { self.ptr.add(end_idx - 1) }; // ptr + end_idx - 1 is in bounds
-                (begin_idx, first, last)
-            })
-    }
-
-    fn remaining_into_seq_iter(&mut self) -> VecIntoSeqIter<T> {
+    fn remaining_into_seq_iter(&mut self) -> ArrayIntoSeqIter<T, ()> {
         // # SAFETY
         // null ptr indicates that the data is already taken out of this iterator
         // by a consuming method such as `into_seq_iter`
@@ -113,22 +103,46 @@ where
         }
     }
 
-    fn slice_into_seq_iter(&self, num_taken: usize, drop_vec: bool) -> VecIntoSeqIter<T> {
-        let p = self.ptr;
+    fn slice_into_seq_iter(&self, num_taken: usize, drop_vec: bool) -> ArrayIntoSeqIter<T, ()> {
         let completed = num_taken == self.vec_len;
-
-        let (first, last, current) = match completed {
-            true => (p, p, p),
+        let (last, current) = match completed {
+            true => (core::ptr::null(), core::ptr::null()),
             false => {
-                let first = p;
-                let last = unsafe { first.add(self.vec_len - 1) }; // self.vec_len is positive here
-                let current = unsafe { first.add(num_taken) }; // first + num_taken is in bounds
-                (first, last, current)
+                // SAFETY: self.vec_len is positive here, would be completed o/w
+                let last = unsafe { self.ptr.add(self.vec_len - 1) };
+                // SAFETY: first + num_taken is in bounds
+                let current = unsafe { self.ptr.add(num_taken) };
+                (last, current)
             }
         };
 
-        let drop_vec_capacity = drop_vec.then_some(self.vec_cap);
-        VecIntoSeqIter::new(completed, first, last, current, drop_vec_capacity)
+        let allocation_to_drop = drop_vec.then_some((self.ptr, self.vec_cap));
+
+        ArrayIntoSeqIter::new(current, last, allocation_to_drop, ())
+    }
+}
+
+impl<T> ArrayConIter for ConIterVec<T>
+where
+    T: Send + Sync,
+{
+    type Item = T;
+
+    fn progress_and_get_chunk_pointers(
+        &self,
+        chunk_size: usize,
+    ) -> Option<ChunkPointers<Self::Item>> {
+        self.progress_and_get_begin_idx(chunk_size)
+            .map(|begin_idx| {
+                let end_idx = (begin_idx + chunk_size).min(self.vec_len).max(begin_idx);
+                let first = unsafe { self.ptr.add(begin_idx) }; // ptr + begin_idx is in bounds
+                let last = unsafe { self.ptr.add(end_idx - 1) }; // ptr + end_idx - 1 is in bounds
+                ChunkPointers {
+                    begin_idx,
+                    first,
+                    last,
+                }
+            })
     }
 }
 
@@ -138,10 +152,10 @@ where
 {
     type Item = T;
 
-    type SequentialIter = VecIntoSeqIter<T>;
+    type SequentialIter = ArrayIntoSeqIter<T, ()>;
 
     type ChunkPuller<'i>
-        = ChunkPullerVec<'i, T>
+        = ArrayChunkPuller<'i, Self>
     where
         Self: 'i;
 

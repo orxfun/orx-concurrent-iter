@@ -135,7 +135,7 @@ where
     /// * we intend to drop the vectors when we drop this jagged array,
     /// * in this case, calling this method with `None` would cause the memory to leak.
     ///
-    /// If the jagged array is crated as owned, and if we call this method with `Some(n)`:
+    /// If the jagged array is Created as owned, and if we call this method with `Some(n)`:
     /// * we must make sure that all elements with flat indices within range `0..n` must be taken manually
     ///   by the [`take`] method; and hence, will be dropped externally;
     /// * if an element within `0..n` is not taken, the corresponding element will leak,
@@ -204,7 +204,7 @@ where
     /// of the flattened jagged array.
     ///
     /// Returns an empty slice if any of the indices are out of bounds or if `flat_end <= flat_begin`.
-    pub(super) fn slice(&self, flat_begin: usize, flat_end: usize) -> RawJaggedSlice<T> {
+    pub(super) fn slice(&self, flat_begin: usize, flat_end: usize) -> RawJaggedSlice<'_, T> {
         match flat_end.saturating_sub(flat_begin) {
             0 => Default::default(),
             len => {
@@ -218,7 +218,7 @@ where
     }
 
     /// Returns the raw jagged array slice for the flattened positions within range `flat_begin..self.len()`.
-    pub(super) fn slice_from(&self, flat_begin: usize) -> RawJaggedSlice<T> {
+    pub(super) fn slice_from(&self, flat_begin: usize) -> RawJaggedSlice<'_, T> {
         self.slice(flat_begin, self.len)
     }
 }

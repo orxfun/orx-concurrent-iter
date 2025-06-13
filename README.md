@@ -376,7 +376,7 @@ We can create concurrent iterators using two methods `con_iter` and `into_con_it
 > In addition, a concurrent iterator can be created from a generic iterator using `iter_into_con_iter`; however, this is explained separately above and made explicit.
 
 
-### E.1. [`IntoConcurrentIter`](https://docs.rs/orx-concurrent-iter/1.30.0/orx_concurrent_iter/trait.IntoConcurrentIter.html)
+### E.1. [`IntoConcurrentIter`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.IntoConcurrentIter.html)
 
 This trait represents all types that can be consumed and converted into a concurrent iterator.
 
@@ -387,7 +387,7 @@ For instance, `Vec<T>` implements `IntoIterator<Item = T>`; and it also implemen
 * `vec.into_iter()` consumes `vec` and returns an iterator yielding items of `T`.
 * `vec.into_con_iter()` consumes `vec` and returns a concurrent iterator yielding items of `T`.
 
-### E.2. [`ConcurrentIterable`](https://docs.rs/orx-concurrent-iter/1.30.0/orx_concurrent_iter/trait.ConcurrentIterable.html)
+### E.2. [`ConcurrentIterable`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ConcurrentIterable.html)
 
 This trait represents all types that can repeatedly create concurrent iterators for its elements, without consuming the type.
 
@@ -398,7 +398,7 @@ For instance, `&Range<usize>` implements `Iterable<Item = usize>`; and it also i
 * `range.iter()` returns an iterator yielding items of `usize` without consuming `range`.
 * `range.con_iter()` returns a concurrent iterator yielding items of `usize` without consuming `range`.
 
-### E.3. [`ConcurrentCollection`](https://docs.rs/orx-concurrent-iter/1.30.0/orx_concurrent_iter/trait.ConcurrentCollection.html)
+### E.3. [`ConcurrentCollection`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ConcurrentCollection.html)
 
 This trait represents all types that can both repeatedly create concurrent iterators for references of its elements, and also converted into a concurrent iterator of its elements.
 
@@ -413,6 +413,9 @@ Concurrent counterpart of the [`Collection`](https://docs.rs/orx-iterable/latest
   * `vec.into_iter()` consumes `vec` and returns an iterator yielding items of `T`.
   * `vec.into_con_iter()` consumes `vec` and returns a concurrent iterator yielding items of `T`.
 
+### E.4 [`ConcurrentDrainableOverSlice`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ConcurrentDrainableOverSlice.html)
+
+This trait represents types which can create a concurrent draining iterator by calling `con_drain` method, which can be considered as the concurrent counterpart of the [`Vec::drain`](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.drain) method.
 
 ## Contributing
 
