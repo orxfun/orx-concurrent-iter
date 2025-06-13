@@ -106,7 +106,6 @@ where
 
         let vec_len = vec.len();
         let ptr = vec.as_ptr();
-        let counter = range.start.into();
 
         // SAFETY: setting the length to range.start already as a safeguard for if the iterator is leaked
         unsafe { vec.set_len(range.start) };
@@ -116,13 +115,13 @@ where
             range,
             vec_len,
             ptr,
-            counter,
+            counter: 0.into(),
         }
     }
 
     fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
         let begin_idx = self.counter.fetch_add(number_to_fetch, Ordering::Relaxed);
-        match begin_idx < self.range.end {
+        match begin_idx < self.range.len() {
             true => Some(begin_idx),
             _ => None,
         }
@@ -135,7 +134,7 @@ where
         match self.ptr.is_null() {
             true => Default::default(),
             false => {
-                let num_taken = self.counter.load(Ordering::Acquire).min(self.range.end);
+                let num_taken = self.counter.load(Ordering::Acquire).min(self.range.len());
                 let iter = self.slice_into_seq_iter(num_taken);
                 self.ptr = core::ptr::null();
                 iter
@@ -144,14 +143,14 @@ where
     }
 
     fn slice_into_seq_iter(&self, num_taken: usize) -> ArrayIntoSeqIter<T> {
-        let completed = num_taken == self.range.end;
+        let completed = num_taken == self.range.len();
         let (last, current) = match completed {
             true => (core::ptr::null(), core::ptr::null()),
             false => {
                 // SAFETY: self.range.end is positive here, would be completed o/w
                 let last = unsafe { self.ptr.add(self.range.end - 1) };
                 // SAFETY: first + num_taken is in bounds
-                let current = unsafe { self.ptr.add(num_taken) };
+                let current = unsafe { self.ptr.add(self.range.start + num_taken) };
                 (last, current)
             }
         };
@@ -172,9 +171,11 @@ where
     ) -> Option<ChunkPointers<Self::Item>> {
         self.progress_and_get_begin_idx(chunk_size)
             .map(|begin_idx| {
-                let end_idx = (begin_idx + chunk_size).min(self.range.end).max(begin_idx);
-                let first = unsafe { self.ptr.add(begin_idx) }; // ptr + begin_idx is in bounds
-                let last = unsafe { self.ptr.add(end_idx - 1) }; // ptr + end_idx - 1 is in bounds
+                let end_idx = (begin_idx + chunk_size)
+                    .min(self.range.len())
+                    .max(begin_idx);
+                let first = unsafe { self.ptr.add(self.range.start + begin_idx) }; // ptr + range.start + begin_idx is in bounds
+                let last = unsafe { self.ptr.add(self.range.start + end_idx - 1) }; // ptr + range.start + end_idx - 1 is in bounds
                 ChunkPointers {
                     begin_idx,
                     first,
@@ -202,24 +203,28 @@ where
     }
 
     fn skip_to_end(&self) {
-        let current = self.counter.fetch_max(self.range.end, Ordering::Acquire);
-        let num_taken_before = current.min(self.range.end);
+        let current = self.counter.fetch_max(self.range.len(), Ordering::Acquire);
+        let num_taken_before = current.min(self.range.len());
         let _iter = self.slice_into_seq_iter(num_taken_before);
     }
 
     fn next(&self) -> Option<Self::Item> {
-        self.progress_and_get_begin_idx(1) // ptr + idx is in-bounds
-            .map(|idx| unsafe { take(self.ptr.add(idx) as *mut T) })
+        self.progress_and_get_begin_idx(1) // ptr + range.start + idx is in-bounds
+            .map(|idx| unsafe { take(self.ptr.add(self.range.start + idx) as *mut T) })
     }
 
     fn next_with_idx(&self) -> Option<(usize, Self::Item)> {
-        self.progress_and_get_begin_idx(1) // ptr + idx is in-bounds
-            .map(|idx| (idx, unsafe { take(self.ptr.add(idx) as *mut T) }))
+        self.progress_and_get_begin_idx(1) // ptr + range.start + idx is in-bounds
+            .map(|idx| {
+                (idx, unsafe {
+                    take(self.ptr.add(self.range.start + idx) as *mut T)
+                })
+            })
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         let num_taken = self.counter.load(Ordering::Acquire);
-        let remaining = self.range.end.saturating_sub(num_taken);
+        let remaining = self.range.len().saturating_sub(num_taken);
         (remaining, Some(remaining))
     }
 
@@ -234,36 +239,6 @@ where
 {
     fn len(&self) -> usize {
         let num_taken = self.counter.load(Ordering::Acquire);
-        self.range.end.saturating_sub(num_taken)
-    }
-}
-
-#[cfg(test)]
-mod tst {
-    use super::*;
-    use crate::*;
-    use alloc::boxed::Box;
-    use alloc::vec::Vec;
-
-    #[test]
-    fn abc() {
-        let n = 4;
-        let range = ..;
-
-        let mut vec: Vec<_> = (0..n).map(|x| x.to_string()).collect();
-
-        {
-            let iter = ConIterVecDrain::new(&mut vec, range);
-            // let iter = vec.drain(range);
-            let bx = Box::new(iter);
-            Box::leak(bx);
-            // while let Some(x) = iter.next() {
-            //     dbg!(x);
-            // }
-        }
-
-        dbg!(&vec);
-
-        // assert_eq!(vec.len(), 33);
+        self.range.len().saturating_sub(num_taken)
     }
 }
