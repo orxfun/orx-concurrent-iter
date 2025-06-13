@@ -1,9 +1,15 @@
 use crate::ConcurrentIter;
+use core::ops::RangeBounds;
 
 /// A type which can create a concurrent draining iterator over any of its sub-slices.
 pub trait ConcurrentDrainableOverSlice {
     /// Type of draining iterator elements.
     type Item;
+
+    /// Type of the draining iterator created by `con_drain` method.
+    type DrainingIter<'a>: ConcurrentIter<Item = Self::Item>
+    where
+        Self: 'a;
 
     /// Creates a concurrent draining iterators such that:
     ///
@@ -35,5 +41,7 @@ pub trait ConcurrentDrainableOverSlice {
     /// assert_eq!(v, &[1]);
     /// assert_eq!(u, &[2, 3]);
     /// ```
-    fn con_drain<R>(&mut self, range: R) -> impl ConcurrentIter<Item = Self::Item>;
+    fn con_drain<R>(&mut self, range: R) -> Self::DrainingIter<'_>
+    where
+        R: RangeBounds<usize>;
 }
