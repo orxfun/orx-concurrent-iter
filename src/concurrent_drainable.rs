@@ -3,7 +3,7 @@ use core::ops::RangeBounds;
 
 /// A type which can create a concurrent draining iterator over any of its sub-slices.
 ///
-/// * Crated draining iterator yields all elements of the slice defined by the `range`,
+/// * Created draining iterator yields all elements of the slice defined by the `range`,
 /// * Further, the slice is removed from the original collection.
 ///
 /// If the iterator is dropped before being fully consumed, it drops the remaining removed elements.

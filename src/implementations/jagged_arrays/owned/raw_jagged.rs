@@ -135,7 +135,7 @@ where
     /// * we intend to drop the vectors when we drop this jagged array,
     /// * in this case, calling this method with `None` would cause the memory to leak.
     ///
-    /// If the jagged array is crated as owned, and if we call this method with `Some(n)`:
+    /// If the jagged array is Created as owned, and if we call this method with `Some(n)`:
     /// * we must make sure that all elements with flat indices within range `0..n` must be taken manually
     ///   by the [`take`] method; and hence, will be dropped externally;
     /// * if an element within `0..n` is not taken, the corresponding element will leak,
