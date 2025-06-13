@@ -42,13 +42,13 @@ where
 
     fn pull(&mut self) -> Option<Self::Chunk<'_>> {
         self.con_iter
-            .progress_and_get_chunk_pointers2(self.chunk_size)
+            .progress_and_get_chunk_pointers(self.chunk_size)
             .map(|x| ArrayChunkSeqIter::new(x.first, x.last))
     }
 
     fn pull_with_idx(&mut self) -> Option<(usize, Self::Chunk<'_>)> {
         self.con_iter
-            .progress_and_get_chunk_pointers2(self.chunk_size)
+            .progress_and_get_chunk_pointers(self.chunk_size)
             .map(|x| (x.begin_idx, ArrayChunkSeqIter::new(x.first, x.last)))
     }
 }

@@ -128,7 +128,7 @@ where
 {
     type Item = T;
 
-    fn progress_and_get_chunk_pointers2(
+    fn progress_and_get_chunk_pointers(
         &self,
         chunk_size: usize,
     ) -> Option<ChunkPointers<Self::Item>> {

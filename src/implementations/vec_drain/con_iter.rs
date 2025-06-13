@@ -108,7 +108,7 @@ where
         let ptr = vec.as_ptr();
         let counter = range.start.into();
 
-        // TODO: write safety note here
+        // SAFETY: setting the length to range.start already as a safeguard for if the iterator is leaked
         unsafe { vec.set_len(range.start) };
 
         Self {
@@ -166,7 +166,7 @@ where
 {
     type Item = T;
 
-    fn progress_and_get_chunk_pointers2(
+    fn progress_and_get_chunk_pointers(
         &self,
         chunk_size: usize,
     ) -> Option<ChunkPointers<Self::Item>> {
