@@ -54,8 +54,16 @@ where
     T: Send + Sync,
 {
     fn drop(&mut self) {
-        let iter = self.remaining_into_seq_iter();
-        drop(iter);
+        let num_taken = self.num_taken();
+        if num_taken < self.range.len() {
+            let iter = Self::slice_into_seq_iter_with(
+                self.vec.as_ptr(),
+                self.range.clone(),
+                num_taken,
+                (),
+            );
+            drop(iter);
+        }
 
         let right_start = self.range.end;
         let right_len = self.vec_len - self.range.end;
@@ -127,35 +135,29 @@ where
         }
     }
 
-    fn remaining_into_seq_iter(&mut self) -> ArrayIntoSeqIter<T> {
-        // # SAFETY
-        // null ptr indicates that the data is already taken out of this iterator
-        // by a consuming method such as `into_seq_iter`
-        match self.ptr.is_null() {
-            true => Default::default(),
-            false => {
-                let num_taken = self.counter.load(Ordering::Acquire).min(self.range.len());
-                let iter = self.slice_into_seq_iter(num_taken);
-                self.ptr = core::ptr::null();
-                iter
-            }
-        }
+    fn num_taken(&self) -> usize {
+        self.counter.load(Ordering::Acquire).min(self.range.len())
     }
 
-    fn slice_into_seq_iter(&self, num_taken: usize) -> ArrayIntoSeqIter<T> {
-        let completed = num_taken == self.range.len();
+    fn slice_into_seq_iter_with<M>(
+        ptr: *const T,
+        range: Range<usize>,
+        num_taken: usize,
+        moved_into: M,
+    ) -> ArrayIntoSeqIter<T, M> {
+        let completed = num_taken == range.len();
         let (last, current) = match completed {
             true => (core::ptr::null(), core::ptr::null()),
             false => {
-                // SAFETY: self.range.end is positive here, would be completed o/w
-                let last = unsafe { self.ptr.add(self.range.end - 1) };
+                // SAFETY: range.end is positive here, would be completed o/w
+                let last = unsafe { ptr.add(range.end - 1) };
                 // SAFETY: first + num_taken is in bounds
-                let current = unsafe { self.ptr.add(self.range.start + num_taken) };
+                let current = unsafe { ptr.add(range.start + num_taken) };
                 (last, current)
             }
         };
 
-        ArrayIntoSeqIter::new(current, last, None)
+        ArrayIntoSeqIter::new(current, last, None, moved_into)
     }
 }
 
@@ -191,21 +193,24 @@ where
 {
     type Item = T;
 
-    type SequentialIter = ArrayIntoSeqIter<T>;
+    type SequentialIter = ArrayIntoSeqIter<T, Self>;
 
     type ChunkPuller<'i>
         = ArrayChunkPuller<'i, Self>
     where
         Self: 'i;
 
-    fn into_seq_iter(mut self) -> Self::SequentialIter {
-        self.remaining_into_seq_iter()
+    fn into_seq_iter(self) -> Self::SequentialIter {
+        let num_taken = self.num_taken();
+        let _ = self.counter.fetch_max(self.range.len(), Ordering::Acquire);
+        Self::slice_into_seq_iter_with(self.ptr, self.range.clone(), num_taken, self)
     }
 
     fn skip_to_end(&self) {
         let current = self.counter.fetch_max(self.range.len(), Ordering::Acquire);
         let num_taken_before = current.min(self.range.len());
-        let _iter = self.slice_into_seq_iter(num_taken_before);
+        let _iter =
+            Self::slice_into_seq_iter_with(self.ptr, self.range.clone(), num_taken_before, ());
     }
 
     fn next(&self) -> Option<Self::Item> {

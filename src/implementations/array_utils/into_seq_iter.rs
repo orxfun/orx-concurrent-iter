@@ -6,16 +6,18 @@ use core::iter::FusedIterator;
 /// iterator is dropped.
 ///
 /// Further, it might call a `drop_allocation` function if provided to drop the vector.
-pub struct ArrayIntoSeqIter<T>
+pub struct ArrayIntoSeqIter<T, M>
 where
     T: Send + Sync,
 {
     current: *const T,
     last: *const T,
     allocation_to_drop: Option<(*const T, usize)>,
+    /// Data moved into the sequential iterator to make sure that it is not dropped before the iterator is dropped.
+    _moved_into: M,
 }
 
-impl<T> ArrayIntoSeqIter<T>
+impl<T, M> ArrayIntoSeqIter<T, M>
 where
     T: Send + Sync,
 {
@@ -45,11 +47,13 @@ where
         first: *const T,
         last: *const T,
         allocation_to_drop: Option<(*const T, usize)>,
+        moved_into: M,
     ) -> Self {
         Self {
             current: first,
             last,
             allocation_to_drop,
+            _moved_into: moved_into,
         }
     }
 
@@ -63,16 +67,17 @@ where
     }
 }
 
-impl<T> Default for ArrayIntoSeqIter<T>
+impl<T, M> Default for ArrayIntoSeqIter<T, M>
 where
     T: Send + Sync,
+    M: Default,
 {
     fn default() -> Self {
-        Self::new(core::ptr::null(), core::ptr::null(), None)
+        Self::new(core::ptr::null(), core::ptr::null(), None, M::default())
     }
 }
 
-impl<T> Drop for ArrayIntoSeqIter<T>
+impl<T, M> Drop for ArrayIntoSeqIter<T, M>
 where
     T: Send + Sync,
 {
@@ -102,7 +107,7 @@ where
     }
 }
 
-impl<T> Iterator for ArrayIntoSeqIter<T>
+impl<T, M> Iterator for ArrayIntoSeqIter<T, M>
 where
     T: Send + Sync,
 {
@@ -131,7 +136,7 @@ where
     }
 }
 
-impl<T> ExactSizeIterator for ArrayIntoSeqIter<T>
+impl<T, M> ExactSizeIterator for ArrayIntoSeqIter<T, M>
 where
     T: Send + Sync,
 {
@@ -140,4 +145,4 @@ where
     }
 }
 
-impl<T> FusedIterator for ArrayIntoSeqIter<T> where T: Send + Sync {}
+impl<T, M> FusedIterator for ArrayIntoSeqIter<T, M> where T: Send + Sync {}

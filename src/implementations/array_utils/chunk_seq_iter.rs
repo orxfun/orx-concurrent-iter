@@ -5,7 +5,7 @@ pub struct ArrayChunkSeqIter<'i, T>
 where
     T: Send + Sync,
 {
-    iter: ArrayIntoSeqIter<T>,
+    iter: ArrayIntoSeqIter<T, ()>,
     parent_iter_lifetime: PhantomData<&'i ()>,
 }
 
@@ -15,7 +15,7 @@ where
 {
     pub(crate) fn new(first: *const T, last: *const T) -> Self {
         Self {
-            iter: ArrayIntoSeqIter::new(first, last, None),
+            iter: ArrayIntoSeqIter::new(first, last, None, ()),
             parent_iter_lifetime: PhantomData,
         }
     }

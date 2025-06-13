@@ -88,7 +88,7 @@ where
         }
     }
 
-    fn remaining_into_seq_iter(&mut self) -> ArrayIntoSeqIter<T> {
+    fn remaining_into_seq_iter(&mut self) -> ArrayIntoSeqIter<T, ()> {
         // # SAFETY
         // null ptr indicates that the data is already taken out of this iterator
         // by a consuming method such as `into_seq_iter`
@@ -103,7 +103,7 @@ where
         }
     }
 
-    fn slice_into_seq_iter(&self, num_taken: usize, drop_vec: bool) -> ArrayIntoSeqIter<T> {
+    fn slice_into_seq_iter(&self, num_taken: usize, drop_vec: bool) -> ArrayIntoSeqIter<T, ()> {
         let completed = num_taken == self.vec_len;
         let (last, current) = match completed {
             true => (core::ptr::null(), core::ptr::null()),
@@ -118,7 +118,7 @@ where
 
         let allocation_to_drop = drop_vec.then_some((self.ptr, self.vec_cap));
 
-        ArrayIntoSeqIter::new(current, last, allocation_to_drop)
+        ArrayIntoSeqIter::new(current, last, allocation_to_drop, ())
     }
 }
 
@@ -152,7 +152,7 @@ where
 {
     type Item = T;
 
-    type SequentialIter = ArrayIntoSeqIter<T>;
+    type SequentialIter = ArrayIntoSeqIter<T, ()>;
 
     type ChunkPuller<'i>
         = ArrayChunkPuller<'i, Self>
