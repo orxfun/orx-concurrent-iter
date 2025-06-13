@@ -39,6 +39,7 @@ pub mod enumerate;
 // exported types
 
 pub use concurrent_collection::ConcurrentCollection;
+pub use concurrent_drainable::ConcurrentDrainableOverSlice;
 pub use concurrent_iter::ConcurrentIter;
 pub use concurrent_iterable::ConcurrentIterable;
 pub use exact_size_concurrent_iter::ExactSizeConcurrentIter;

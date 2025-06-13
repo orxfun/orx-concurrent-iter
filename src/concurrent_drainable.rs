@@ -2,6 +2,7 @@ use crate::ConcurrentIter;
 
 /// A type which can create a concurrent draining iterator over any of its sub-slices.
 pub trait ConcurrentDrainableOverSlice {
+    /// Type of draining iterator elements.
     type Item;
 
     /// Creates a concurrent draining iterators such that:
