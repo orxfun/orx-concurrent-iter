@@ -41,7 +41,6 @@ where
     vec: &'a mut Vec<T>,
     range: Range<usize>,
     vec_len: usize,
-    ptr: *const T,
     counter: AtomicUsize,
 }
 
@@ -113,7 +112,6 @@ where
         assert!(range.end <= vec.len());
 
         let vec_len = vec.len();
-        let ptr = vec.as_ptr();
 
         // SAFETY: setting the length to range.start already as a safeguard for if the iterator is leaked
         unsafe { vec.set_len(range.start) };
@@ -122,9 +120,12 @@ where
             vec,
             range,
             vec_len,
-            ptr,
             counter: 0.into(),
         }
+    }
+
+    fn ptr(&self) -> *const T {
+        self.vec.as_ptr()
     }
 
     fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
@@ -176,8 +177,8 @@ where
                 let end_idx = (begin_idx + chunk_size)
                     .min(self.range.len())
                     .max(begin_idx);
-                let first = unsafe { self.ptr.add(self.range.start + begin_idx) }; // ptr + range.start + begin_idx is in bounds
-                let last = unsafe { self.ptr.add(self.range.start + end_idx - 1) }; // ptr + range.start + end_idx - 1 is in bounds
+                let first = unsafe { self.ptr().add(self.range.start + begin_idx) }; // ptr + range.start + begin_idx is in bounds
+                let last = unsafe { self.ptr().add(self.range.start + end_idx - 1) }; // ptr + range.start + end_idx - 1 is in bounds
                 ChunkPointers {
                     begin_idx,
                     first,
@@ -203,26 +204,26 @@ where
     fn into_seq_iter(self) -> Self::SequentialIter {
         let num_taken = self.num_taken();
         let _ = self.counter.fetch_max(self.range.len(), Ordering::Acquire);
-        Self::slice_into_seq_iter_with(self.ptr, self.range.clone(), num_taken, self)
+        Self::slice_into_seq_iter_with(self.ptr(), self.range.clone(), num_taken, self)
     }
 
     fn skip_to_end(&self) {
         let current = self.counter.fetch_max(self.range.len(), Ordering::Acquire);
         let num_taken_before = current.min(self.range.len());
         let _iter =
-            Self::slice_into_seq_iter_with(self.ptr, self.range.clone(), num_taken_before, ());
+            Self::slice_into_seq_iter_with(self.ptr(), self.range.clone(), num_taken_before, ());
     }
 
     fn next(&self) -> Option<Self::Item> {
         self.progress_and_get_begin_idx(1) // ptr + range.start + idx is in-bounds
-            .map(|idx| unsafe { take(self.ptr.add(self.range.start + idx) as *mut T) })
+            .map(|idx| unsafe { take(self.ptr().add(self.range.start + idx) as *mut T) })
     }
 
     fn next_with_idx(&self) -> Option<(usize, Self::Item)> {
         self.progress_and_get_begin_idx(1) // ptr + range.start + idx is in-bounds
             .map(|idx| {
                 (idx, unsafe {
-                    take(self.ptr.add(self.range.start + idx) as *mut T)
+                    take(self.ptr().add(self.range.start + idx) as *mut T)
                 })
             })
     }
