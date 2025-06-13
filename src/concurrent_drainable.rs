@@ -36,7 +36,7 @@ pub trait ConcurrentDrainableOverSlice {
     /// use orx_concurrent_iter::*;
     ///
     /// let mut v = vec![1, 2, 3];
-    /// let u: Vec<_> = v.con_drain(1..).collect();
+    /// let u: Vec<_> = v.con_drain(1..).item_puller().collect();
     ///
     /// assert_eq!(v, &[1]);
     /// assert_eq!(u, &[2, 3]);
