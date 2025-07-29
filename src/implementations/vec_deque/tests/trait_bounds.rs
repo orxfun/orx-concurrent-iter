@@ -18,7 +18,7 @@ fn concurrent_collection<T: Send + Sync>(vec: VecDeque<T>) {
 }
 
 #[test]
-fn vec_con_iter_trait_bounds() {
+fn vec_deque_con_iter_trait_bounds() {
     into_con_iter(VecDeque::<String>::new());
     concurrent_iterable(VecDeque::<String>::new());
     concurrent_collection(VecDeque::<String>::new());
