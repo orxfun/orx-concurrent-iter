@@ -17,7 +17,7 @@ where
 }
 
 #[test]
-fn slice_con_iter_trait_bounds() {
+fn range_con_iter_trait_bounds() {
     into_con_iter(0..1);
     concurrent_iterable(0..1);
 }
