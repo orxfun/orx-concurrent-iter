@@ -3,7 +3,7 @@ use crate::pullers::ChunkPuller;
 
 pub struct ChunkPullerSlice<'i, 'a, T>
 where
-    T: Send + Sync,
+    T: Sync,
 {
     con_iter: &'i ConIterSlice<'a, T>,
     chunk_size: usize,
@@ -11,7 +11,7 @@ where
 
 impl<'i, 'a, T> ChunkPullerSlice<'i, 'a, T>
 where
-    T: Send + Sync,
+    T: Sync,
 {
     pub(super) fn new(con_iter: &'i ConIterSlice<'a, T>, chunk_size: usize) -> Self {
         Self {
@@ -23,7 +23,7 @@ where
 
 impl<'a, T> ChunkPuller for ChunkPullerSlice<'_, 'a, T>
 where
-    T: Send + Sync,
+    T: Sync,
 {
     type ChunkItem = &'a T;
 
