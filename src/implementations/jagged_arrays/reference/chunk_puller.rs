@@ -6,7 +6,7 @@ use crate::{
 
 pub struct ChunkPullerJaggedRef<'i, 'a, T, S, X>
 where
-    T: Send + Sync,
+    T: Sync,
     X: JaggedIndexer + Send + Sync,
     S: Slices<'a, T> + Send + Sync,
 {
@@ -16,7 +16,7 @@ where
 
 impl<'i, 'a, T, S, X> ChunkPullerJaggedRef<'i, 'a, T, S, X>
 where
-    T: Send + Sync,
+    T: Sync,
     X: JaggedIndexer + Send + Sync,
     S: Slices<'a, T> + Send + Sync,
 {
@@ -30,7 +30,7 @@ where
 
 impl<'a, T, S, X> ChunkPuller for ChunkPullerJaggedRef<'_, 'a, T, S, X>
 where
-    T: Send + Sync + 'a,
+    T: Sync + 'a,
     X: JaggedIndexer + Send + Sync,
     S: Slices<'a, T> + Send + Sync,
 {

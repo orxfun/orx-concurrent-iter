@@ -37,7 +37,7 @@ use core::{
 /// ```
 pub struct ConIterSlice<'a, T>
 where
-    T: Send + Sync,
+    T: Sync,
 {
     slice: &'a [T],
     counter: AtomicUsize,
@@ -45,7 +45,7 @@ where
 
 impl<T> Default for ConIterSlice<'_, T>
 where
-    T: Send + Sync,
+    T: Sync,
 {
     fn default() -> Self {
         Self::new(&[])
@@ -54,7 +54,7 @@ where
 
 impl<'a, T> ConIterSlice<'a, T>
 where
-    T: Send + Sync,
+    T: Sync,
 {
     pub(crate) fn new(slice: &'a [T]) -> Self {
         Self {
@@ -88,7 +88,7 @@ where
 
 impl<'a, T> ConcurrentIter for ConIterSlice<'a, T>
 where
-    T: Send + Sync,
+    T: Sync,
 {
     type Item = &'a T;
 
@@ -131,7 +131,7 @@ where
 
 impl<T> ExactSizeConcurrentIter for ConIterSlice<'_, T>
 where
-    T: Send + Sync,
+    T: Sync,
 {
     fn len(&self) -> usize {
         let num_taken = self.counter.load(Ordering::Acquire);

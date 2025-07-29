@@ -3,7 +3,7 @@ use crate::{concurrent_iterable::ConcurrentIterable, into_concurrent_iter::IntoC
 
 impl<'a, T> IntoConcurrentIter for &'a [T]
 where
-    T: Send + Sync,
+    T: Sync,
 {
     type Item = &'a T;
 
@@ -16,7 +16,7 @@ where
 
 impl<'a, T> ConcurrentIterable for &'a [T]
 where
-    T: Send + Sync,
+    T: Sync,
 {
     type Item = &'a T;
 

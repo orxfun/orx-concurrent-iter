@@ -39,14 +39,14 @@ use orx_pseudo_default::PseudoDefault;
 /// ```
 pub struct ConIterVecDequeRef<'a, T>
 where
-    T: Send + Sync,
+    T: Sync,
 {
     con_iter: ConIterCore<'a, T>,
 }
 
 impl<'a, T> ConIterVecDequeRef<'a, T>
 where
-    T: Send + Sync,
+    T: Sync,
 {
     pub(super) fn new(vec_deque_ref: &'a VecDeque<T>) -> Self {
         let len = vec_deque_ref.len();
@@ -95,7 +95,7 @@ impl JaggedIndexer for VecDequeSlicesIndexer {
 
 impl<'a, T> ConcurrentIter for ConIterVecDequeRef<'a, T>
 where
-    T: Send + Sync,
+    T: Sync,
 {
     type Item = <ConIterCore<'a, T> as ConcurrentIter>::Item;
 
@@ -133,7 +133,7 @@ where
 
 impl<T> ExactSizeConcurrentIter for ConIterVecDequeRef<'_, T>
 where
-    T: Send + Sync,
+    T: Sync,
 {
     fn len(&self) -> usize {
         self.con_iter.len()

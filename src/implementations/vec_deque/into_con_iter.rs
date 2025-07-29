@@ -4,7 +4,7 @@ use alloc::{collections::VecDeque, vec::Vec};
 
 impl<'a, T> IntoConcurrentIter for &'a VecDeque<T>
 where
-    T: Send + Sync,
+    T: Sync,
 {
     type Item = &'a T;
 

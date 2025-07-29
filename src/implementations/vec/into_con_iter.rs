@@ -17,7 +17,7 @@ where
 
 impl<'a, T> IntoConcurrentIter for &'a Vec<T>
 where
-    T: Send + Sync,
+    T: Sync,
 {
     type Item = &'a T;
 
