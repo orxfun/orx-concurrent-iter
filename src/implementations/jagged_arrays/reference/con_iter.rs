@@ -11,7 +11,7 @@ use core::sync::atomic::{AtomicUsize, Ordering};
 /// Flattened concurrent iterator of a raw jagged array yielding references to elements.
 pub struct ConIterJaggedRef<'a, T, S, X>
 where
-    T: Send + Sync + 'a,
+    T: Sync + 'a,
     X: JaggedIndexer,
     S: Slices<'a, T> + Send + Sync,
 {
@@ -21,7 +21,7 @@ where
 
 impl<'a, T, S, X> ConIterJaggedRef<'a, T, S, X>
 where
-    T: Send + Sync + 'a,
+    T: Sync + 'a,
     X: JaggedIndexer + Send + Sync,
     S: Slices<'a, T> + Send + Sync,
 {
@@ -58,7 +58,7 @@ where
 
 impl<'a, T, S, X> ConcurrentIter for ConIterJaggedRef<'a, T, S, X>
 where
-    T: Send + Sync + 'a,
+    T: Sync + 'a,
     X: JaggedIndexer,
     S: Slices<'a, T> + Send + Sync,
 {
@@ -105,7 +105,7 @@ where
 
 impl<'a, T, S, X> ExactSizeConcurrentIter for ConIterJaggedRef<'a, T, S, X>
 where
-    T: Send + Sync + 'a,
+    T: Sync + 'a,
     X: JaggedIndexer,
     S: Slices<'a, T> + Send + Sync,
 {
