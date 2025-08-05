@@ -2,10 +2,7 @@ use crate::{ConcurrentDrainableOverSlice, implementations::vec_drain::con_iter::
 use alloc::vec::Vec;
 use core::ops::RangeBounds;
 
-impl<T> ConcurrentDrainableOverSlice for Vec<T>
-where
-    T: Send + Sync,
-{
+impl<T> ConcurrentDrainableOverSlice for Vec<T> {
     type Item = T;
 
     type DrainingIter<'a>
