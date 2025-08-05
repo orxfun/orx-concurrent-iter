@@ -9,7 +9,7 @@ pub struct ChunkPullerRange<'i, T> {
 
 impl<'i, T> From<(&'i ConIterRange<T>, usize)> for ChunkPullerRange<'i, T>
 where
-    T: Send + Sync + From<usize>,
+    T: From<usize>,
     Range<T>: Default + Clone + ExactSizeIterator<Item = T>,
 {
     fn from((con_iter, chunk_size): (&'i ConIterRange<T>, usize)) -> Self {
@@ -22,7 +22,7 @@ where
 
 impl<T> ChunkPuller for ChunkPullerRange<'_, T>
 where
-    T: Send + Sync + From<usize> + Into<usize>,
+    T: From<usize> + Into<usize>,
     Range<T>: Default + Clone + ExactSizeIterator<Item = T>,
 {
     type ChunkItem = T;
