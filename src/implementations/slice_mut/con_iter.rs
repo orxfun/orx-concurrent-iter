@@ -50,9 +50,9 @@ where
     counter: AtomicUsize,
 }
 
-unsafe impl<'a, T: 'a> Sync for ConIterSliceMut<'a, T> {}
+unsafe impl<'a, T: Sync + 'a> Sync for ConIterSliceMut<'a, T> {}
 
-unsafe impl<'a, T: 'a> Send for ConIterSliceMut<'a, T> {}
+unsafe impl<'a, T: Sync + 'a> Send for ConIterSliceMut<'a, T> {}
 
 impl<'a, T: 'a> Default for ConIterSliceMut<'a, T> {
     fn default() -> Self {
