@@ -6,6 +6,7 @@ use alloc::{
     string::{String, ToString},
     vec::Vec,
 };
+use core::cmp::Ordering;
 use orx_concurrent_bag::ConcurrentBag;
 use test_case::test_matrix;
 
@@ -377,62 +378,80 @@ fn skip_to_end(n: usize, nt: usize) {
     assert_eq!(expected, vec);
 }
 
-// #[test_matrix([0, 1, N], [1, 2, 4], [0, N / 2, N])]
-// fn into_seq_iter(n: usize, nt: usize, until: usize) {
-//     let mut vec = new_vec(n, |x| (x + 10).to_string());
-//     let slice = vec.as_mut_slice();
-//     let iter = ConIterSliceMut::new(slice);
+#[test_matrix([0, 1, N], [1, 2, 4], [0, N / 2, N])]
+fn into_seq_iter(n: usize, nt: usize, until: usize) {
+    let mut vec = new_vec(n, |x| (x + 10).to_string());
+    let slice = vec.as_mut_slice();
+    let iter = ConIterSliceMut::new(slice);
 
-//     let bag = ConcurrentBag::new();
-//     let num_spawned = ConcurrentBag::new();
-//     let con_num_spawned = &num_spawned;
-//     let con_bag = &bag;
-//     let con_iter = &iter;
-//     if until > 0 {
-//         std::thread::scope(|s| {
-//             for t in 0..nt {
-//                 s.spawn(move || {
-//                     con_num_spawned.push(true);
-//                     while con_num_spawned.len() < nt {} // allow all threads to be spawned
+    let num_spawned = ConcurrentBag::new();
+    let con_num_spawned = &num_spawned;
+    let con_iter = &iter;
+    if until > 0 {
+        std::thread::scope(|s| {
+            for t in 0..nt {
+                s.spawn(move || {
+                    con_num_spawned.push(true);
+                    while con_num_spawned.len() < nt {} // allow all threads to be spawned
 
-//                     match t % 2 {
-//                         0 => {
-//                             while let Some(num) = con_iter.next() {
-//                                 con_bag.push(num.clone());
-//                                 if num.parse::<usize>().expect("") >= until + 10 {
-//                                     break;
-//                                 }
-//                             }
-//                         }
-//                         _ => {
-//                             let mut iter = con_iter.chunk_puller(7);
-//                             while let Some(chunk) = iter.pull() {
-//                                 let mut do_break = false;
-//                                 for num in chunk {
-//                                     con_bag.push(num.clone());
-//                                     if num.parse::<usize>().expect("") >= until + 10 {
-//                                         do_break = true;
-//                                     }
-//                                 }
-//                                 if do_break {
-//                                     break;
-//                                 }
-//                             }
-//                         }
-//                     }
-//                 });
-//             }
-//         });
-//     }
+                    match t % 2 {
+                        0 => {
+                            while let Some(num) = con_iter.next() {
+                                let parsed = num.parse::<usize>().expect("");
 
-//     let iter = iter.into_seq_iter();
-//     let remaining: Vec<_> = iter.cloned().collect();
-//     let collected = bag.into_inner().to_vec();
-//     let mut all: Vec<_> = collected.into_iter().chain(remaining).collect();
-//     all.sort();
+                                match parsed.cmp(&(until + 10)) {
+                                    Ordering::Less => num.push('!'),
+                                    Ordering::Equal => {
+                                        num.push('x');
+                                        break;
+                                    }
+                                    Ordering::Greater => {
+                                        num.push('?');
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        _ => {
+                            let mut iter = con_iter.chunk_puller(7);
+                            while let Some(chunk) = iter.pull() {
+                                let mut do_break = false;
+                                for num in chunk {
+                                    let parsed = num.parse::<usize>().expect("");
 
-//     let mut expected: Vec<_> = (0..n).map(|i| vec[i].clone()).collect();
-//     expected.sort();
+                                    match parsed.cmp(&(until + 10)) {
+                                        Ordering::Less => num.push('!'),
+                                        Ordering::Equal => {
+                                            num.push('x');
+                                            do_break = true;
+                                        }
+                                        Ordering::Greater => {
+                                            num.push('?');
+                                            do_break = true;
+                                        }
+                                    }
+                                }
+                                if do_break {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    }
 
-//     assert_eq!(all, expected);
-// }
+    let iter = iter.into_seq_iter();
+    iter.for_each(|x| x.push('?'));
+
+    let expected = match until == 0 {
+        true => new_vec(n, |x| format!("{}?", x + 10)),
+        false => new_vec(n, |x| match x.cmp(&until) {
+            Ordering::Equal => format!("{}x", x + 10),
+            Ordering::Less => format!("{}!", x + 10),
+            Ordering::Greater => format!("{}?", x + 10),
+        }),
+    };
+    assert_eq!(expected, vec);
+}
