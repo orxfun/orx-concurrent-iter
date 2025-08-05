@@ -3,7 +3,7 @@ use core::ops::Range;
 
 impl<T> Clone for ConIterRange<T>
 where
-    T: From<usize> + Into<usize>,
+    T: Send + From<usize> + Into<usize>,
     Range<T>: Default + Clone + ExactSizeIterator<Item = T>,
 {
     fn clone(&self) -> Self {
