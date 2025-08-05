@@ -31,6 +31,13 @@ pub struct ConIterRange<T> {
     phantom: PhantomData<T>,
 }
 
+unsafe impl<T> Sync for ConIterRange<T>
+where
+    T: Send + From<usize> + Into<usize>,
+    Range<T>: Default + Clone + ExactSizeIterator<Item = T>,
+{
+}
+
 impl<T> Default for ConIterRange<T> {
     fn default() -> Self {
         Self {
