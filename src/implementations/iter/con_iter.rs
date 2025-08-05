@@ -68,9 +68,9 @@ where
     state: AtomicState,
 }
 
-unsafe impl<I> Sync for ConIterOfIter<I> where I: Iterator {}
+unsafe impl<I: Iterator> Sync for ConIterOfIter<I> where I::Item: Sync {}
 
-unsafe impl<I> Send for ConIterOfIter<I> where I: Iterator {}
+unsafe impl<I: Iterator> Send for ConIterOfIter<I> where I::Item: Send {}
 
 impl<I> Default for ConIterOfIter<I>
 where
