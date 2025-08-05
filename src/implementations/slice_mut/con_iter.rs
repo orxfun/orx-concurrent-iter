@@ -1,10 +1,10 @@
-// use super::chunk_puller::ChunkPullerSlice;
 use crate::{
     concurrent_iter::ConcurrentIter, exact_size_concurrent_iter::ExactSizeConcurrentIter,
     implementations::slice_mut::chunk_puller::ChunkPullerSliceMut,
 };
 use core::{
     iter::Skip,
+    marker::PhantomData,
     sync::atomic::{AtomicUsize, Ordering},
 };
 
@@ -44,7 +44,7 @@ pub struct ConIterSliceMut<'a, T>
 where
     T: 'a,
 {
-    _slice: &'a (),
+    _slice: PhantomData<&'a ()>,
     slice_len: usize,
     p: *mut T,
     counter: AtomicUsize,
@@ -65,7 +65,7 @@ impl<'a, T: 'a> ConIterSliceMut<'a, T> {
         Self {
             p: slice.as_mut_ptr(),
             slice_len: slice.len(),
-            _slice: &(),
+            _slice: PhantomData,
             counter: 0.into(),
         }
     }
