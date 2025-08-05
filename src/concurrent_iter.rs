@@ -326,7 +326,7 @@ use crate::{
 /// generalization of iterators that can be iterated over either concurrently or sequentially.
 ///
 /// [`into_seq_iter`]: crate::ConcurrentIter::into_seq_iter
-pub trait ConcurrentIter: Send + Sync {
+pub trait ConcurrentIter {
     /// Type of the element that the concurrent iterator yields.
     type Item;
 
@@ -851,7 +851,7 @@ pub trait ConcurrentIter: Send + Sync {
     /// ```
     fn copied<'a, T>(self) -> ConIterCopied<'a, Self, T>
     where
-        T: Send + Sync + Copy,
+        T: Copy,
         Self: ConcurrentIter<Item = &'a T> + Sized,
     {
         ConIterCopied::new(self)
@@ -880,7 +880,7 @@ pub trait ConcurrentIter: Send + Sync {
     /// ```
     fn cloned<'a, T>(self) -> ConIterCloned<'a, Self, T>
     where
-        T: Send + Sync + Clone,
+        T: Clone,
         Self: ConcurrentIter<Item = &'a T> + Sized,
     {
         ConIterCloned::new(self)

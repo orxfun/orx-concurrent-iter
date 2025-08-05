@@ -2,18 +2,12 @@ use super::con_iter::ConIterEmpty;
 use crate::pullers::ChunkPuller;
 use core::marker::PhantomData;
 
-pub struct ChunkPullerEmpty<'i, T>
-where
-    T: Send + Sync,
-{
+pub struct ChunkPullerEmpty<'i, T> {
     chunk_size: usize,
     phantom: PhantomData<&'i T>,
 }
 
-impl<'i, T> ChunkPullerEmpty<'i, T>
-where
-    T: Send + Sync,
-{
+impl<'i, T> ChunkPullerEmpty<'i, T> {
     pub(super) fn new(_con_iter: &'i ConIterEmpty<T>, chunk_size: usize) -> Self {
         Self {
             chunk_size,
@@ -22,10 +16,7 @@ where
     }
 }
 
-impl<T> ChunkPuller for ChunkPullerEmpty<'_, T>
-where
-    T: Send + Sync,
-{
+impl<T> ChunkPuller for ChunkPullerEmpty<'_, T> {
     type ChunkItem = T;
 
     type Chunk<'c>

@@ -11,7 +11,7 @@ use core::{iter::Cloned, marker::PhantomData};
 /// [`cloned`]: crate::ConcurrentIter::cloned
 pub struct ConIterCloned<'a, I, T>
 where
-    T: Send + Sync + Clone,
+    T: Clone,
     I: ConcurrentIter<Item = &'a T>,
 {
     con_iter: I,
@@ -20,7 +20,7 @@ where
 
 impl<'a, I, T> ConIterCloned<'a, I, T>
 where
-    T: Send + Sync + Clone,
+    T: Clone,
     I: ConcurrentIter<Item = &'a T>,
 {
     pub(crate) fn new(con_iter: I) -> Self {
@@ -33,7 +33,7 @@ where
 
 impl<'a, I, T> ConcurrentIter for ConIterCloned<'a, I, T>
 where
-    T: Send + Sync + Clone,
+    T: Clone,
     I: ConcurrentIter<Item = &'a T>,
 {
     type Item = T;

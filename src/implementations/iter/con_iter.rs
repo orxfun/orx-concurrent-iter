@@ -63,30 +63,18 @@ use core::sync::atomic::Ordering;
 pub struct ConIterOfIter<I>
 where
     I: Iterator,
-    I::Item: Send + Sync,
 {
     iter: IterCell<I::Item, I>,
     state: AtomicState,
 }
 
-unsafe impl<I> Sync for ConIterOfIter<I>
-where
-    I: Iterator,
-    I::Item: Send + Sync,
-{
-}
+unsafe impl<I> Sync for ConIterOfIter<I> where I: Iterator {}
 
-unsafe impl<I> Send for ConIterOfIter<I>
-where
-    I: Iterator,
-    I::Item: Send + Sync,
-{
-}
+unsafe impl<I> Send for ConIterOfIter<I> where I: Iterator {}
 
 impl<I> Default for ConIterOfIter<I>
 where
     I: Iterator + Default,
-    I::Item: Send + Sync,
 {
     fn default() -> Self {
         Self::new(I::default())
@@ -96,7 +84,6 @@ where
 impl<I> ConIterOfIter<I>
 where
     I: Iterator,
-    I::Item: Send + Sync,
 {
     pub(crate) fn new(iter: I) -> Self {
         Self {
@@ -126,7 +113,6 @@ where
 impl<I> ConcurrentIter for ConIterOfIter<I>
 where
     I: Iterator,
-    I::Item: Send + Sync,
 {
     type Item = I::Item;
 
@@ -168,7 +154,6 @@ where
 impl<I> ExactSizeConcurrentIter for ConIterOfIter<I>
 where
     I: ExactSizeIterator,
-    I::Item: Send + Sync,
 {
     fn len(&self) -> usize {
         match self.get_handle() {

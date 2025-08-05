@@ -17,27 +17,21 @@ use core::marker::PhantomData;
 /// let con_iter = implementations::ConIterEmpty::<String>::new();
 /// assert_eq!(con_iter.next(), None);
 /// ```
-pub struct ConIterEmpty<T: Send + Sync> {
+pub struct ConIterEmpty<T> {
     phantom: PhantomData<T>,
 }
 
-unsafe impl<T: Send + Sync> Sync for ConIterEmpty<T> {}
+unsafe impl<T> Sync for ConIterEmpty<T> {}
 
-unsafe impl<T: Send + Sync> Send for ConIterEmpty<T> {}
+unsafe impl<T> Send for ConIterEmpty<T> {}
 
-impl<T> Default for ConIterEmpty<T>
-where
-    T: Send + Sync,
-{
+impl<T> Default for ConIterEmpty<T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T> ConIterEmpty<T>
-where
-    T: Send + Sync,
-{
+impl<T> ConIterEmpty<T> {
     /// Creates a new empty concurrent iterator with no elements.
     pub fn new() -> Self {
         Self {
@@ -46,10 +40,7 @@ where
     }
 }
 
-impl<T> ConcurrentIter for ConIterEmpty<T>
-where
-    T: Send + Sync,
-{
+impl<T> ConcurrentIter for ConIterEmpty<T> {
     type Item = T;
 
     type SequentialIter = core::iter::Empty<T>;
@@ -82,10 +73,7 @@ where
     }
 }
 
-impl<T> ExactSizeConcurrentIter for ConIterEmpty<T>
-where
-    T: Send + Sync,
-{
+impl<T> ExactSizeConcurrentIter for ConIterEmpty<T> {
     fn len(&self) -> usize {
         0
     }
