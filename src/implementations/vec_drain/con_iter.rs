@@ -176,7 +176,10 @@ impl<T> ArrayConIter for ConIterVecDrain<'_, T> {
     }
 }
 
-impl<T> ConcurrentIter for ConIterVecDrain<'_, T> {
+impl<T> ConcurrentIter for ConIterVecDrain<'_, T>
+where
+    T: Send,
+{
     type Item = T;
 
     type SequentialIter = ArrayIntoSeqIter<T, Self>;
@@ -224,7 +227,10 @@ impl<T> ConcurrentIter for ConIterVecDrain<'_, T> {
     }
 }
 
-impl<T> ExactSizeConcurrentIter for ConIterVecDrain<'_, T> {
+impl<T> ExactSizeConcurrentIter for ConIterVecDrain<'_, T>
+where
+    T: Send,
+{
     fn len(&self) -> usize {
         let num_taken = self.counter.load(Ordering::Acquire);
         self.range.len().saturating_sub(num_taken)
