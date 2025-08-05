@@ -22,8 +22,6 @@ where
 
 unsafe impl<T: Send, X: JaggedIndexer> Sync for ConIterJaggedOwned<T, X> {}
 
-unsafe impl<T: Send, X: JaggedIndexer> Send for ConIterJaggedOwned<T, X> {}
-
 impl<T, X> ConIterJaggedOwned<T, X>
 where
     T: Send,

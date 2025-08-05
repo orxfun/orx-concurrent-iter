@@ -43,8 +43,6 @@ pub struct ConIterVecDrain<'a, T> {
 
 unsafe impl<T: Send> Sync for ConIterVecDrain<'_, T> {}
 
-unsafe impl<T: Send> Send for ConIterVecDrain<'_, T> {}
-
 impl<T> Drop for ConIterVecDrain<'_, T> {
     fn drop(&mut self) {
         let num_taken = self.num_taken();

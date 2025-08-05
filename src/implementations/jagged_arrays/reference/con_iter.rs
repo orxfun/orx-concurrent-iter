@@ -27,14 +27,6 @@ where
 {
 }
 
-unsafe impl<'a, T, S, X> Send for ConIterJaggedRef<'a, T, S, X>
-where
-    T: Sync,
-    X: JaggedIndexer,
-    S: Slices<'a, T>,
-{
-}
-
 impl<'a, T, S, X> ConIterJaggedRef<'a, T, S, X>
 where
     T: Sync,
