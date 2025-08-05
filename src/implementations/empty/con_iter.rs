@@ -24,8 +24,6 @@ pub struct ConIterEmpty<T> {
 
 unsafe impl<T> Sync for ConIterEmpty<T> {}
 
-unsafe impl<T> Send for ConIterEmpty<T> {}
-
 impl<T> Default for ConIterEmpty<T> {
     fn default() -> Self {
         Self::new()
@@ -41,7 +39,10 @@ impl<T> ConIterEmpty<T> {
     }
 }
 
-impl<T> ConcurrentIter for ConIterEmpty<T> {
+impl<T> ConcurrentIter for ConIterEmpty<T>
+where
+    T: Send,
+{
     type Item = T;
 
     type SequentialIter = core::iter::Empty<T>;
@@ -74,7 +75,10 @@ impl<T> ConcurrentIter for ConIterEmpty<T> {
     }
 }
 
-impl<T> ExactSizeConcurrentIter for ConIterEmpty<T> {
+impl<T> ExactSizeConcurrentIter for ConIterEmpty<T>
+where
+    T: Send,
+{
     fn len(&self) -> usize {
         0
     }

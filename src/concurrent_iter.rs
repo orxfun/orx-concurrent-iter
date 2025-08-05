@@ -324,7 +324,7 @@ use crate::{
 /// [`into_seq_iter`]: crate::ConcurrentIter::into_seq_iter
 pub trait ConcurrentIter: Sync {
     /// Type of the element that the concurrent iterator yields.
-    type Item;
+    type Item: Send;
 
     /// Type of the sequential iterator that the concurrent iterator can be converted
     /// into using the [`into_seq_iter`] method.
