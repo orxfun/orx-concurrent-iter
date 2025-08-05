@@ -322,7 +322,7 @@ use crate::{
 /// generalization of iterators that can be iterated over either concurrently or sequentially.
 ///
 /// [`into_seq_iter`]: crate::ConcurrentIter::into_seq_iter
-pub trait ConcurrentIter: Sync {
+pub trait ConcurrentIter {
     /// Type of the element that the concurrent iterator yields.
     type Item;
 
