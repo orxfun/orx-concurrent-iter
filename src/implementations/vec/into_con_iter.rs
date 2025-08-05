@@ -5,7 +5,10 @@ use crate::{
 };
 use alloc::vec::Vec;
 
-impl<T> IntoConcurrentIter for Vec<T> {
+impl<T> IntoConcurrentIter for Vec<T>
+where
+    T: Send,
+{
     type Item = T;
 
     type IntoIter = ConIterVec<T>;

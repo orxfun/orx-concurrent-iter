@@ -15,7 +15,10 @@ where
     }
 }
 
-impl<T> IntoConcurrentIter for VecDeque<T> {
+impl<T> IntoConcurrentIter for VecDeque<T>
+where
+    T: Send,
+{
     type Item = T;
 
     type IntoIter = ConIterVec<T>;

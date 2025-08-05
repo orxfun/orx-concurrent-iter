@@ -38,8 +38,6 @@ pub struct ConIterVec<T> {
 
 unsafe impl<T: Send> Sync for ConIterVec<T> {}
 
-unsafe impl<T: Send> Send for ConIterVec<T> {}
-
 impl<T> Default for ConIterVec<T> {
     fn default() -> Self {
         Self::new(Vec::new())
@@ -131,7 +129,10 @@ impl<T> ArrayConIter for ConIterVec<T> {
     }
 }
 
-impl<T> ConcurrentIter for ConIterVec<T> {
+impl<T> ConcurrentIter for ConIterVec<T>
+where
+    T: Send,
+{
     type Item = T;
 
     type SequentialIter = ArrayIntoSeqIter<T, ()>;
@@ -172,7 +173,10 @@ impl<T> ConcurrentIter for ConIterVec<T> {
     }
 }
 
-impl<T> ExactSizeConcurrentIter for ConIterVec<T> {
+impl<T> ExactSizeConcurrentIter for ConIterVec<T>
+where
+    T: Send,
+{
     fn len(&self) -> usize {
         let num_taken = self.counter.load(Ordering::Acquire);
         self.vec_len.saturating_sub(num_taken)
