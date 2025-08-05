@@ -6,7 +6,7 @@ use crate::{
 
 impl<'a, T, S, X> IntoConcurrentIter for RawJaggedRef<'a, T, S, X>
 where
-    T: Sync + 'a,
+    T: Sync,
     X: JaggedIndexer,
     S: Slices<'a, T>,
 {
