@@ -19,7 +19,7 @@ where
     counter: AtomicUsize,
 }
 
-unsafe impl<T: Sync, X: JaggedIndexer> Sync for ConIterJaggedOwned<T, X> {}
+unsafe impl<T: Send, X: JaggedIndexer> Sync for ConIterJaggedOwned<T, X> {}
 
 unsafe impl<T: Send, X: JaggedIndexer> Send for ConIterJaggedOwned<T, X> {}
 
