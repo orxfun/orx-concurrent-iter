@@ -1,7 +1,10 @@
 use super::con_iter::ConIterSlice;
 use crate::{concurrent_iterable::ConcurrentIterable, into_concurrent_iter::IntoConcurrentIter};
 
-impl<'a, T> IntoConcurrentIter for &'a [T] {
+impl<'a, T> IntoConcurrentIter for &'a [T]
+where
+    T: Sync,
+{
     type Item = &'a T;
 
     type IntoIter = ConIterSlice<'a, T>;
@@ -11,7 +14,10 @@ impl<'a, T> IntoConcurrentIter for &'a [T] {
     }
 }
 
-impl<'a, T> ConcurrentIterable for &'a [T] {
+impl<'a, T> ConcurrentIterable for &'a [T]
+where
+    T: Sync,
+{
     type Item = &'a T;
 
     type Iter = ConIterSlice<'a, T>;

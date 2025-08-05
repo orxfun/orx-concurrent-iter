@@ -77,7 +77,10 @@ impl<'a, T> ConIterSlice<'a, T> {
     }
 }
 
-impl<'a, T> ConcurrentIter for ConIterSlice<'a, T> {
+impl<'a, T> ConcurrentIter for ConIterSlice<'a, T>
+where
+    T: Sync,
+{
     type Item = &'a T;
 
     type SequentialIter = Skip<core::slice::Iter<'a, T>>;
@@ -117,7 +120,10 @@ impl<'a, T> ConcurrentIter for ConIterSlice<'a, T> {
     }
 }
 
-impl<T> ExactSizeConcurrentIter for ConIterSlice<'_, T> {
+impl<T> ExactSizeConcurrentIter for ConIterSlice<'_, T>
+where
+    T: Sync,
+{
     fn len(&self) -> usize {
         let num_taken = self.counter.load(Ordering::Acquire);
         self.slice.len().saturating_sub(num_taken)
