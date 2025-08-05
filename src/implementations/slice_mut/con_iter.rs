@@ -40,38 +40,43 @@ use core::{
 /// assert_eq!(con_iter.next(), Some(&2));
 /// assert_eq!(con_iter.next(), None);
 /// ```
-pub struct ConIterSliceMut<'a, T> {
-    slice: &'a mut [T],
+pub struct ConIterSliceMut<'a, T>
+where
+    T: 'a,
+{
+    _slice: &'a (),
+    slice_len: usize,
     p: *mut T,
     counter: AtomicUsize,
 }
 
-unsafe impl<'a, T> Sync for ConIterSliceMut<'a, T> {}
+unsafe impl<'a, T: 'a> Sync for ConIterSliceMut<'a, T> {}
 
-unsafe impl<'a, T> Send for ConIterSliceMut<'a, T> {}
+unsafe impl<'a, T: 'a> Send for ConIterSliceMut<'a, T> {}
 
-impl<T> Default for ConIterSliceMut<'_, T> {
+impl<'a, T: 'a> Default for ConIterSliceMut<'a, T> {
     fn default() -> Self {
         Self::new(&mut [])
     }
 }
 
-impl<'a, T> ConIterSliceMut<'a, T> {
+impl<'a, T: 'a> ConIterSliceMut<'a, T> {
     pub(crate) fn new(slice: &'a mut [T]) -> Self {
         Self {
             p: slice.as_mut_ptr(),
-            slice,
+            slice_len: slice.len(),
+            _slice: &(),
             counter: 0.into(),
         }
     }
 
-    pub(super) fn slice(&self) -> &&'a mut [T] {
-        &self.slice
+    pub(super) fn slice(&self) -> &'a mut [T] {
+        unsafe { core::slice::from_raw_parts_mut(self.p, self.slice_len) }
     }
 
     fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
         let begin_idx = self.counter.fetch_add(number_to_fetch, Ordering::Relaxed);
-        match begin_idx < self.slice.len() {
+        match begin_idx < self.slice_len {
             true => Some(begin_idx),
             _ => None,
         }
@@ -81,7 +86,7 @@ impl<'a, T> ConIterSliceMut<'a, T> {
         &self,
         chunk_size: usize,
     ) -> Option<(usize, &'a mut [T])> {
-        let slice_len = self.slice.len();
+        let slice_len = self.slice_len;
 
         self.progress_and_get_begin_idx(chunk_size)
             .map(|begin_idx| {
@@ -97,7 +102,7 @@ impl<'a, T> ConIterSliceMut<'a, T> {
     }
 }
 
-impl<'a, T> ConcurrentIter for ConIterSliceMut<'a, T> {
+impl<'a, T: 'a> ConcurrentIter for ConIterSliceMut<'a, T> {
     type Item = &'a mut T;
 
     type SequentialIter = Skip<core::slice::IterMut<'a, T>>;
@@ -109,11 +114,11 @@ impl<'a, T> ConcurrentIter for ConIterSliceMut<'a, T> {
 
     fn into_seq_iter(self) -> Self::SequentialIter {
         let current = self.counter.load(Ordering::Acquire);
-        self.slice.iter_mut().skip(current)
+        self.slice().iter_mut().skip(current)
     }
 
     fn skip_to_end(&self) {
-        let _ = self.counter.fetch_max(self.slice.len(), Ordering::Acquire);
+        let _ = self.counter.fetch_max(self.slice_len, Ordering::Acquire);
     }
 
     fn next(&self) -> Option<Self::Item> {
@@ -132,7 +137,7 @@ impl<'a, T> ConcurrentIter for ConIterSliceMut<'a, T> {
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         let num_taken = self.counter.load(Ordering::Acquire);
-        let remaining = self.slice.len().saturating_sub(num_taken);
+        let remaining = self.slice_len.saturating_sub(num_taken);
         (remaining, Some(remaining))
     }
 
@@ -144,6 +149,6 @@ impl<'a, T> ConcurrentIter for ConIterSliceMut<'a, T> {
 impl<T> ExactSizeConcurrentIter for ConIterSliceMut<'_, T> {
     fn len(&self) -> usize {
         let num_taken = self.counter.load(Ordering::Acquire);
-        self.slice.len().saturating_sub(num_taken)
+        self.slice_len.saturating_sub(num_taken)
     }
 }
