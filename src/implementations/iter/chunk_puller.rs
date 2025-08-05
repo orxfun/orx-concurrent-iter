@@ -6,6 +6,7 @@ use core::iter::FusedIterator;
 pub struct ChunkPullerOfIter<'i, I>
 where
     I: Iterator,
+    I::Item: Send,
 {
     con_iter: &'i ConIterOfIter<I>,
     buffer: Vec<Option<I::Item>>,
@@ -14,6 +15,7 @@ where
 impl<'i, I> ChunkPullerOfIter<'i, I>
 where
     I: Iterator,
+    I::Item: Send,
 {
     pub(super) fn new(con_iter: &'i ConIterOfIter<I>, chunk_size: usize) -> Self {
         let mut buffer = Vec::with_capacity(chunk_size);
@@ -27,6 +29,7 @@ where
 impl<I> ChunkPuller for ChunkPullerOfIter<'_, I>
 where
     I: Iterator,
+    I::Item: Send,
 {
     type ChunkItem = I::Item;
 
