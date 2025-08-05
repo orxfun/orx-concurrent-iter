@@ -352,7 +352,7 @@ fn skip_to_end(n: usize, nt: usize) {
                     0 => {
                         while let Some(num) = con_iter.next() {
                             match num.parse::<usize>().expect("") < until + 10 {
-                                true => _ = con_bag.push(num),
+                                true => _ = num.push('!'),
                                 false => con_iter.skip_to_end(),
                             }
                         }
@@ -360,7 +360,7 @@ fn skip_to_end(n: usize, nt: usize) {
                     _ => {
                         for num in con_iter.chunk_puller(7).flattened() {
                             match num.parse::<usize>().expect("") < until + 10 {
-                                true => _ = con_bag.push(num),
+                                true => _ = num.push('!'),
                                 false => con_iter.skip_to_end(),
                             }
                         }
@@ -370,12 +370,11 @@ fn skip_to_end(n: usize, nt: usize) {
         }
     });
 
-    let mut expected: Vec<_> = (0..until).map(|i| &vec[i]).collect();
-    expected.sort();
-    let mut collected = bag.into_inner().to_vec();
-    collected.sort();
-
-    assert_eq!(expected, collected);
+    let expected = new_vec(n, |x| match x < until {
+        true => format!("{}!", x + 10),
+        false => (x + 10).to_string(),
+    });
+    assert_eq!(expected, vec);
 }
 
 // #[test_matrix([0, 1, N], [1, 2, 4], [0, N / 2, N])]
