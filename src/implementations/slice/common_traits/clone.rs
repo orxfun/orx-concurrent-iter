@@ -1,9 +1,6 @@
 use crate::{ExactSizeConcurrentIter, implementations::ConIterSlice};
 
-impl<T> Clone for ConIterSlice<'_, T>
-where
-    T: Send + Sync,
-{
+impl<T> Clone for ConIterSlice<'_, T> {
     fn clone(&self) -> Self {
         let remaining = self.len();
         let num_taken = self.slice().len() - remaining;

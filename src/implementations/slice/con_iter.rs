@@ -35,27 +35,18 @@ use core::{
 /// assert_eq!(con_iter.next(), Some(&2));
 /// assert_eq!(con_iter.next(), None);
 /// ```
-pub struct ConIterSlice<'a, T>
-where
-    T: Sync,
-{
+pub struct ConIterSlice<'a, T> {
     slice: &'a [T],
     counter: AtomicUsize,
 }
 
-impl<T> Default for ConIterSlice<'_, T>
-where
-    T: Sync,
-{
+impl<T> Default for ConIterSlice<'_, T> {
     fn default() -> Self {
         Self::new(&[])
     }
 }
 
-impl<'a, T> ConIterSlice<'a, T>
-where
-    T: Sync,
-{
+impl<'a, T> ConIterSlice<'a, T> {
     pub(crate) fn new(slice: &'a [T]) -> Self {
         Self {
             slice,
@@ -86,10 +77,7 @@ where
     }
 }
 
-impl<'a, T> ConcurrentIter for ConIterSlice<'a, T>
-where
-    T: Sync,
-{
+impl<'a, T> ConcurrentIter for ConIterSlice<'a, T> {
     type Item = &'a T;
 
     type SequentialIter = Skip<core::slice::Iter<'a, T>>;
@@ -129,10 +117,7 @@ where
     }
 }
 
-impl<T> ExactSizeConcurrentIter for ConIterSlice<'_, T>
-where
-    T: Sync,
-{
+impl<T> ExactSizeConcurrentIter for ConIterSlice<'_, T> {
     fn len(&self) -> usize {
         let num_taken = self.counter.load(Ordering::Acquire);
         self.slice.len().saturating_sub(num_taken)

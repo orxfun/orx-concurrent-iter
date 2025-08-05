@@ -1,10 +1,7 @@
 use crate::{ExactSizeConcurrentIter, implementations::ConIterSlice};
 use core::fmt::Debug;
 
-impl<T> Debug for ConIterSlice<'_, T>
-where
-    T: Send + Sync,
-{
+impl<T> Debug for ConIterSlice<'_, T> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let remaining = self.len();
         let num_taken = self.slice().len() - remaining;
