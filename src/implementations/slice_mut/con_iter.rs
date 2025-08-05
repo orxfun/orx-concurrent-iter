@@ -8,9 +8,11 @@ use core::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
+// TODO: documentation update
+
 /// Concurrent iterator of a mutable slice.
 ///
-/// It can be created by calling [`into_con_iter`] on a slice.
+/// It can be created by calling [`into_con_iter`] on a mutable slice.
 ///
 /// Alternatively, it can be created calling [`con_iter`] on the type
 /// that owns the slice.
