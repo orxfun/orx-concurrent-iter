@@ -36,7 +36,7 @@ pub struct ConIterVec<T> {
     counter: AtomicUsize,
 }
 
-unsafe impl<T: Sync> Sync for ConIterVec<T> {}
+unsafe impl<T: Send> Sync for ConIterVec<T> {}
 
 unsafe impl<T: Send> Send for ConIterVec<T> {}
 
