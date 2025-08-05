@@ -39,7 +39,7 @@ use crate::{concurrent_iter::ConcurrentIter, into_concurrent_iter::IntoConcurren
 /// ```
 pub trait ConcurrentIterable {
     /// Type of the element that the concurrent iterator yields.
-    type Item: Send + Sync;
+    type Item;
 
     /// Type of the concurrent iterator that this type can be converted into.
     type Iter: ConcurrentIter<Item = Self::Item>;
