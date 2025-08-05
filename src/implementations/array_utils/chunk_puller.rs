@@ -5,7 +5,6 @@ use crate::pullers::ChunkPuller;
 pub struct ArrayChunkPuller<'i, C>
 where
     C: ArrayConIter,
-    C::Item: Send + Sync,
 {
     con_iter: &'i C,
     chunk_size: usize,
@@ -14,7 +13,6 @@ where
 impl<'i, C> ArrayChunkPuller<'i, C>
 where
     C: ArrayConIter,
-    C::Item: Send + Sync,
 {
     pub(crate) fn new(con_iter: &'i C, chunk_size: usize) -> Self {
         Self {
@@ -27,7 +25,6 @@ where
 impl<'i, C> ChunkPuller for ArrayChunkPuller<'i, C>
 where
     C: ArrayConIter,
-    C::Item: Send + Sync,
 {
     type ChunkItem = C::Item;
 
