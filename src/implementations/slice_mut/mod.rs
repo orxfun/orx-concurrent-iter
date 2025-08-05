@@ -1,9 +1,9 @@
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod tests;
 
-// mod chunk_puller;
-// mod common_traits;
-// mod con_iter;
-// mod into_con_iter;
+mod chunk_puller;
+mod common_traits;
+mod con_iter;
+mod into_con_iter;
 
-// pub use con_iter::ConIterSliceMut;
+pub use con_iter::ConIterSliceMut;

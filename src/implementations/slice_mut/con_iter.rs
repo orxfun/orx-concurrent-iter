@@ -40,6 +40,7 @@ where
     T: Sync,
 {
     slice: &'a mut [T],
+    p: *mut T,
     counter: AtomicUsize,
 }
 
@@ -58,6 +59,7 @@ where
 {
     pub(crate) fn new(slice: &'a mut [T]) -> Self {
         Self {
+            p: slice.as_mut_ptr(),
             slice,
             counter: 0.into(),
         }
@@ -80,13 +82,12 @@ where
         chunk_size: usize,
     ) -> Option<(usize, &'a mut [T])> {
         let slice_len = self.slice.len();
-        let ptr_slice = self.slice.as_ptr() as *mut T;
 
         self.progress_and_get_begin_idx(chunk_size)
             .map(|begin_idx| {
                 let end_idx = (begin_idx + chunk_size).min(slice_len).max(begin_idx);
 
-                let ptr = unsafe { ptr_slice.add(begin_idx) };
+                let ptr = unsafe { self.p.add(begin_idx) };
                 let len = end_idx - begin_idx;
                 let slice = unsafe { core::slice::from_raw_parts_mut(ptr, len) };
 
@@ -120,13 +121,17 @@ where
     }
 
     fn next(&self) -> Option<Self::Item> {
-        self.progress_and_get_begin_idx(1)
-            .map(|idx| &self.slice[idx])
+        self.progress_and_get_begin_idx(1).map(|idx| {
+            let ptr = unsafe { self.p.add(idx) };
+            unsafe { &mut *ptr }
+        })
     }
 
     fn next_with_idx(&self) -> Option<(usize, Self::Item)> {
-        self.progress_and_get_begin_idx(1)
-            .map(|idx| (idx, &self.slice[idx]))
+        self.progress_and_get_begin_idx(1).map(|idx| {
+            let ptr = unsafe { self.p.add(idx) };
+            (idx, unsafe { &mut *ptr })
+        })
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
