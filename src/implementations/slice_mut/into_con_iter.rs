@@ -1,10 +1,7 @@
 use super::con_iter::ConIterSliceMut;
 use crate::into_concurrent_iter::IntoConcurrentIter;
 
-impl<'a, T> IntoConcurrentIter for &'a mut [T]
-where
-    T: Sync,
-{
+impl<'a, T> IntoConcurrentIter for &'a mut [T] {
     type Item = &'a mut T;
 
     type IntoIter = ConIterSliceMut<'a, T>;
