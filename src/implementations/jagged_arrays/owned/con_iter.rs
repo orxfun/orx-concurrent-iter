@@ -13,6 +13,7 @@ use core::sync::atomic::{AtomicUsize, Ordering};
 /// Further, cleans up the allocations of the jagged array.
 pub struct ConIterJaggedOwned<T, X>
 where
+    T: Send,
     X: JaggedIndexer,
 {
     jagged: RawJagged<T, X>,
@@ -25,6 +26,7 @@ unsafe impl<T: Send, X: JaggedIndexer> Send for ConIterJaggedOwned<T, X> {}
 
 impl<T, X> ConIterJaggedOwned<T, X>
 where
+    T: Send,
     X: JaggedIndexer,
 {
     pub(crate) fn new(jagged: RawJagged<T, X>, begin: usize) -> Self {
@@ -60,6 +62,7 @@ where
 
 impl<T, X> ConcurrentIter for ConIterJaggedOwned<T, X>
 where
+    T: Send,
     X: JaggedIndexer,
 {
     type Item = T;
@@ -113,6 +116,7 @@ where
 
 impl<T, X> ExactSizeConcurrentIter for ConIterJaggedOwned<T, X>
 where
+    T: Send,
     T: Send + Sync,
     X: JaggedIndexer + Send + Sync,
 {
@@ -124,6 +128,7 @@ where
 
 impl<T, X> Drop for ConIterJaggedOwned<T, X>
 where
+    T: Send,
     X: JaggedIndexer,
 {
     fn drop(&mut self) {
