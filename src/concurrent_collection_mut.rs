@@ -3,14 +3,14 @@ use crate::{ConcurrentCollection, ConcurrentIter, IntoConcurrentIter};
 /// A type implementing [`ConcurrentCollectionMut`] is a collection owning the elements such that
 ///
 /// * if the elements are of type `T`,
-/// * then, non-consuming [`con_iter`] method can be called **multiple times** to create concurrent
+/// * then, non-consuming [`con_iter_mut`] method can be called **multiple times** to create concurrent
 ///   iterators; i.e., [`ConcurrentIter`], yielding references to the elements `&T`; and further,
 /// * non-consuming mutable [`con_iter_mut`] method can be called to create concurrent iterators
 ///   yielding mutable references to elements `&mut T`.
 ///
 /// This trait can be considered as the *concurrent counterpart* of the [`CollectionMut`] trait.
 ///
-/// [`con_iter`]: crate::ConcurrentCollection::con_iter
+/// [`con_iter_mut`]: crate::ConcurrentCollectionMut::con_iter_mut
 /// [`CollectionMut`]: orx_iterable::CollectionMut
 /// [`ConcurrentIter`]: crate::ConcurrentIter
 ///
