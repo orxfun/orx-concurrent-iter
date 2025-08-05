@@ -30,13 +30,34 @@ use crate::{ConcurrentCollection, ConcurrentIter, IntoConcurrentIter};
 /// while let Some(x) = con_iter.next() {
 ///     *x *= 100;
 /// }
-/// assert_eq!(vec, vec![100, 200]);
+/// assert_eq!(data, vec![100, 200]);
 /// ```
 pub trait ConcurrentCollectionMut: ConcurrentCollection {
+    /// Type of the mutable concurrent iterator that this type can create with `con_iter_mut` method.
     type IterMut<'a>: ConcurrentIter<Item = &'a mut Self::Item>
     where
         Self: 'a;
 
+    /// Creates a concurrent iterator to mutable references of the underlying data; i.e., `&mut Self::Item`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use orx_concurrent_iter::*;
+    ///
+    /// let mut data = vec![1, 2];
+    ///
+    /// let con_iter = data.con_iter_mut();
+    /// assert_eq!(con_iter.next(), Some(&mut 1));
+    /// assert_eq!(con_iter.next(), Some(&mut 2));
+    /// assert_eq!(con_iter.next(), None);
+    ///
+    /// let con_iter = data.con_iter_mut();
+    /// while let Some(x) = con_iter.next() {
+    ///     *x *= 100;
+    /// }
+    /// assert_eq!(data, vec![100, 200]);
+    /// ```
     fn con_iter_mut(&mut self) -> Self::IterMut<'_>;
 }
 
