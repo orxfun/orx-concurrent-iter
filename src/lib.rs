@@ -15,6 +15,7 @@
 extern crate alloc;
 
 mod concurrent_collection;
+mod concurrent_collection_mut;
 mod concurrent_drainable;
 mod concurrent_iter;
 mod concurrent_iterable;
