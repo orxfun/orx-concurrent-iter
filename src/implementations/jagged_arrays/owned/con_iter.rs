@@ -13,31 +13,19 @@ use core::sync::atomic::{AtomicUsize, Ordering};
 /// Further, cleans up the allocations of the jagged array.
 pub struct ConIterJaggedOwned<T, X>
 where
-    T: Send + Sync,
-    X: JaggedIndexer + Send + Sync,
+    X: JaggedIndexer,
 {
     jagged: RawJagged<T, X>,
     counter: AtomicUsize,
 }
 
-unsafe impl<T, X> Sync for ConIterJaggedOwned<T, X>
-where
-    T: Send + Sync,
-    X: JaggedIndexer + Send + Sync,
-{
-}
+unsafe impl<T: Sync, X: JaggedIndexer> Sync for ConIterJaggedOwned<T, X> {}
 
-unsafe impl<T, X> Send for ConIterJaggedOwned<T, X>
-where
-    T: Send + Sync,
-    X: JaggedIndexer + Send + Sync,
-{
-}
+unsafe impl<T: Send, X: JaggedIndexer> Send for ConIterJaggedOwned<T, X> {}
 
 impl<T, X> ConIterJaggedOwned<T, X>
 where
-    T: Send + Sync,
-    X: JaggedIndexer + Send + Sync,
+    X: JaggedIndexer,
 {
     pub(crate) fn new(jagged: RawJagged<T, X>, begin: usize) -> Self {
         Self {
@@ -72,8 +60,7 @@ where
 
 impl<T, X> ConcurrentIter for ConIterJaggedOwned<T, X>
 where
-    T: Send + Sync,
-    X: JaggedIndexer + Send + Sync,
+    X: JaggedIndexer,
 {
     type Item = T;
 
@@ -137,8 +124,7 @@ where
 
 impl<T, X> Drop for ConIterJaggedOwned<T, X>
 where
-    T: Send + Sync,
-    X: JaggedIndexer + Send + Sync,
+    X: JaggedIndexer,
 {
     fn drop(&mut self) {
         if self.jagged.num_taken().is_some() {

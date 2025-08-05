@@ -3,8 +3,7 @@ use crate::{ChunkPuller, implementations::jagged_arrays::indexer::JaggedIndexer}
 
 pub struct ChunkPullerJaggedOwned<'i, T, X>
 where
-    T: Send + Sync,
-    X: JaggedIndexer + Send + Sync,
+    X: JaggedIndexer,
 {
     con_iter: &'i ConIterJaggedOwned<T, X>,
     chunk_size: usize,
@@ -12,8 +11,7 @@ where
 
 impl<'i, T, X> ChunkPullerJaggedOwned<'i, T, X>
 where
-    T: Send + Sync,
-    X: JaggedIndexer + Send + Sync,
+    X: JaggedIndexer,
 {
     pub(super) fn new(con_iter: &'i ConIterJaggedOwned<T, X>, chunk_size: usize) -> Self {
         Self {
@@ -25,8 +23,7 @@ where
 
 impl<T, X> ChunkPuller for ChunkPullerJaggedOwned<'_, T, X>
 where
-    T: Send + Sync,
-    X: JaggedIndexer + Send + Sync,
+    X: JaggedIndexer,
 {
     type ChunkItem = T;
 

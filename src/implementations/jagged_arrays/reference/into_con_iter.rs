@@ -8,7 +8,7 @@ impl<'a, T, S, X> IntoConcurrentIter for RawJaggedRef<'a, T, S, X>
 where
     T: Sync + 'a,
     X: JaggedIndexer,
-    S: Slices<'a, T> + Send + Sync,
+    S: Slices<'a, T>,
 {
     type Item = &'a T;
 
