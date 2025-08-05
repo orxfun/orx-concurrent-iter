@@ -100,9 +100,9 @@ impl<'a, T> ConcurrentIter for ConIterSliceMut<'a, T>
 where
     T: Sync,
 {
-    type Item = &'a T;
+    type Item = &'a mut T;
 
-    type SequentialIter = Skip<core::slice::Iter<'a, T>>;
+    type SequentialIter = Skip<core::slice::IterMut<'a, T>>;
 
     type ChunkPuller<'i>
         // = ChunkPullerSlice<'i, 'a, T>
@@ -112,7 +112,7 @@ where
 
     fn into_seq_iter(self) -> Self::SequentialIter {
         let current = self.counter.load(Ordering::Acquire);
-        self.slice.iter().skip(current)
+        self.slice.iter_mut().skip(current)
     }
 
     fn skip_to_end(&self) {
