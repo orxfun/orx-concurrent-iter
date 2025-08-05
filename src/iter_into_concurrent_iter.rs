@@ -79,7 +79,10 @@ use crate::implementations::ConIterOfIter;
 ///
 /// assert_eq!(sum_evens, 3782);
 /// ```
-pub trait IterIntoConcurrentIter: Iterator + Sized {
+pub trait IterIntoConcurrentIter: Iterator + Sized
+where
+    Self::Item: Send,
+{
     /// Any regular iterator implements [`IterIntoConcurrentIter`] trait allowing them to be used
     /// as a concurrent iterator; i.e., [`ConcurrentIter`], by calling [`iter_into_con_iter`].
     ///
@@ -129,6 +132,7 @@ pub trait IterIntoConcurrentIter: Iterator + Sized {
 impl<I> IterIntoConcurrentIter for I
 where
     I: Iterator,
+    I::Item: Send,
 {
     fn iter_into_con_iter(self) -> ConIterOfIter<Self> {
         ConIterOfIter::new(self)
