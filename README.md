@@ -128,12 +128,12 @@ use orx_concurrent_iter::*;
 
 fn parallel_reduce<T, F>(
     num_threads: usize,
-    con_iter: impl ConcurrentIter<Item = T>,
+    con_iter: impl ConcurrentIter<Item = T> + Sync,
     reduce: F,
 ) -> Option<T>
 where
-    T: Send + Sync,
-    F: Fn(T, T) -> T + Send + Sync,
+    T: Send,
+    F: Fn(T, T) -> T + Sync,
 {
     std::thread::scope(|s| {
         (0..num_threads)
@@ -209,12 +209,12 @@ use orx_concurrent_iter::*;
 fn parallel_reduce<T, F>(
     num_threads: usize,
     chunk: usize,
-    con_iter: impl ConcurrentIter<Item = T>,
+    con_iter: impl ConcurrentIter<Item = T> + Sync,
     reduce: F,
 ) -> Option<T>
 where
-    T: Send + Sync,
-    F: Fn(T, T) -> T + Send + Sync,
+    T: Send,
+    F: Fn(T, T) -> T + Sync,
 {
     std::thread::scope(|s| {
         (0..num_threads)
@@ -248,12 +248,12 @@ use orx_concurrent_iter::*;
 
 fn parallel_find<T, F>(
     num_threads: usize,
-    con_iter: impl ConcurrentIter<Item = T>,
+    con_iter: impl ConcurrentIter<Item = T> + Sync,
     predicate: F,
 ) -> Option<T>
 where
-    T: Send + Sync,
-    F: Fn(&T) -> bool + Send + Sync,
+    T: Send,
+    F: Fn(&T) -> bool + Sync,
 {
     std::thread::scope(|s| {
         (0..num_threads)

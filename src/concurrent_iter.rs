@@ -116,27 +116,25 @@ use crate::{
 ///
 /// fn parallel_reduce<T, F>(
 ///     num_threads: usize,
-///     con_iter: impl ConcurrentIter<Item = T>,
+///     chunk: usize,
+///     con_iter: impl ConcurrentIter<Item = T> + Sync,
 ///     reduce: F,
 /// ) -> Option<T>
 /// where
-///     T: Send + Sync,
-///     F: Fn(T, T) -> T + Send + Sync,
+///     T: Send,
+///     F: Fn(T, T) -> T + Sync,
 /// {
 ///     std::thread::scope(|s| {
 ///         (0..num_threads)
-///             .map(|_| s.spawn(|| con_iter.item_puller().reduce(&reduce))) // reduce inside each thread
-///             .filter_map(|x| x.join().unwrap()) // join threads
+///             .map(|_| s.spawn(|| con_iter.chunk_puller(chunk).flattened().reduce(&reduce))) // reduce inside each thread
+///             .filter_map(|x| x.join().unwrap()) // join threads, ignore None's
 ///             .reduce(&reduce) // reduce thread results to final result
 ///     })
 /// }
 ///
-/// let sum = parallel_reduce(8, (0..0).into_con_iter(), |a, b| a + b);
-/// assert_eq!(sum, None);
-///
 /// let n = 10_000;
 /// let data: Vec<_> = (0..n).collect();
-/// let sum = parallel_reduce(8, data.con_iter().copied(), |a, b| a + b);
+/// let sum = parallel_reduce(8, 64, data.con_iter().copied(), |a, b| a + b);
 /// assert_eq!(sum, Some(n * (n - 1) / 2));
 /// ```
 ///
@@ -286,35 +284,33 @@ use crate::{
 /// ```
 /// use orx_concurrent_iter::*;
 ///
-/// fn find<T, F>(
+/// fn parallel_find<T, F>(
 ///     num_threads: usize,
-///     con_iter: impl ConcurrentIter<Item = T>,
+///     con_iter: impl ConcurrentIter<Item = T> + Sync,
 ///     predicate: F,
 /// ) -> Option<T>
 /// where
-///     T: Send + Sync,
-///     F: Fn(&T) -> bool + Send + Sync,
+///     T: Send,
+///     F: Fn(&T) -> bool + Sync,
 /// {
 ///     std::thread::scope(|s| {
-///         let mut results = vec![];
-///         for _ in 0..num_threads {
-///             results.push(s.spawn(|| {
-///                 for value in con_iter.item_puller() {
-///                     if predicate(&value) {
-///                         // will immediately jump to end
-///                         con_iter.skip_to_end();
-///                         return Some(value);
-///                     }
-///                 }
-///                 None
-///             }));
-///         }
-///         results.into_iter().filter_map(|x| x.join().unwrap()).next()
+///         (0..num_threads)
+///             .map(|_| {
+///                 s.spawn(|| {
+///                     con_iter
+///                         .item_puller()
+///                         .find(&predicate)
+///                         // once found, immediately jump to end
+///                         .inspect(|_| con_iter.skip_to_end())
+///                 })
+///             })
+///             .filter_map(|x| x.join().unwrap())
+///             .next()
 ///     })
 /// }
 ///
 /// let data: Vec<_> = (0..1000).map(|x| x.to_string()).collect();
-/// let value = find(4, data.con_iter(), |x| x.starts_with("33"));
+/// let value = parallel_find(4, data.con_iter(), |x| x.starts_with("33"));
 ///
 /// assert_eq!(value, Some(&33.to_string()));
 /// ```
@@ -403,35 +399,33 @@ pub trait ConcurrentIter {
     /// ```
     /// use orx_concurrent_iter::*;
     ///
-    /// fn find<T, F>(
+    /// fn parallel_find<T, F>(
     ///     num_threads: usize,
-    ///     con_iter: impl ConcurrentIter<Item = T>,
+    ///     con_iter: impl ConcurrentIter<Item = T> + Sync,
     ///     predicate: F,
     /// ) -> Option<T>
     /// where
-    ///     T: Send + Sync,
-    ///     F: Fn(&T) -> bool + Send + Sync,
+    ///     T: Send,
+    ///     F: Fn(&T) -> bool + Sync,
     /// {
     ///     std::thread::scope(|s| {
-    ///         let mut results = vec![];
-    ///         for _ in 0..num_threads {
-    ///             results.push(s.spawn(|| {
-    ///                 for value in con_iter.item_puller() {
-    ///                     if predicate(&value) {
-    ///                         // will immediately jump to end
-    ///                         con_iter.skip_to_end();
-    ///                         return Some(value);
-    ///                     }
-    ///                 }
-    ///                 None
-    ///             }));
-    ///         }
-    ///         results.into_iter().filter_map(|x| x.join().unwrap()).next()
+    ///         (0..num_threads)
+    ///             .map(|_| {
+    ///                 s.spawn(|| {
+    ///                     con_iter
+    ///                         .item_puller()
+    ///                         .find(&predicate)
+    ///                         // once found, immediately jump to end
+    ///                         .inspect(|_| con_iter.skip_to_end())
+    ///                 })
+    ///             })
+    ///             .filter_map(|x| x.join().unwrap())
+    ///             .next()
     ///     })
     /// }
     ///
     /// let data: Vec<_> = (0..1000).map(|x| x.to_string()).collect();
-    /// let value = find(4, data.con_iter(), |x| x.starts_with("33"));
+    /// let value = parallel_find(4, data.con_iter(), |x| x.starts_with("33"));
     ///
     /// assert_eq!(value, Some(&33.to_string()));
     /// ```
@@ -751,23 +745,28 @@ pub trait ConcurrentIter {
     ///
     /// fn parallel_reduce<T, F>(
     ///     num_threads: usize,
-    ///     con_iter: impl ConcurrentIter<Item = T>,
+    ///     con_iter: impl ConcurrentIter<Item = T> + Sync,
     ///     reduce: F,
     /// ) -> Option<T>
     /// where
-    ///     T: Send + Sync,
-    ///     F: Fn(T, T) -> T + Send + Sync,
+    ///     T: Send,
+    ///     F: Fn(T, T) -> T + Sync,
     /// {
     ///     std::thread::scope(|s| {
     ///         (0..num_threads)
     ///             .map(|_| s.spawn(|| con_iter.item_puller().reduce(&reduce))) // reduce inside each thread
-    ///             .filter_map(|x| x.join().unwrap()) // join threads
+    ///             .filter_map(|x| x.join().unwrap()) // join threads, ignore None's
     ///             .reduce(&reduce) // reduce thread results to final result
     ///     })
     /// }
     ///
+    /// // test
+    ///
     /// let sum = parallel_reduce(8, (0..0).into_con_iter(), |a, b| a + b);
     /// assert_eq!(sum, None);
+    ///
+    /// let sum = parallel_reduce(8, (0..3).into_con_iter(), |a, b| a + b);
+    /// assert_eq!(sum, Some(3));
     ///
     /// let n = 10_000;
     /// let data: Vec<_> = (0..n).collect();

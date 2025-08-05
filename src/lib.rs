@@ -51,3 +51,38 @@ pub use pullers::{
     ChunkPuller, EnumeratedItemPuller, FlattenedChunkPuller, FlattenedEnumeratedChunkPuller,
     ItemPuller,
 };
+
+#[test]
+fn abc() {
+    use crate::*;
+
+    fn parallel_find<T, F>(
+        num_threads: usize,
+        con_iter: impl ConcurrentIter<Item = T> + Sync,
+        predicate: F,
+    ) -> Option<T>
+    where
+        T: Send,
+        F: Fn(&T) -> bool + Sync,
+    {
+        std::thread::scope(|s| {
+            (0..num_threads)
+                .map(|_| {
+                    s.spawn(|| {
+                        con_iter
+                            .item_puller()
+                            .find(&predicate)
+                            // once found, immediately jump to end
+                            .inspect(|_| con_iter.skip_to_end())
+                    })
+                })
+                .filter_map(|x| x.join().unwrap())
+                .next()
+        })
+    }
+
+    let data: Vec<_> = (0..1000).map(|x| x.to_string()).collect();
+    let value = parallel_find(4, data.con_iter(), |x| x.starts_with("33"));
+
+    assert_eq!(value, Some(&33.to_string()));
+}

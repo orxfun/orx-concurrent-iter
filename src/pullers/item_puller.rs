@@ -85,12 +85,12 @@ use crate::concurrent_iter::ConcurrentIter;
 ///
 /// fn parallel_reduce<T, F>(
 ///     num_threads: usize,
-///     con_iter: impl ConcurrentIter<Item = T>,
+///     con_iter: impl ConcurrentIter<Item = T> + Sync,
 ///     reduce: F,
 /// ) -> Option<T>
 /// where
-///     T: Send + Sync,
-///     F: Fn(T, T) -> T + Send + Sync,
+///     T: Send,
+///     F: Fn(T, T) -> T + Sync,
 /// {
 ///     std::thread::scope(|s| {
 ///         (0..num_threads)
