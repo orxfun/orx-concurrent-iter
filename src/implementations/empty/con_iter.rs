@@ -17,6 +17,7 @@ use core::marker::PhantomData;
 /// let con_iter = implementations::ConIterEmpty::<String>::new();
 /// assert_eq!(con_iter.next(), None);
 /// ```
+#[derive(Debug, Clone, Copy)]
 pub struct ConIterEmpty<T> {
     phantom: PhantomData<T>,
 }
