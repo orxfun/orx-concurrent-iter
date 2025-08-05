@@ -1,11 +1,14 @@
 // use super::chunk_puller::ChunkPullerSlice;
-use crate::{concurrent_iter::ConcurrentIter, exact_size_concurrent_iter::ExactSizeConcurrentIter};
+use crate::{
+    concurrent_iter::ConcurrentIter, exact_size_concurrent_iter::ExactSizeConcurrentIter,
+    implementations::slice_mut::chunk_puller::ChunkPullerSliceMut,
+};
 use core::{
     iter::Skip,
     sync::atomic::{AtomicUsize, Ordering},
 };
 
-/// Concurrent iterator of a slice.
+/// Concurrent iterator of a mutable slice.
 ///
 /// It can be created by calling [`into_con_iter`] on a slice.
 ///
@@ -35,28 +38,23 @@ use core::{
 /// assert_eq!(con_iter.next(), Some(&2));
 /// assert_eq!(con_iter.next(), None);
 /// ```
-pub struct ConIterSliceMut<'a, T>
-where
-    T: Sync,
-{
+pub struct ConIterSliceMut<'a, T> {
     slice: &'a mut [T],
     p: *mut T,
     counter: AtomicUsize,
 }
 
-impl<T> Default for ConIterSliceMut<'_, T>
-where
-    T: Sync,
-{
+unsafe impl<'a, T> Sync for ConIterSliceMut<'a, T> {}
+
+unsafe impl<'a, T> Send for ConIterSliceMut<'a, T> {}
+
+impl<T> Default for ConIterSliceMut<'_, T> {
     fn default() -> Self {
         Self::new(&mut [])
     }
 }
 
-impl<'a, T> ConIterSliceMut<'a, T>
-where
-    T: Sync,
-{
+impl<'a, T> ConIterSliceMut<'a, T> {
     pub(crate) fn new(slice: &'a mut [T]) -> Self {
         Self {
             p: slice.as_mut_ptr(),
@@ -97,17 +95,13 @@ where
     }
 }
 
-impl<'a, T> ConcurrentIter for ConIterSliceMut<'a, T>
-where
-    T: Sync,
-{
+impl<'a, T> ConcurrentIter for ConIterSliceMut<'a, T> {
     type Item = &'a mut T;
 
     type SequentialIter = Skip<core::slice::IterMut<'a, T>>;
 
     type ChunkPuller<'i>
-        // = ChunkPullerSlice<'i, 'a, T>
-        = todo!()
+        = ChunkPullerSliceMut<'i, 'a, T>
     where
         Self: 'i;
 
@@ -145,10 +139,7 @@ where
     }
 }
 
-impl<T> ExactSizeConcurrentIter for ConIterSliceMut<'_, T>
-where
-    T: Sync,
-{
+impl<T> ExactSizeConcurrentIter for ConIterSliceMut<'_, T> {
     fn len(&self) -> usize {
         let num_taken = self.counter.load(Ordering::Acquire);
         self.slice.len().saturating_sub(num_taken)
