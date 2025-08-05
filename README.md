@@ -128,7 +128,7 @@ use orx_concurrent_iter::*;
 
 fn parallel_reduce<T, F>(
     num_threads: usize,
-    con_iter: impl ConcurrentIter<Item = T> + Sync,
+    con_iter: impl ConcurrentIter<Item = T>,
     reduce: F,
 ) -> Option<T>
 where
@@ -209,7 +209,7 @@ use orx_concurrent_iter::*;
 fn parallel_reduce<T, F>(
     num_threads: usize,
     chunk: usize,
-    con_iter: impl ConcurrentIter<Item = T> + Sync,
+    con_iter: impl ConcurrentIter<Item = T>,
     reduce: F,
 ) -> Option<T>
 where
@@ -248,7 +248,7 @@ use orx_concurrent_iter::*;
 
 fn parallel_find<T, F>(
     num_threads: usize,
-    con_iter: impl ConcurrentIter<Item = T> + Sync,
+    con_iter: impl ConcurrentIter<Item = T>,
     predicate: F,
 ) -> Option<T>
 where

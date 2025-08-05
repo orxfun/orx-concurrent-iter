@@ -30,7 +30,7 @@ use super::ChunkPuller;
 /// fn parallel_reduce<T, F>(
 ///     num_threads: usize,
 ///     chunk: usize,
-///     con_iter: impl ConcurrentIter<Item = T> + Sync,
+///     con_iter: impl ConcurrentIter<Item = T>,
 ///     reduce: F,
 /// ) -> Option<T>
 /// where

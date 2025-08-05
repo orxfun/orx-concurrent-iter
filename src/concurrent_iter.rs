@@ -117,7 +117,7 @@ use crate::{
 /// fn parallel_reduce<T, F>(
 ///     num_threads: usize,
 ///     chunk: usize,
-///     con_iter: impl ConcurrentIter<Item = T> + Sync,
+///     con_iter: impl ConcurrentIter<Item = T>,
 ///     reduce: F,
 /// ) -> Option<T>
 /// where
@@ -286,7 +286,7 @@ use crate::{
 ///
 /// fn parallel_find<T, F>(
 ///     num_threads: usize,
-///     con_iter: impl ConcurrentIter<Item = T> + Sync,
+///     con_iter: impl ConcurrentIter<Item = T>,
 ///     predicate: F,
 /// ) -> Option<T>
 /// where
@@ -401,7 +401,7 @@ pub trait ConcurrentIter: Sync {
     ///
     /// fn parallel_find<T, F>(
     ///     num_threads: usize,
-    ///     con_iter: impl ConcurrentIter<Item = T> + Sync,
+    ///     con_iter: impl ConcurrentIter<Item = T>,
     ///     predicate: F,
     /// ) -> Option<T>
     /// where
@@ -745,7 +745,7 @@ pub trait ConcurrentIter: Sync {
     ///
     /// fn parallel_reduce<T, F>(
     ///     num_threads: usize,
-    ///     con_iter: impl ConcurrentIter<Item = T> + Sync,
+    ///     con_iter: impl ConcurrentIter<Item = T>,
     ///     reduce: F,
     /// ) -> Option<T>
     /// where

@@ -125,7 +125,7 @@ use crate::pullers::{FlattenedChunkPuller, FlattenedEnumeratedChunkPuller};
 /// fn parallel_reduce<T, F>(
 ///     num_threads: usize,
 ///     chunk: usize,
-///     con_iter: impl ConcurrentIter<Item = T> + Sync,
+///     con_iter: impl ConcurrentIter<Item = T>,
 ///     reduce: F,
 /// ) -> Option<T>
 /// where
@@ -250,7 +250,7 @@ pub trait ChunkPuller {
     /// fn parallel_reduce<T, F>(
     ///     num_threads: usize,
     ///     chunk: usize,
-    ///     con_iter: impl ConcurrentIter<Item = T> + Sync,
+    ///     con_iter: impl ConcurrentIter<Item = T>,
     ///     reduce: F,
     /// ) -> Option<T>
     /// where

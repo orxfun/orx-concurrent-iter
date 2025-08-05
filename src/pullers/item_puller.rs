@@ -85,7 +85,7 @@ use crate::concurrent_iter::ConcurrentIter;
 ///
 /// fn parallel_reduce<T, F>(
 ///     num_threads: usize,
-///     con_iter: impl ConcurrentIter<Item = T> + Sync,
+///     con_iter: impl ConcurrentIter<Item = T>,
 ///     reduce: F,
 /// ) -> Option<T>
 /// where

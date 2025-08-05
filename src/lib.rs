@@ -58,7 +58,7 @@ fn abc() {
 
     fn parallel_find<T, F>(
         num_threads: usize,
-        con_iter: impl ConcurrentIter<Item = T> + Sync,
+        con_iter: impl ConcurrentIter<Item = T>,
         predicate: F,
     ) -> Option<T>
     where
