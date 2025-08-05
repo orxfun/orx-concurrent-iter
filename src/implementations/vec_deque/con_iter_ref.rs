@@ -37,17 +37,11 @@ use orx_pseudo_default::PseudoDefault;
 /// assert_eq!(con_iter.next(), Some(&2));
 /// assert_eq!(con_iter.next(), None);
 /// ```
-pub struct ConIterVecDequeRef<'a, T>
-where
-    T: Sync,
-{
+pub struct ConIterVecDequeRef<'a, T> {
     con_iter: ConIterCore<'a, T>,
 }
 
-impl<'a, T> ConIterVecDequeRef<'a, T>
-where
-    T: Sync,
-{
+impl<'a, T> ConIterVecDequeRef<'a, T> {
     pub(super) fn new(vec_deque_ref: &'a VecDeque<T>) -> Self {
         let len = vec_deque_ref.len();
         let vec_deque_ref = VecDequeRef::new(vec_deque_ref);
@@ -93,10 +87,7 @@ impl JaggedIndexer for VecDequeSlicesIndexer {
     }
 }
 
-impl<'a, T> ConcurrentIter for ConIterVecDequeRef<'a, T>
-where
-    T: Sync,
-{
+impl<'a, T> ConcurrentIter for ConIterVecDequeRef<'a, T> {
     type Item = <ConIterCore<'a, T> as ConcurrentIter>::Item;
 
     type SequentialIter = <ConIterCore<'a, T> as ConcurrentIter>::SequentialIter;
@@ -131,10 +122,7 @@ where
     }
 }
 
-impl<T> ExactSizeConcurrentIter for ConIterVecDequeRef<'_, T>
-where
-    T: Sync,
-{
+impl<T> ExactSizeConcurrentIter for ConIterVecDequeRef<'_, T> {
     fn len(&self) -> usize {
         self.con_iter.len()
     }

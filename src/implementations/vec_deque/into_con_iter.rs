@@ -2,10 +2,7 @@ use super::con_iter_ref::ConIterVecDequeRef;
 use crate::{IntoConcurrentIter, implementations::ConIterVec};
 use alloc::{collections::VecDeque, vec::Vec};
 
-impl<'a, T> IntoConcurrentIter for &'a VecDeque<T>
-where
-    T: Sync,
-{
+impl<'a, T> IntoConcurrentIter for &'a VecDeque<T> {
     type Item = &'a T;
 
     type IntoIter = ConIterVecDequeRef<'a, T>;
@@ -15,10 +12,7 @@ where
     }
 }
 
-impl<T> IntoConcurrentIter for VecDeque<T>
-where
-    T: Send + Sync,
-{
+impl<T> IntoConcurrentIter for VecDeque<T> {
     type Item = T;
 
     type IntoIter = ConIterVec<T>;
