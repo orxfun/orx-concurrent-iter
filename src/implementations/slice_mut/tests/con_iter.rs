@@ -40,121 +40,116 @@ fn enumeration() {
     assert_eq!(iter.next_with_idx(), None);
 }
 
-// #[test]
-// fn size_hint() {
-//     let mut n = 25;
-//     let mut vec = new_vec(n, |x| (x + 10).to_string());
-//     let slice = vec.as_mut_slice();
-//     let iter = ConIterSliceMut::new(slice);
+#[test]
+fn size_hint() {
+    let mut n = 25;
+    let mut vec = new_vec(n, |x| (x + 10).to_string());
+    let slice = vec.as_mut_slice();
+    let iter = ConIterSliceMut::new(slice);
 
-//     for _ in 0..10 {
-//         assert_eq!(iter.size_hint(), (n, Some(n)));
-//         let _ = iter.next();
-//         n -= 1;
-//     }
+    for _ in 0..10 {
+        assert_eq!(iter.size_hint(), (n, Some(n)));
+        let _ = iter.next();
+        n -= 1;
+    }
 
-//     let mut chunks_iter = iter.chunk_puller(7);
+    let mut chunks_iter = iter.chunk_puller(7);
 
-//     assert_eq!(iter.size_hint(), (n, Some(n)));
-//     assert_eq!(iter.len(), n);
-//     let _ = chunks_iter.pull();
-//     n -= 7;
+    assert_eq!(iter.size_hint(), (n, Some(n)));
+    assert_eq!(iter.len(), n);
+    let _ = chunks_iter.pull();
+    n -= 7;
 
-//     assert_eq!(iter.size_hint(), (n, Some(n)));
-//     assert_eq!(iter.len(), n);
-//     let _ = chunks_iter.pull();
-//     assert_eq!(iter.size_hint(), (1, Some(1)));
+    assert_eq!(iter.size_hint(), (n, Some(n)));
+    assert_eq!(iter.len(), n);
+    let _ = chunks_iter.pull();
+    assert_eq!(iter.size_hint(), (1, Some(1)));
 
-//     let _ = chunks_iter.pull();
-//     assert_eq!(iter.len(), 0);
-//     assert_eq!(iter.size_hint(), (0, Some(0)));
+    let _ = chunks_iter.pull();
+    assert_eq!(iter.len(), 0);
+    assert_eq!(iter.size_hint(), (0, Some(0)));
 
-//     let _ = chunks_iter.pull();
-//     assert_eq!(iter.len(), 0);
-//     assert_eq!(iter.size_hint(), (0, Some(0)));
+    let _ = chunks_iter.pull();
+    assert_eq!(iter.len(), 0);
+    assert_eq!(iter.size_hint(), (0, Some(0)));
 
-//     let _ = iter.next();
-//     assert_eq!(iter.len(), 0);
-//     assert_eq!(iter.size_hint(), (0, Some(0)));
-// }
+    let _ = iter.next();
+    assert_eq!(iter.len(), 0);
+    assert_eq!(iter.size_hint(), (0, Some(0)));
+}
 
-// #[test]
-// fn size_hint_skip_to_end() {
-//     let n = 25;
-//     let vec = new_vec(n, |x| (x + 10).to_string());
-//     let slice = vec.as_slice();
-//     let iter = ConIterSliceMut::new(slice);
+#[test]
+fn size_hint_skip_to_end() {
+    let n = 25;
+    let mut vec = new_vec(n, |x| (x + 10).to_string());
+    let slice = vec.as_mut_slice();
+    let iter = ConIterSliceMut::new(slice);
 
-//     for _ in 0..10 {
-//         let _ = iter.next();
-//     }
-//     let mut chunks_iter = iter.chunk_puller(7);
-//     let _ = chunks_iter.pull();
+    for _ in 0..10 {
+        let _ = iter.next();
+    }
+    let mut chunks_iter = iter.chunk_puller(7);
+    let _ = chunks_iter.pull();
 
-//     assert_eq!(iter.len(), 8);
+    assert_eq!(iter.len(), 8);
 
-//     iter.skip_to_end();
-//     assert_eq!(iter.len(), 0);
-// }
+    iter.skip_to_end();
+    assert_eq!(iter.len(), 0);
+}
 
-// #[test_matrix([1, 2, 4])]
-// fn empty(nt: usize) {
-//     let vec = Vec::<String>::new();
-//     let slice = vec.as_slice();
-//     let iter = ConIterSliceMut::new(slice);
+#[test_matrix([1, 2, 4])]
+fn empty(nt: usize) {
+    let mut vec = Vec::<String>::new();
+    let slice = vec.as_mut_slice();
+    let iter = ConIterSliceMut::new(slice);
 
-//     std::thread::scope(|s| {
-//         for _ in 0..nt {
-//             s.spawn(|| {
-//                 assert!(iter.next().is_none());
-//                 assert!(iter.next().is_none());
+    std::thread::scope(|s| {
+        for _ in 0..nt {
+            s.spawn(|| {
+                assert!(iter.next().is_none());
+                assert!(iter.next().is_none());
 
-//                 let mut puller = iter.chunk_puller(5);
-//                 assert!(puller.pull().is_none());
-//                 assert!(puller.pull().is_none());
+                let mut puller = iter.chunk_puller(5);
+                assert!(puller.pull().is_none());
+                assert!(puller.pull().is_none());
 
-//                 let mut iter = iter.chunk_puller(5).flattened();
-//                 assert!(iter.next().is_none());
-//                 assert!(iter.next().is_none());
-//             });
-//         }
-//     });
-// }
+                let mut iter = iter.chunk_puller(5).flattened();
+                assert!(iter.next().is_none());
+                assert!(iter.next().is_none());
+            });
+        }
+    });
+}
 
-// #[test_matrix([0, 1, N], [1, 2, 4])]
-// fn next(n: usize, nt: usize) {
-//     let vec = new_vec(n, |x| (x + 10).to_string());
-//     let slice = vec.as_slice();
-//     let iter = ConIterSliceMut::new(slice);
+#[test_matrix([0, 1, N], [1, 2, 4])]
+fn next(n: usize, nt: usize) {
+    let mut vec = new_vec(n, |x| (x + 10).to_string());
+    let slice = vec.as_mut_slice();
+    let iter = ConIterSliceMut::new(slice);
 
-//     let bag = ConcurrentBag::new();
-//     let num_spawned = ConcurrentBag::new();
-//     std::thread::scope(|s| {
-//         for _ in 0..nt {
-//             s.spawn(|| {
-//                 num_spawned.push(true);
-//                 while num_spawned.len() < nt {} // allow all threads to be spawned
+    let num_spawned = ConcurrentBag::new();
+    std::thread::scope(|s| {
+        for _ in 0..nt {
+            s.spawn(|| {
+                num_spawned.push(true);
+                while num_spawned.len() < nt {} // allow all threads to be spawned
 
-//                 while let Some(x) = iter.next() {
-//                     _ = iter.size_hint();
-//                     bag.push(x);
-//                 }
-//             });
-//         }
-//     });
+                while let Some(x) = iter.next() {
+                    _ = iter.size_hint();
+                    x.push('!');
+                }
+            });
+        }
+    });
 
-//     let mut expected: Vec<_> = (0..n).map(|i| &vec[i]).collect();
-//     expected.sort();
-//     let mut collected = bag.into_inner().to_vec();
-//     collected.sort();
-
-//     assert_eq!(expected, collected);
-// }
+    let expected = new_vec(n, |x| format!("{}!", x + 10));
+    assert_eq!(expected, vec);
+}
 
 // #[test_matrix([0, 1, N], [1, 2, 4])]
 // fn next_with_idx(n: usize, nt: usize) {
-//     let vec = new_vec(n, |x| (x + 10).to_string());
-//     let slice = vec.as_slice();
+//     let mut vec = new_vec(n, |x| (x + 10).to_string());
+//     let slice = vec.as_mut_slice();
 //     let iter = ConIterSliceMut::new(slice);
 
 //     let bag = ConcurrentBag::new();
@@ -183,8 +178,8 @@ fn enumeration() {
 
 // #[test_matrix([0, 1, N], [1, 2, 4])]
 // fn item_puller(n: usize, nt: usize) {
-//     let vec = new_vec(n, |x| (x + 10).to_string());
-//     let slice = vec.as_slice();
+//     let mut vec = new_vec(n, |x| (x + 10).to_string());
+//     let slice = vec.as_mut_slice();
 //     let iter = ConIterSliceMut::new(slice);
 
 //     let bag = ConcurrentBag::new();
@@ -213,8 +208,8 @@ fn enumeration() {
 
 // #[test_matrix( [0, 1, N], [1, 2, 4])]
 // fn item_puller_with_idx(n: usize, nt: usize) {
-//     let vec = new_vec(n, |x| (x + 10).to_string());
-//     let slice = vec.as_slice();
+//     let mut vec = new_vec(n, |x| (x + 10).to_string());
+//     let slice = vec.as_mut_slice();
 //     let iter = ConIterSliceMut::new(slice);
 
 //     let bag = ConcurrentBag::new();
@@ -243,8 +238,8 @@ fn enumeration() {
 
 // #[test_matrix([0, 1, N], [1, 2, 4])]
 // fn chunk_puller(n: usize, nt: usize) {
-//     let vec = new_vec(n, |x| (x + 10).to_string());
-//     let slice = vec.as_slice();
+//     let mut vec = new_vec(n, |x| (x + 10).to_string());
+//     let slice = vec.as_mut_slice();
 //     let iter = ConIterSliceMut::new(slice);
 
 //     let bag = ConcurrentBag::new();
@@ -277,8 +272,8 @@ fn enumeration() {
 
 // #[test_matrix([0, 1, N], [1, 2, 4])]
 // fn chunk_puller_with_idx(n: usize, nt: usize) {
-//     let vec = new_vec(n, |x| (x + 10).to_string());
-//     let slice = vec.as_slice();
+//     let mut vec = new_vec(n, |x| (x + 10).to_string());
+//     let slice = vec.as_mut_slice();
 //     let iter = ConIterSliceMut::new(slice);
 
 //     let bag = ConcurrentBag::new();
@@ -311,8 +306,8 @@ fn enumeration() {
 
 // #[test_matrix([0, 1, N], [1, 2, 4])]
 // fn flattened_chunk_puller(n: usize, nt: usize) {
-//     let vec = new_vec(n, |x| (x + 10).to_string());
-//     let slice = vec.as_slice();
+//     let mut vec = new_vec(n, |x| (x + 10).to_string());
+//     let slice = vec.as_mut_slice();
 //     let iter = ConIterSliceMut::new(slice);
 
 //     let bag = ConcurrentBag::new();
@@ -340,8 +335,8 @@ fn enumeration() {
 
 // #[test_matrix([0, 1, N], [1, 2, 4])]
 // fn flattened_chunk_puller_with_idx(n: usize, nt: usize) {
-//     let vec = new_vec(n, |x| (x + 10).to_string());
-//     let slice = vec.as_slice();
+//     let mut vec = new_vec(n, |x| (x + 10).to_string());
+//     let slice = vec.as_mut_slice();
 //     let iter = ConIterSliceMut::new(slice);
 
 //     let bag = ConcurrentBag::new();
@@ -369,8 +364,8 @@ fn enumeration() {
 
 // #[test_matrix([0, 1, N], [1, 2, 4])]
 // fn skip_to_end(n: usize, nt: usize) {
-//     let vec = new_vec(n, |x| (x + 10).to_string());
-//     let slice = vec.as_slice();
+//     let mut vec = new_vec(n, |x| (x + 10).to_string());
+//     let slice = vec.as_mut_slice();
 //     let iter = ConIterSliceMut::new(slice);
 
 //     let until = n / 2;
@@ -418,8 +413,8 @@ fn enumeration() {
 
 // #[test_matrix([0, 1, N], [1, 2, 4], [0, N / 2, N])]
 // fn into_seq_iter(n: usize, nt: usize, until: usize) {
-//     let vec = new_vec(n, |x| (x + 10).to_string());
-//     let slice = vec.as_slice();
+//     let mut vec = new_vec(n, |x| (x + 10).to_string());
+//     let slice = vec.as_mut_slice();
 //     let iter = ConIterSliceMut::new(slice);
 
 //     let bag = ConcurrentBag::new();
