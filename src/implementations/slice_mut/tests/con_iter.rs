@@ -178,7 +178,6 @@ fn item_puller(n: usize, nt: usize) {
     let slice = vec.as_mut_slice();
     let iter = ConIterSliceMut::new(slice);
 
-    let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();
     std::thread::scope(|s| {
         for _ in 0..nt {
@@ -188,18 +187,14 @@ fn item_puller(n: usize, nt: usize) {
 
                 for x in iter.item_puller() {
                     _ = iter.size_hint();
-                    bag.push(x);
+                    x.push('!');
                 }
             });
         }
     });
 
-    let mut expected: Vec<_> = (0..n).map(|i| &vec[i]).collect();
-    expected.sort();
-    let mut collected = bag.into_inner().to_vec();
-    collected.sort();
-
-    assert_eq!(expected, collected);
+    let expected = new_vec(n, |x| format!("{}!", x + 10));
+    assert_eq!(expected, vec);
 }
 
 // #[test_matrix( [0, 1, N], [1, 2, 4])]
