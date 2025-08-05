@@ -41,7 +41,7 @@ pub struct ConIterVecDrain<'a, T> {
     counter: AtomicUsize,
 }
 
-unsafe impl<T: Sync> Sync for ConIterVecDrain<'_, T> {}
+unsafe impl<T: Send> Sync for ConIterVecDrain<'_, T> {}
 
 unsafe impl<T: Send> Send for ConIterVecDrain<'_, T> {}
 
