@@ -29,42 +29,30 @@ use core::{
 /// assert_eq!(con_iter.next(), Some(2));
 /// assert_eq!(con_iter.next(), None);
 /// ```
-pub struct ConIterVec<T>
-where
-    T: Send + Sync,
-{
+pub struct ConIterVec<T> {
     ptr: *const T,
     vec_len: usize,
     vec_cap: usize,
     counter: AtomicUsize,
 }
 
-unsafe impl<T: Send + Sync> Sync for ConIterVec<T> {}
+unsafe impl<T: Sync> Sync for ConIterVec<T> {}
 
-unsafe impl<T: Send + Sync> Send for ConIterVec<T> {}
+unsafe impl<T: Send> Send for ConIterVec<T> {}
 
-impl<T> Default for ConIterVec<T>
-where
-    T: Send + Sync,
-{
+impl<T> Default for ConIterVec<T> {
     fn default() -> Self {
         Self::new(Vec::new())
     }
 }
 
-impl<T> Drop for ConIterVec<T>
-where
-    T: Send + Sync,
-{
+impl<T> Drop for ConIterVec<T> {
     fn drop(&mut self) {
         let _iter = self.remaining_into_seq_iter();
     }
 }
 
-impl<T> ConIterVec<T>
-where
-    T: Send + Sync,
-{
+impl<T> ConIterVec<T> {
     pub(super) fn new(vec: Vec<T>) -> Self {
         let (vec_len, vec_cap, ptr) = (vec.len(), vec.capacity(), vec.as_ptr());
         let _ = ManuallyDrop::new(vec);
@@ -122,10 +110,7 @@ where
     }
 }
 
-impl<T> ArrayConIter for ConIterVec<T>
-where
-    T: Send + Sync,
-{
+impl<T> ArrayConIter for ConIterVec<T> {
     type Item = T;
 
     fn progress_and_get_chunk_pointers(
@@ -146,10 +131,7 @@ where
     }
 }
 
-impl<T> ConcurrentIter for ConIterVec<T>
-where
-    T: Send + Sync,
-{
+impl<T> ConcurrentIter for ConIterVec<T> {
     type Item = T;
 
     type SequentialIter = ArrayIntoSeqIter<T, ()>;
@@ -190,10 +172,7 @@ where
     }
 }
 
-impl<T> ExactSizeConcurrentIter for ConIterVec<T>
-where
-    T: Send + Sync,
-{
+impl<T> ExactSizeConcurrentIter for ConIterVec<T> {
     fn len(&self) -> usize {
         let num_taken = self.counter.load(Ordering::Acquire);
         self.vec_len.saturating_sub(num_taken)

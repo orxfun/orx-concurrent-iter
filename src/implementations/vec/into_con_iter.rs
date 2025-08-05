@@ -5,10 +5,7 @@ use crate::{
 };
 use alloc::vec::Vec;
 
-impl<T> IntoConcurrentIter for Vec<T>
-where
-    T: Send + Sync,
-{
+impl<T> IntoConcurrentIter for Vec<T> {
     type Item = T;
 
     type IntoIter = ConIterVec<T>;
@@ -18,10 +15,7 @@ where
     }
 }
 
-impl<'a, T> IntoConcurrentIter for &'a Vec<T>
-where
-    T: Sync,
-{
+impl<'a, T> IntoConcurrentIter for &'a Vec<T> {
     type Item = &'a T;
 
     type IntoIter = ConIterSlice<'a, T>;
@@ -31,10 +25,7 @@ where
     }
 }
 
-impl<'a, T> IntoConcurrentIter for &'a mut Vec<T>
-where
-    T: Sync,
-{
+impl<'a, T> IntoConcurrentIter for &'a mut Vec<T> {
     type Item = &'a mut T;
 
     type IntoIter = ConIterSliceMut<'a, T>;
