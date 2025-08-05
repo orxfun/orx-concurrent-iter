@@ -224,7 +224,7 @@ fn item_puller_with_idx(n: usize, nt: usize) {
 }
 
 #[test_matrix([0, 1, N], [1, 2, 4])]
-fn chunk_puller(n: usize, nt: usize) {
+fn www_chunk_puller(n: usize, nt: usize) {
     let mut vec = new_vec(n, |x| (x + 10).to_string());
     let slice = vec.as_mut_slice();
     let iter = ConIterSliceMut::new(slice);
@@ -253,7 +253,7 @@ fn chunk_puller(n: usize, nt: usize) {
 }
 
 #[test_matrix([0, 1, N], [1, 2, 4])]
-fn chunk_puller_with_idx(n: usize, nt: usize) {
+fn www_chunk_puller_with_idx(n: usize, nt: usize) {
     let mut vec = new_vec(n, |x| (x + 10).to_string());
     let slice = vec.as_mut_slice();
     let iter = ConIterSliceMut::new(slice);
@@ -282,63 +282,54 @@ fn chunk_puller_with_idx(n: usize, nt: usize) {
     assert_eq!(expected, vec);
 }
 
-// #[test_matrix([0, 1, N], [1, 2, 4])]
-// fn flattened_chunk_puller(n: usize, nt: usize) {
-//     let mut vec = new_vec(n, |x| (x + 10).to_string());
-//     let slice = vec.as_mut_slice();
-//     let iter = ConIterSliceMut::new(slice);
+#[test_matrix([0, 1, N], [1, 2, 4])]
+fn xyz_flattened_chunk_puller(n: usize, nt: usize) {
+    let mut vec = new_vec(n, |x| (x + 10).to_string());
+    let slice = vec.as_mut_slice();
+    let iter = ConIterSliceMut::new(slice);
 
-//     let bag = ConcurrentBag::new();
-//     let num_spawned = ConcurrentBag::new();
-//     std::thread::scope(|s| {
-//         for _ in 0..nt {
-//             s.spawn(|| {
-//                 num_spawned.push(true);
-//                 while num_spawned.len() < nt {} // allow all threads to be spawned
+    let num_spawned = ConcurrentBag::new();
+    std::thread::scope(|s| {
+        for _ in 0..nt {
+            s.spawn(|| {
+                num_spawned.push(true);
+                while num_spawned.len() < nt {} // allow all threads to be spawned
 
-//                 for x in iter.chunk_puller(7).flattened() {
-//                     bag.push(x);
-//                 }
-//             });
-//         }
-//     });
+                for x in iter.chunk_puller(7).flattened() {
+                    x.push('!');
+                }
+            });
+        }
+    });
 
-//     let mut expected: Vec<_> = (0..n).map(|i| &vec[i]).collect();
-//     expected.sort();
-//     let mut collected = bag.into_inner().to_vec();
-//     collected.sort();
+    let expected = new_vec(n, |x| format!("{}!", x + 10));
+    assert_eq!(expected, vec);
+}
 
-//     assert_eq!(expected, collected);
-// }
+#[test_matrix([0, 1, N], [1, 2, 4])]
+fn xyz_flattened_chunk_puller_with_idx(n: usize, nt: usize) {
+    let mut vec = new_vec(n, |x| (x + 10).to_string());
+    let slice = vec.as_mut_slice();
+    let iter = ConIterSliceMut::new(slice);
 
-// #[test_matrix([0, 1, N], [1, 2, 4])]
-// fn flattened_chunk_puller_with_idx(n: usize, nt: usize) {
-//     let mut vec = new_vec(n, |x| (x + 10).to_string());
-//     let slice = vec.as_mut_slice();
-//     let iter = ConIterSliceMut::new(slice);
+    let num_spawned = ConcurrentBag::new();
+    std::thread::scope(|s| {
+        for _ in 0..nt {
+            s.spawn(|| {
+                num_spawned.push(true);
+                while num_spawned.len() < nt {} // allow all threads to be spawned
 
-//     let bag = ConcurrentBag::new();
-//     let num_spawned = ConcurrentBag::new();
-//     std::thread::scope(|s| {
-//         for _ in 0..nt {
-//             s.spawn(|| {
-//                 num_spawned.push(true);
-//                 while num_spawned.len() < nt {} // allow all threads to be spawned
+                for x in iter.chunk_puller(7).flattened_with_idx() {
+                    assert_eq!(x.0 + 10, x.1.parse::<usize>().unwrap());
+                    x.1.push('!');
+                }
+            });
+        }
+    });
 
-//                 for x in iter.chunk_puller(7).flattened_with_idx() {
-//                     bag.push(x);
-//                 }
-//             });
-//         }
-//     });
-
-//     let mut expected: Vec<_> = (0..n).map(|i| (i, &vec[i])).collect();
-//     expected.sort();
-//     let mut collected = bag.into_inner().to_vec();
-//     collected.sort();
-
-//     assert_eq!(expected, collected);
-// }
+    let expected = new_vec(n, |x| format!("{}!", x + 10));
+    assert_eq!(expected, vec);
+}
 
 // #[test_matrix([0, 1, N], [1, 2, 4])]
 // fn skip_to_end(n: usize, nt: usize) {

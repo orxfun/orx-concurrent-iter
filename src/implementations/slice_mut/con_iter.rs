@@ -97,8 +97,7 @@ impl<'a, T: 'a> ConIterSliceMut<'a, T> {
                 let slice = unsafe { core::slice::from_raw_parts_mut(ptr, len) };
 
                 (begin_idx, slice)
-            });
-        None
+            })
     }
 }
 
