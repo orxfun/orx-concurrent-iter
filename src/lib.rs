@@ -15,6 +15,7 @@
 extern crate alloc;
 
 mod concurrent_collection;
+mod concurrent_collection_mut;
 mod concurrent_drainable;
 mod concurrent_iter;
 mod concurrent_iterable;
@@ -39,6 +40,7 @@ pub mod enumerate;
 // exported types
 
 pub use concurrent_collection::ConcurrentCollection;
+pub use concurrent_collection_mut::ConcurrentCollectionMut;
 pub use concurrent_drainable::ConcurrentDrainableOverSlice;
 pub use concurrent_iter::ConcurrentIter;
 pub use concurrent_iterable::ConcurrentIterable;

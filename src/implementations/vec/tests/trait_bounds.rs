@@ -1,5 +1,3 @@
-use alloc::vec::Vec;
-
 fn into_con_iter<T: Send + Sync>(vec: Vec<T>) {
     use crate::IntoConcurrentIter;
     let _con_iter = vec.into_con_iter();
@@ -17,9 +15,15 @@ fn concurrent_collection<T: Send + Sync>(vec: Vec<T>) {
     let _con_iter = vec.as_concurrent_iterable();
 }
 
+fn concurrent_collection_mut<T: Send + Sync>(mut vec: Vec<T>) {
+    use crate::ConcurrentCollectionMut;
+    let _con_iter = vec.con_iter_mut();
+}
+
 #[test]
 fn vec_con_iter_trait_bounds() {
     into_con_iter(Vec::<String>::new());
     concurrent_iterable(Vec::<String>::new());
     concurrent_collection(Vec::<String>::new());
+    concurrent_collection_mut(Vec::<String>::new());
 }
