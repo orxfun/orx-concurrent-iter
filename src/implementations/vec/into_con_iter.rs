@@ -15,7 +15,10 @@ impl<T> IntoConcurrentIter for Vec<T> {
     }
 }
 
-impl<'a, T> IntoConcurrentIter for &'a Vec<T> {
+impl<'a, T> IntoConcurrentIter for &'a Vec<T>
+where
+    T: Sync,
+{
     type Item = &'a T;
 
     type IntoIter = ConIterSlice<'a, T>;
@@ -25,7 +28,10 @@ impl<'a, T> IntoConcurrentIter for &'a Vec<T> {
     }
 }
 
-impl<'a, T> IntoConcurrentIter for &'a mut Vec<T> {
+impl<'a, T> IntoConcurrentIter for &'a mut Vec<T>
+where
+    T: Send,
+{
     type Item = &'a mut T;
 
     type IntoIter = ConIterSliceMut<'a, T>;

@@ -1,4 +1,4 @@
-fn into_con_iter<T>(slice: &mut [T]) {
+fn into_con_iter<T: Send>(slice: &mut [T]) {
     use crate::IntoConcurrentIter;
     let _con_iter = slice.into_con_iter();
 }
