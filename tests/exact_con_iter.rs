@@ -39,7 +39,7 @@ where
 fn validate_exact_iter_concurrently<Fun, I>(get_iter: Fun)
 where
     I: ConcurrentIter,
-    I::Item: Debug + Add<usize, Output = usize> + PartialOrd + Ord,
+    I::Item: Debug + Add<usize, Output = usize> + PartialOrd + Ord + Sync,
     Fun: Fn() -> I,
 {
     let num_threads = 4;
