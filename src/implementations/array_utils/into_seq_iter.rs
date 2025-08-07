@@ -6,10 +6,7 @@ use core::iter::FusedIterator;
 /// iterator is dropped.
 ///
 /// Further, it might call a `drop_allocation` function if provided to drop the vector.
-pub struct ArrayIntoSeqIter<T, M>
-where
-    T: Send + Sync,
-{
+pub struct ArrayIntoSeqIter<T, M> {
     current: *const T,
     last: *const T,
     allocation_to_drop: Option<(*const T, usize)>,
@@ -17,10 +14,7 @@ where
     _moved_into: M,
 }
 
-impl<T, M> ArrayIntoSeqIter<T, M>
-where
-    T: Send + Sync,
-{
+impl<T, M> ArrayIntoSeqIter<T, M> {
     /// Creates the new iterator such that:
     /// * the first element to be returned is at `first` (inclusive)
     /// * the last element of allocation is at `last` (inclusive)
@@ -69,7 +63,6 @@ where
 
 impl<T, M> Default for ArrayIntoSeqIter<T, M>
 where
-    T: Send + Sync,
     M: Default,
 {
     fn default() -> Self {
@@ -77,10 +70,7 @@ where
     }
 }
 
-impl<T, M> Drop for ArrayIntoSeqIter<T, M>
-where
-    T: Send + Sync,
-{
+impl<T, M> Drop for ArrayIntoSeqIter<T, M> {
     fn drop(&mut self) {
         // 1. drop remaining elements in place
         if core::mem::needs_drop::<T>() {
@@ -107,10 +97,7 @@ where
     }
 }
 
-impl<T, M> Iterator for ArrayIntoSeqIter<T, M>
-where
-    T: Send + Sync,
-{
+impl<T, M> Iterator for ArrayIntoSeqIter<T, M> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -136,13 +123,10 @@ where
     }
 }
 
-impl<T, M> ExactSizeIterator for ArrayIntoSeqIter<T, M>
-where
-    T: Send + Sync,
-{
+impl<T, M> ExactSizeIterator for ArrayIntoSeqIter<T, M> {
     fn len(&self) -> usize {
         self.remaining()
     }
 }
 
-impl<T, M> FusedIterator for ArrayIntoSeqIter<T, M> where T: Send + Sync {}
+impl<T, M> FusedIterator for ArrayIntoSeqIter<T, M> {}

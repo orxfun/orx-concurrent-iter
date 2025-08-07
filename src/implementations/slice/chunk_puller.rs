@@ -1,18 +1,12 @@
 use super::con_iter::ConIterSlice;
 use crate::pullers::ChunkPuller;
 
-pub struct ChunkPullerSlice<'i, 'a, T>
-where
-    T: Sync,
-{
+pub struct ChunkPullerSlice<'i, 'a, T> {
     con_iter: &'i ConIterSlice<'a, T>,
     chunk_size: usize,
 }
 
-impl<'i, 'a, T> ChunkPullerSlice<'i, 'a, T>
-where
-    T: Sync,
-{
+impl<'i, 'a, T> ChunkPullerSlice<'i, 'a, T> {
     pub(super) fn new(con_iter: &'i ConIterSlice<'a, T>, chunk_size: usize) -> Self {
         Self {
             con_iter,
@@ -21,10 +15,7 @@ where
     }
 }
 
-impl<'a, T> ChunkPuller for ChunkPullerSlice<'_, 'a, T>
-where
-    T: Sync,
-{
+impl<'a, T> ChunkPuller for ChunkPullerSlice<'_, 'a, T> {
     type ChunkItem = &'a T;
 
     type Chunk<'c>

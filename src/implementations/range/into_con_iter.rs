@@ -4,7 +4,7 @@ use core::ops::Range;
 
 impl<T> IntoConcurrentIter for Range<T>
 where
-    T: Send + Sync + From<usize> + Into<usize>,
+    T: Send + From<usize> + Into<usize>,
     Range<T>: Default + Clone + ExactSizeIterator<Item = T>,
 {
     type Item = T;
@@ -18,7 +18,7 @@ where
 
 impl<T> IntoConcurrentIter for ConIterRange<T>
 where
-    T: Send + Sync + From<usize> + Into<usize>,
+    T: Send + From<usize> + Into<usize>,
     Range<T>: Default + Clone + ExactSizeIterator<Item = T>,
 {
     type Item = T;

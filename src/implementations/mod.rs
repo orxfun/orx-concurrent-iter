@@ -6,6 +6,7 @@ pub mod jagged_arrays;
 mod ptr_utils;
 mod range;
 mod slice;
+mod slice_mut;
 mod vec;
 mod vec_deque;
 mod vec_drain;

@@ -35,27 +35,18 @@ use core::{
 /// assert_eq!(con_iter.next(), Some(&2));
 /// assert_eq!(con_iter.next(), None);
 /// ```
-pub struct ConIterSlice<'a, T>
-where
-    T: Sync,
-{
+pub struct ConIterSlice<'a, T> {
     slice: &'a [T],
     counter: AtomicUsize,
 }
 
-impl<T> Default for ConIterSlice<'_, T>
-where
-    T: Sync,
-{
+impl<T> Default for ConIterSlice<'_, T> {
     fn default() -> Self {
         Self::new(&[])
     }
 }
 
-impl<'a, T> ConIterSlice<'a, T>
-where
-    T: Sync,
-{
+impl<'a, T> ConIterSlice<'a, T> {
     pub(crate) fn new(slice: &'a [T]) -> Self {
         Self {
             slice,

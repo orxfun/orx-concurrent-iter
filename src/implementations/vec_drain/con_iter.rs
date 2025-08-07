@@ -34,24 +34,16 @@ use core::{
 /// assert_eq!(con_iter.next(), Some(2));
 /// assert_eq!(con_iter.next(), None);
 /// ```
-pub struct ConIterVecDrain<'a, T>
-where
-    T: Send + Sync,
-{
+pub struct ConIterVecDrain<'a, T> {
     vec: &'a mut Vec<T>,
     range: Range<usize>,
     vec_len: usize,
     counter: AtomicUsize,
 }
 
-unsafe impl<T: Send + Sync> Sync for ConIterVecDrain<'_, T> {}
+unsafe impl<T: Send> Sync for ConIterVecDrain<'_, T> {}
 
-unsafe impl<T: Send + Sync> Send for ConIterVecDrain<'_, T> {}
-
-impl<T> Drop for ConIterVecDrain<'_, T>
-where
-    T: Send + Sync,
-{
+impl<T> Drop for ConIterVecDrain<'_, T> {
     fn drop(&mut self) {
         let num_taken = self.num_taken();
         if num_taken < self.range.len() {
@@ -80,10 +72,7 @@ where
     }
 }
 
-impl<'a, T> ConIterVecDrain<'a, T>
-where
-    T: Send + Sync,
-{
+impl<'a, T> ConIterVecDrain<'a, T> {
     /// Creates a new concurrent draining iterator over the `vec` for the given `range`.
     ///
     /// # Panics
@@ -162,10 +151,7 @@ where
     }
 }
 
-impl<T> ArrayConIter for ConIterVecDrain<'_, T>
-where
-    T: Send + Sync,
-{
+impl<T> ArrayConIter for ConIterVecDrain<'_, T> {
     type Item = T;
 
     fn progress_and_get_chunk_pointers(
@@ -190,7 +176,7 @@ where
 
 impl<T> ConcurrentIter for ConIterVecDrain<'_, T>
 where
-    T: Send + Sync,
+    T: Send,
 {
     type Item = T;
 
@@ -241,7 +227,7 @@ where
 
 impl<T> ExactSizeConcurrentIter for ConIterVecDrain<'_, T>
 where
-    T: Send + Sync,
+    T: Send,
 {
     fn len(&self) -> usize {
         let num_taken = self.counter.load(Ordering::Acquire);

@@ -26,7 +26,7 @@ use crate::concurrent_iter::ConcurrentIter;
 /// ```
 pub trait IntoConcurrentIter {
     /// Type of the element that the concurrent iterator yields.
-    type Item: Send + Sync;
+    type Item;
 
     /// Type of the concurrent iterator that this type can be converted into.
     type IntoIter: ConcurrentIter<Item = Self::Item>;

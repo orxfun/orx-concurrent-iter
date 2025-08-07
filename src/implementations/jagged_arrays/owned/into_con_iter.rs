@@ -3,7 +3,7 @@ use crate::{IntoConcurrentIter, implementations::jagged_arrays::JaggedIndexer};
 
 impl<T, X> IntoConcurrentIter for RawJagged<T, X>
 where
-    T: Send + Sync,
+    T: Send,
     X: JaggedIndexer,
 {
     type Item = T;

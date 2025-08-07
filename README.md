@@ -132,8 +132,8 @@ fn parallel_reduce<T, F>(
     reduce: F,
 ) -> Option<T>
 where
-    T: Send + Sync,
-    F: Fn(T, T) -> T + Send + Sync,
+    T: Send,
+    F: Fn(T, T) -> T + Sync,
 {
     std::thread::scope(|s| {
         (0..num_threads)
@@ -213,8 +213,8 @@ fn parallel_reduce<T, F>(
     reduce: F,
 ) -> Option<T>
 where
-    T: Send + Sync,
-    F: Fn(T, T) -> T + Send + Sync,
+    T: Send,
+    F: Fn(T, T) -> T + Sync,
 {
     std::thread::scope(|s| {
         (0..num_threads)
@@ -252,8 +252,8 @@ fn parallel_find<T, F>(
     predicate: F,
 ) -> Option<T>
 where
-    T: Send + Sync,
-    F: Fn(&T) -> bool + Send + Sync,
+    T: Send,
+    F: Fn(&T) -> bool + Sync,
 {
     std::thread::scope(|s| {
         (0..num_threads)

@@ -17,7 +17,7 @@ where
 
 impl<T> IntoConcurrentIter for VecDeque<T>
 where
-    T: Send + Sync,
+    T: Send,
 {
     type Item = T;
 

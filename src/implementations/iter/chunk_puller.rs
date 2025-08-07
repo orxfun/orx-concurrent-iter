@@ -6,7 +6,7 @@ use core::iter::FusedIterator;
 pub struct ChunkPullerOfIter<'i, I>
 where
     I: Iterator,
-    I::Item: Send + Sync,
+    I::Item: Send,
 {
     con_iter: &'i ConIterOfIter<I>,
     buffer: Vec<Option<I::Item>>,
@@ -15,7 +15,7 @@ where
 impl<'i, I> ChunkPullerOfIter<'i, I>
 where
     I: Iterator,
-    I::Item: Send + Sync,
+    I::Item: Send,
 {
     pub(super) fn new(con_iter: &'i ConIterOfIter<I>, chunk_size: usize) -> Self {
         let mut buffer = Vec::with_capacity(chunk_size);
@@ -29,7 +29,7 @@ where
 impl<I> ChunkPuller for ChunkPullerOfIter<'_, I>
 where
     I: Iterator,
-    I::Item: Send + Sync,
+    I::Item: Send,
 {
     type ChunkItem = I::Item;
 
@@ -67,18 +67,12 @@ where
 
 // iter
 
-pub struct ChunksIterOfIter<'i, T>
-where
-    T: Send + Sync,
-{
+pub struct ChunksIterOfIter<'i, T> {
     buffer: &'i mut [Option<T>],
     current: usize,
 }
 
-impl<T> Default for ChunksIterOfIter<'_, T>
-where
-    T: Send + Sync,
-{
+impl<T> Default for ChunksIterOfIter<'_, T> {
     fn default() -> Self {
         Self {
             buffer: &mut [],
@@ -87,10 +81,7 @@ where
     }
 }
 
-impl<T> Iterator for ChunksIterOfIter<'_, T>
-where
-    T: Send + Sync,
-{
+impl<T> Iterator for ChunksIterOfIter<'_, T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -106,13 +97,10 @@ where
     }
 }
 
-impl<T> ExactSizeIterator for ChunksIterOfIter<'_, T>
-where
-    T: Send + Sync,
-{
+impl<T> ExactSizeIterator for ChunksIterOfIter<'_, T> {
     fn len(&self) -> usize {
         self.buffer.len().saturating_sub(self.current)
     }
 }
 
-impl<T> FusedIterator for ChunksIterOfIter<'_, T> where T: Send + Sync {}
+impl<T> FusedIterator for ChunksIterOfIter<'_, T> {}
