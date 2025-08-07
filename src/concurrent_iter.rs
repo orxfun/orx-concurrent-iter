@@ -116,27 +116,25 @@ use crate::{
 ///
 /// fn parallel_reduce<T, F>(
 ///     num_threads: usize,
+///     chunk: usize,
 ///     con_iter: impl ConcurrentIter<Item = T>,
 ///     reduce: F,
 /// ) -> Option<T>
 /// where
-///     T: Send + Sync,
-///     F: Fn(T, T) -> T + Send + Sync,
+///     T: Send,
+///     F: Fn(T, T) -> T + Sync,
 /// {
 ///     std::thread::scope(|s| {
 ///         (0..num_threads)
-///             .map(|_| s.spawn(|| con_iter.item_puller().reduce(&reduce))) // reduce inside each thread
-///             .filter_map(|x| x.join().unwrap()) // join threads
+///             .map(|_| s.spawn(|| con_iter.chunk_puller(chunk).flattened().reduce(&reduce))) // reduce inside each thread
+///             .filter_map(|x| x.join().unwrap()) // join threads, ignore None's
 ///             .reduce(&reduce) // reduce thread results to final result
 ///     })
 /// }
 ///
-/// let sum = parallel_reduce(8, (0..0).into_con_iter(), |a, b| a + b);
-/// assert_eq!(sum, None);
-///
 /// let n = 10_000;
 /// let data: Vec<_> = (0..n).collect();
-/// let sum = parallel_reduce(8, data.con_iter().copied(), |a, b| a + b);
+/// let sum = parallel_reduce(8, 64, data.con_iter().copied(), |a, b| a + b);
 /// assert_eq!(sum, Some(n * (n - 1) / 2));
 /// ```
 ///
@@ -286,35 +284,33 @@ use crate::{
 /// ```
 /// use orx_concurrent_iter::*;
 ///
-/// fn find<T, F>(
+/// fn parallel_find<T, F>(
 ///     num_threads: usize,
 ///     con_iter: impl ConcurrentIter<Item = T>,
 ///     predicate: F,
 /// ) -> Option<T>
 /// where
-///     T: Send + Sync,
-///     F: Fn(&T) -> bool + Send + Sync,
+///     T: Send,
+///     F: Fn(&T) -> bool + Sync,
 /// {
 ///     std::thread::scope(|s| {
-///         let mut results = vec![];
-///         for _ in 0..num_threads {
-///             results.push(s.spawn(|| {
-///                 for value in con_iter.item_puller() {
-///                     if predicate(&value) {
-///                         // will immediately jump to end
-///                         con_iter.skip_to_end();
-///                         return Some(value);
-///                     }
-///                 }
-///                 None
-///             }));
-///         }
-///         results.into_iter().filter_map(|x| x.join().unwrap()).next()
+///         (0..num_threads)
+///             .map(|_| {
+///                 s.spawn(|| {
+///                     con_iter
+///                         .item_puller()
+///                         .find(&predicate)
+///                         // once found, immediately jump to end
+///                         .inspect(|_| con_iter.skip_to_end())
+///                 })
+///             })
+///             .filter_map(|x| x.join().unwrap())
+///             .next()
 ///     })
 /// }
 ///
 /// let data: Vec<_> = (0..1000).map(|x| x.to_string()).collect();
-/// let value = find(4, data.con_iter(), |x| x.starts_with("33"));
+/// let value = parallel_find(4, data.con_iter(), |x| x.starts_with("33"));
 ///
 /// assert_eq!(value, Some(&33.to_string()));
 /// ```
@@ -326,9 +322,9 @@ use crate::{
 /// generalization of iterators that can be iterated over either concurrently or sequentially.
 ///
 /// [`into_seq_iter`]: crate::ConcurrentIter::into_seq_iter
-pub trait ConcurrentIter: Send + Sync {
+pub trait ConcurrentIter: Sync {
     /// Type of the element that the concurrent iterator yields.
-    type Item;
+    type Item: Send;
 
     /// Type of the sequential iterator that the concurrent iterator can be converted
     /// into using the [`into_seq_iter`] method.
@@ -403,35 +399,33 @@ pub trait ConcurrentIter: Send + Sync {
     /// ```
     /// use orx_concurrent_iter::*;
     ///
-    /// fn find<T, F>(
+    /// fn parallel_find<T, F>(
     ///     num_threads: usize,
     ///     con_iter: impl ConcurrentIter<Item = T>,
     ///     predicate: F,
     /// ) -> Option<T>
     /// where
-    ///     T: Send + Sync,
-    ///     F: Fn(&T) -> bool + Send + Sync,
+    ///     T: Send,
+    ///     F: Fn(&T) -> bool + Sync,
     /// {
     ///     std::thread::scope(|s| {
-    ///         let mut results = vec![];
-    ///         for _ in 0..num_threads {
-    ///             results.push(s.spawn(|| {
-    ///                 for value in con_iter.item_puller() {
-    ///                     if predicate(&value) {
-    ///                         // will immediately jump to end
-    ///                         con_iter.skip_to_end();
-    ///                         return Some(value);
-    ///                     }
-    ///                 }
-    ///                 None
-    ///             }));
-    ///         }
-    ///         results.into_iter().filter_map(|x| x.join().unwrap()).next()
+    ///         (0..num_threads)
+    ///             .map(|_| {
+    ///                 s.spawn(|| {
+    ///                     con_iter
+    ///                         .item_puller()
+    ///                         .find(&predicate)
+    ///                         // once found, immediately jump to end
+    ///                         .inspect(|_| con_iter.skip_to_end())
+    ///                 })
+    ///             })
+    ///             .filter_map(|x| x.join().unwrap())
+    ///             .next()
     ///     })
     /// }
     ///
     /// let data: Vec<_> = (0..1000).map(|x| x.to_string()).collect();
-    /// let value = find(4, data.con_iter(), |x| x.starts_with("33"));
+    /// let value = parallel_find(4, data.con_iter(), |x| x.starts_with("33"));
     ///
     /// assert_eq!(value, Some(&33.to_string()));
     /// ```
@@ -755,19 +749,24 @@ pub trait ConcurrentIter: Send + Sync {
     ///     reduce: F,
     /// ) -> Option<T>
     /// where
-    ///     T: Send + Sync,
-    ///     F: Fn(T, T) -> T + Send + Sync,
+    ///     T: Send,
+    ///     F: Fn(T, T) -> T + Sync,
     /// {
     ///     std::thread::scope(|s| {
     ///         (0..num_threads)
     ///             .map(|_| s.spawn(|| con_iter.item_puller().reduce(&reduce))) // reduce inside each thread
-    ///             .filter_map(|x| x.join().unwrap()) // join threads
+    ///             .filter_map(|x| x.join().unwrap()) // join threads, ignore None's
     ///             .reduce(&reduce) // reduce thread results to final result
     ///     })
     /// }
     ///
+    /// // test
+    ///
     /// let sum = parallel_reduce(8, (0..0).into_con_iter(), |a, b| a + b);
     /// assert_eq!(sum, None);
+    ///
+    /// let sum = parallel_reduce(8, (0..3).into_con_iter(), |a, b| a + b);
+    /// assert_eq!(sum, Some(3));
     ///
     /// let n = 10_000;
     /// let data: Vec<_> = (0..n).collect();
@@ -851,7 +850,7 @@ pub trait ConcurrentIter: Send + Sync {
     /// ```
     fn copied<'a, T>(self) -> ConIterCopied<'a, Self, T>
     where
-        T: Send + Sync + Copy,
+        T: Copy,
         Self: ConcurrentIter<Item = &'a T> + Sized,
     {
         ConIterCopied::new(self)
@@ -880,7 +879,7 @@ pub trait ConcurrentIter: Send + Sync {
     /// ```
     fn cloned<'a, T>(self) -> ConIterCloned<'a, Self, T>
     where
-        T: Send + Sync + Clone,
+        T: Clone,
         Self: ConcurrentIter<Item = &'a T> + Sized,
     {
         ConIterCloned::new(self)

@@ -3,7 +3,7 @@ use core::fmt::Debug;
 
 impl<T> Debug for ConIterSlice<'_, T>
 where
-    T: Send + Sync,
+    T: Sync,
 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let remaining = self.len();

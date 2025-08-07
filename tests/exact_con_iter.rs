@@ -38,8 +38,9 @@ where
 
 fn validate_exact_iter_concurrently<Fun, I>(get_iter: Fun)
 where
-    I: ConcurrentIter,
-    I::Item: Debug + Add<usize, Output = usize> + PartialOrd + Ord + Sync,
+    I: ConcurrentIter + Sync,
+    I::Item: Sync,
+    I::Item: Debug + Add<usize, Output = usize> + PartialOrd + Ord,
     Fun: Fn() -> I,
 {
     let num_threads = 4;

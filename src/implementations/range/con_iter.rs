@@ -31,6 +31,13 @@ pub struct ConIterRange<T> {
     phantom: PhantomData<T>,
 }
 
+unsafe impl<T> Sync for ConIterRange<T>
+where
+    T: Send + From<usize> + Into<usize>,
+    Range<T>: Default + Clone + ExactSizeIterator<Item = T>,
+{
+}
+
 impl<T> Default for ConIterRange<T> {
     fn default() -> Self {
         Self {
@@ -44,7 +51,7 @@ impl<T> Default for ConIterRange<T> {
 
 impl<T> ConIterRange<T>
 where
-    T: Send + Sync + From<usize> + Into<usize>,
+    T: Send + From<usize> + Into<usize>,
     Range<T>: Default + Clone + ExactSizeIterator<Item = T>,
 {
     pub(super) fn new(range: Range<T>) -> Self {
@@ -88,7 +95,7 @@ where
 
 impl<T> ConcurrentIter for ConIterRange<T>
 where
-    T: Send + Sync + From<usize> + Into<usize>,
+    T: Send + From<usize> + Into<usize>,
     Range<T>: Default + Clone + ExactSizeIterator<Item = T>,
 {
     type Item = T;
@@ -134,7 +141,7 @@ where
 
 impl<T> ExactSizeConcurrentIter for ConIterRange<T>
 where
-    T: Send + Sync + From<usize> + Into<usize>,
+    T: Send + From<usize> + Into<usize>,
     Range<T>: Default + Clone + ExactSizeIterator<Item = T>,
 {
     fn len(&self) -> usize {

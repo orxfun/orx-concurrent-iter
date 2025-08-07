@@ -3,7 +3,6 @@ use core::{cell::UnsafeCell, marker::PhantomData};
 
 pub struct IterCell<T, I>
 where
-    T: Send + Sync,
     I: Iterator<Item = T>,
 {
     iter: UnsafeCell<I>,
@@ -13,7 +12,6 @@ where
 
 impl<T, I> From<I> for IterCell<T, I>
 where
-    T: Send + Sync,
     I: Iterator<Item = T>,
 {
     fn from(iter: I) -> Self {
@@ -27,7 +25,6 @@ where
 
 impl<T, I> IterCell<T, I>
 where
-    T: Send + Sync,
     I: Iterator<Item = T>,
 {
     pub fn into_inner(self) -> I {

@@ -50,9 +50,7 @@ where
     counter: AtomicUsize,
 }
 
-unsafe impl<'a, T: 'a> Sync for ConIterSliceMut<'a, T> {}
-
-unsafe impl<'a, T: 'a> Send for ConIterSliceMut<'a, T> {}
+unsafe impl<'a, T: Send + 'a> Sync for ConIterSliceMut<'a, T> {}
 
 impl<'a, T: 'a> Default for ConIterSliceMut<'a, T> {
     fn default() -> Self {
@@ -101,7 +99,10 @@ impl<'a, T: 'a> ConIterSliceMut<'a, T> {
     }
 }
 
-impl<'a, T: 'a> ConcurrentIter for ConIterSliceMut<'a, T> {
+impl<'a, T: 'a> ConcurrentIter for ConIterSliceMut<'a, T>
+where
+    T: Send,
+{
     type Item = &'a mut T;
 
     type SequentialIter = Skip<core::slice::IterMut<'a, T>>;
@@ -145,7 +146,10 @@ impl<'a, T: 'a> ConcurrentIter for ConIterSliceMut<'a, T> {
     }
 }
 
-impl<T> ExactSizeConcurrentIter for ConIterSliceMut<'_, T> {
+impl<T> ExactSizeConcurrentIter for ConIterSliceMut<'_, T>
+where
+    T: Send,
+{
     fn len(&self) -> usize {
         let num_taken = self.counter.load(Ordering::Acquire);
         self.slice_len.saturating_sub(num_taken)

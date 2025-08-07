@@ -124,7 +124,7 @@ fn early_exit_slice() {
 
 fn par_find<I, P>(iter: I, predicate: P, num_threads: usize, batch: usize) -> Option<(usize, i32)>
 where
-    I: ConcurrentIter<Item = i32>,
+    I: ConcurrentIter<Item = i32> + Sync,
     P: Fn(&i32) -> bool + Send + Sync,
 {
     std::thread::scope(|s| {

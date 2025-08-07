@@ -11,8 +11,9 @@ const LEN: [usize; 4] = [1, 4, 32, 4 * 32];
 
 fn concurrent_iter<I>(num_threads: usize, batch: usize, con_iter: I) -> Vec<I::Item>
 where
-    I: ConcurrentIter + Send + Sync,
-    I::Item: Send + Sync + Clone + Copy + Debug + PartialEq,
+    I: ConcurrentIter + Sync,
+    I::Item: Send + Clone + Copy + Debug + PartialEq,
+    I::Item: Sync, // TODO: requirement is due to ConcurrentBag
 {
     let collected = ConcurrentBag::new();
     let bag = &collected;
@@ -97,7 +98,7 @@ fn con_iter_slice(num_threads: usize, batch: usize) {
 )]
 fn con_iter_vec(num_threads: usize, batch: usize) {
     for len in LEN {
-        let source: Vec<_> = (0..len).collect();
+        let source: Vec<usize> = (0..len).collect();
 
         let collected: Vec<usize> =
             concurrent_iter(num_threads, batch, source.clone().into_con_iter());

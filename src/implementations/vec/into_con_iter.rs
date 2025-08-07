@@ -7,7 +7,7 @@ use alloc::vec::Vec;
 
 impl<T> IntoConcurrentIter for Vec<T>
 where
-    T: Send + Sync,
+    T: Send,
 {
     type Item = T;
 
@@ -33,7 +33,7 @@ where
 
 impl<'a, T> IntoConcurrentIter for &'a mut Vec<T>
 where
-    T: Sync,
+    T: Send,
 {
     type Item = &'a mut T;
 

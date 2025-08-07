@@ -7,8 +7,8 @@ use crate::{
 pub struct ChunkPullerJaggedRef<'i, 'a, T, S, X>
 where
     T: Sync,
-    X: JaggedIndexer + Send + Sync,
-    S: Slices<'a, T> + Send + Sync,
+    X: JaggedIndexer,
+    S: Slices<'a, T>,
 {
     con_iter: &'i ConIterJaggedRef<'a, T, S, X>,
     chunk_size: usize,
@@ -17,8 +17,8 @@ where
 impl<'i, 'a, T, S, X> ChunkPullerJaggedRef<'i, 'a, T, S, X>
 where
     T: Sync,
-    X: JaggedIndexer + Send + Sync,
-    S: Slices<'a, T> + Send + Sync,
+    X: JaggedIndexer,
+    S: Slices<'a, T>,
 {
     pub(super) fn new(con_iter: &'i ConIterJaggedRef<'a, T, S, X>, chunk_size: usize) -> Self {
         Self {
@@ -30,9 +30,9 @@ where
 
 impl<'a, T, S, X> ChunkPuller for ChunkPullerJaggedRef<'_, 'a, T, S, X>
 where
-    T: Sync + 'a,
-    X: JaggedIndexer + Send + Sync,
-    S: Slices<'a, T> + Send + Sync,
+    T: Sync,
+    X: JaggedIndexer,
+    S: Slices<'a, T>,
 {
     type ChunkItem = &'a T;
 

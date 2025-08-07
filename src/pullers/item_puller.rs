@@ -89,8 +89,8 @@ use crate::concurrent_iter::ConcurrentIter;
 ///     reduce: F,
 /// ) -> Option<T>
 /// where
-///     T: Send + Sync,
-///     F: Fn(T, T) -> T + Send + Sync,
+///     T: Send,
+///     F: Fn(T, T) -> T + Sync,
 /// {
 ///     std::thread::scope(|s| {
 ///         (0..num_threads)

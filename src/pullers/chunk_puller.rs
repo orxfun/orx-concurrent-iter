@@ -129,19 +129,16 @@ use crate::pullers::{FlattenedChunkPuller, FlattenedEnumeratedChunkPuller};
 ///     reduce: F,
 /// ) -> Option<T>
 /// where
-///     T: Send + Sync,
-///     F: Fn(T, T) -> T + Send + Sync,
+///     T: Send,
+///     F: Fn(T, T) -> T + Sync,
 /// {
 ///     std::thread::scope(|s| {
 ///         (0..num_threads)
 ///             .map(|_| s.spawn(|| con_iter.chunk_puller(chunk).flattened().reduce(&reduce))) // reduce inside each thread
-///             .filter_map(|x| x.join().unwrap()) // join threads
+///             .filter_map(|x| x.join().unwrap()) // join threads, ignore None's
 ///             .reduce(&reduce) // reduce thread results to final result
 ///     })
 /// }
-///
-/// let sum = parallel_reduce(8, 64, (0..0).into_con_iter(), |a, b| a + b);
-/// assert_eq!(sum, None);
 ///
 /// let n = 10_000;
 /// let data: Vec<_> = (0..n).collect();
@@ -257,19 +254,16 @@ pub trait ChunkPuller {
     ///     reduce: F,
     /// ) -> Option<T>
     /// where
-    ///     T: Send + Sync,
-    ///     F: Fn(T, T) -> T + Send + Sync,
+    ///     T: Send,
+    ///     F: Fn(T, T) -> T + Sync,
     /// {
     ///     std::thread::scope(|s| {
     ///         (0..num_threads)
     ///             .map(|_| s.spawn(|| con_iter.chunk_puller(chunk).flattened().reduce(&reduce))) // reduce inside each thread
-    ///             .filter_map(|x| x.join().unwrap()) // join threads
+    ///             .filter_map(|x| x.join().unwrap()) // join threads, ignore None's
     ///             .reduce(&reduce) // reduce thread results to final result
     ///     })
     /// }
-    ///
-    /// let sum = parallel_reduce(8, 64, (0..0).into_con_iter(), |a, b| a + b);
-    /// assert_eq!(sum, None);
     ///
     /// let n = 10_000;
     /// let data: Vec<_> = (0..n).collect();

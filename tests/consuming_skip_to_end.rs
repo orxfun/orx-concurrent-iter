@@ -12,8 +12,7 @@ const LEN: [usize; 6] = [1, 4, 32, 33, 2 * 64, 4 * 64 + 1];
 
 fn run<T, C>(iter: &C, num_threads: usize, batch: usize)
 where
-    T: Send + Sync,
-    C: ConcurrentIter<Item = T>,
+    C: ConcurrentIter<Item = T> + Sync,
 {
     let len = iter.try_get_len().expect("is-some");
     let until = len / 2;

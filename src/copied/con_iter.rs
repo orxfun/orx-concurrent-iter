@@ -1,5 +1,5 @@
 use super::chunk_puller::CopiedChunkPuller;
-use crate::concurrent_iter::ConcurrentIter;
+use crate::{ExactSizeConcurrentIter, concurrent_iter::ConcurrentIter};
 use core::{iter::Copied, marker::PhantomData};
 
 /// A concurrent iterator which copies all elements.
@@ -11,16 +11,23 @@ use core::{iter::Copied, marker::PhantomData};
 /// [`copied`]: crate::ConcurrentIter::copied
 pub struct ConIterCopied<'a, I, T>
 where
-    T: Send + Sync + Copy,
+    T: Copy,
     I: ConcurrentIter<Item = &'a T>,
 {
     con_iter: I,
     phantom: PhantomData<&'a T>,
 }
 
+unsafe impl<'a, I, T> Sync for ConIterCopied<'a, I, T>
+where
+    T: Copy + Send,
+    I: ConcurrentIter<Item = &'a T>,
+{
+}
+
 impl<'a, I, T> ConIterCopied<'a, I, T>
 where
-    T: Send + Sync + Copy,
+    T: Copy,
     I: ConcurrentIter<Item = &'a T>,
 {
     pub(crate) fn new(con_iter: I) -> Self {
@@ -33,7 +40,7 @@ where
 
 impl<'a, I, T> ConcurrentIter for ConIterCopied<'a, I, T>
 where
-    T: Send + Sync + Copy,
+    T: Copy + Send,
     I: ConcurrentIter<Item = &'a T>,
 {
     type Item = T;
@@ -67,5 +74,15 @@ where
 
     fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
         self.con_iter.chunk_puller(chunk_size).into()
+    }
+}
+
+impl<'a, I, T> ExactSizeConcurrentIter for ConIterCopied<'a, I, T>
+where
+    T: Copy + Send,
+    I: ExactSizeConcurrentIter<Item = &'a T>,
+{
+    fn len(&self) -> usize {
+        self.con_iter.len()
     }
 }

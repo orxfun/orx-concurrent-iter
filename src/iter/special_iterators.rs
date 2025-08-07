@@ -15,6 +15,6 @@ use crate::implementations::ConIterEmpty;
 /// let con_iter = implementations::ConIterEmpty::<String>::new();
 /// assert_eq!(con_iter.next(), None);
 /// ```
-pub fn empty<T: Send + Sync>() -> ConIterEmpty<T> {
+pub fn empty<T>() -> ConIterEmpty<T> {
     Default::default()
 }

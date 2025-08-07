@@ -81,7 +81,7 @@ use crate::implementations::ConIterOfIter;
 /// ```
 pub trait IterIntoConcurrentIter: Iterator + Sized
 where
-    Self::Item: Send + Sync,
+    Self::Item: Send,
 {
     /// Any regular iterator implements [`IterIntoConcurrentIter`] trait allowing them to be used
     /// as a concurrent iterator; i.e., [`ConcurrentIter`], by calling [`iter_into_con_iter`].
@@ -132,7 +132,7 @@ where
 impl<I> IterIntoConcurrentIter for I
 where
     I: Iterator,
-    I::Item: Send + Sync,
+    I::Item: Send,
 {
     fn iter_into_con_iter(self) -> ConIterOfIter<Self> {
         ConIterOfIter::new(self)

@@ -4,7 +4,7 @@ use core::ops::RangeBounds;
 
 impl<T> ConcurrentDrainableOverSlice for Vec<T>
 where
-    T: Send + Sync,
+    T: Send,
 {
     type Item = T;
 
