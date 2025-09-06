@@ -30,7 +30,7 @@ where
     type SequentialIter = core::iter::Chain<I::SequentialIter, J::SequentialIter>;
 
     type ChunkPuller<'i>
-        = ChainedChunkPuller<I::ChunkPuller<'i>, J::ChunkPuller<'i>>
+        = ChainedChunkPuller<'i, I, J>
     where
         Self: 'i;
 
@@ -63,11 +63,7 @@ where
     }
 
     fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
-        ChainedChunkPuller::new(
-            self.i.chunk_puller(chunk_size),
-            self.j.chunk_puller(chunk_size),
-            false,
-        )
+        ChainedChunkPuller::new(&self.i, &self.j, chunk_size)
     }
 }
 

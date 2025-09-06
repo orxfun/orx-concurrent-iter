@@ -38,7 +38,7 @@ where
     type SequentialIter = core::iter::Chain<I::SequentialIter, J::SequentialIter>;
 
     type ChunkPuller<'i>
-        = ChainedChunkPuller<I::ChunkPuller<'i>, J::ChunkPuller<'i>>
+        = ChainedChunkPuller<'i, I, J>
     where
         Self: 'i;
 

@@ -1,35 +1,47 @@
-use crate::ChunkPuller;
+use crate::{ChunkPuller, ConcurrentIter};
 
-pub struct ChainedChunkPuller<P, Q>
+pub struct ChainedChunkPuller<'i, I, J>
 where
-    P: ChunkPuller,
-    Q: ChunkPuller<ChunkItem = P::ChunkItem>,
+    I: ConcurrentIter,
+    J: ConcurrentIter<Item = I::Item>,
 {
-    p: P,
-    q: Q,
+    i: &'i I,
+    j: &'i J,
+    p: I::ChunkPuller<'i>,
+    q: J::ChunkPuller<'i>,
     p_consumed: bool,
 }
 
-impl<P, Q> ChainedChunkPuller<P, Q>
+impl<'i, I, J> ChainedChunkPuller<'i, I, J>
 where
-    P: ChunkPuller,
-    Q: ChunkPuller<ChunkItem = P::ChunkItem>,
+    I: ConcurrentIter,
+    J: ConcurrentIter<Item = I::Item>,
 {
-    pub(super) fn new(p: P, q: Q, p_consumed: bool) -> Self {
-        debug_assert_eq!(p.chunk_size(), q.chunk_size());
-        Self { p, q, p_consumed }
+    pub(super) fn new(i: &'i I, j: &'i J, chunk_size: usize) -> Self {
+        let p = i.chunk_puller(chunk_size);
+        let q = j.chunk_puller(chunk_size);
+        Self {
+            i,
+            j,
+            p,
+            q,
+            p_consumed: false,
+        }
     }
 }
 
-impl<P, Q> ChunkPuller for ChainedChunkPuller<P, Q>
+impl<'i, I, J> ChunkPuller for ChainedChunkPuller<'i, I, J>
 where
-    P: ChunkPuller,
-    Q: ChunkPuller<ChunkItem = P::ChunkItem>,
+    I: ConcurrentIter,
+    J: ConcurrentIter<Item = I::Item>,
 {
-    type ChunkItem = P::ChunkItem;
+    type ChunkItem = I::Item;
 
     type Chunk<'c>
-        = ChunkOfEither<P::Chunk<'c>, Q::Chunk<'c>>
+        = ChunkOfEither<
+        <I::ChunkPuller<'i> as ChunkPuller>::Chunk<'c>,
+        <J::ChunkPuller<'i> as ChunkPuller>::Chunk<'c>,
+    >
     where
         Self: 'c;
 
