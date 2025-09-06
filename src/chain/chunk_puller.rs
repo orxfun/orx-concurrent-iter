@@ -41,15 +41,12 @@ where
     fn pull(&mut self) -> Option<Self::Chunk<'_>> {
         match self.p_consumed {
             false => {
-                // SAFETY: s will be used to recursively call this function iff pulled chunks is None
-                // in which case the mutable reference is not used.
-                let s = unsafe { &mut *(self as *mut Self) };
                 let p = self.p.pull().map(ChunkOfEither::P);
                 match p.is_some() {
                     true => p,
                     false => {
                         self.p_consumed = true;
-                        s.pull()
+                        self.q.pull().map(ChunkOfEither::Q)
                     }
                 }
             }
@@ -60,9 +57,6 @@ where
     fn pull_with_idx(&mut self) -> Option<(usize, Self::Chunk<'_>)> {
         match self.p_consumed {
             false => {
-                // SAFETY: s will be used to recursively call this function iff pulled chunks is None
-                // in which case the mutable reference is not used.
-                let s = unsafe { &mut *(self as *mut Self) };
                 let p = self
                     .p
                     .pull_with_idx()
@@ -71,7 +65,9 @@ where
                     true => p,
                     false => {
                         self.p_consumed = true;
-                        s.pull_with_idx()
+                        self.q
+                            .pull_with_idx()
+                            .map(|(idx, q)| (idx, ChunkOfEither::Q(q)))
                     }
                 }
             }
