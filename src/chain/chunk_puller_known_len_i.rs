@@ -77,7 +77,7 @@ where
                         self.p_consumed = true;
                         self.q
                             .pull_with_idx()
-                            .map(|(idx, q)| (idx, ChunkOfEither::Q(q)))
+                            .map(|(idx, q)| (self.len_i + idx, ChunkOfEither::Q(q)))
                     }
                 }
             }

@@ -1,4 +1,7 @@
-use crate::{ConcurrentIter, ExactSizeConcurrentIter, chain::chunk_puller::ChainedChunkPuller};
+use crate::{
+    ConcurrentIter, ExactSizeConcurrentIter,
+    chain::chunk_puller_known_len_i::ChainedChunkPullerKnownLenI,
+};
 
 pub struct ChainKnownLenI<I, J>
 where
@@ -30,7 +33,7 @@ where
     type SequentialIter = core::iter::Chain<I::SequentialIter, J::SequentialIter>;
 
     type ChunkPuller<'i>
-        = ChainedChunkPuller<'i, I, J>
+        = ChainedChunkPullerKnownLenI<'i, I, J>
     where
         Self: 'i;
 
@@ -63,7 +66,7 @@ where
     }
 
     fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
-        ChainedChunkPuller::new(&self.i, &self.j, chunk_size)
+        ChainedChunkPullerKnownLenI::new(&self.i, &self.j, chunk_size, self.len_i)
     }
 }
 

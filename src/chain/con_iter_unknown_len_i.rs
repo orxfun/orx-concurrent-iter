@@ -1,4 +1,7 @@
-use crate::{ConcurrentIter, ExactSizeConcurrentIter, chain::chunk_puller::ChainedChunkPuller};
+use crate::{
+    ConcurrentIter, ExactSizeConcurrentIter,
+    chain::chunk_puller_unknown_len_i::ChainedChunkPullerUnknownLenI,
+};
 use core::sync::atomic::{AtomicUsize, Ordering};
 
 pub struct ChainUnknownLenI<I, J>
@@ -6,9 +9,9 @@ where
     I: ConcurrentIter,
     J: ConcurrentIter<Item = I::Item>,
 {
-    i: I,
-    j: J,
-    len_i: AtomicUsize,
+    pub(super) i: I,
+    pub(super) j: J,
+    pub(super) num_pulled_i: AtomicUsize,
 }
 
 impl<I, J> ChainUnknownLenI<I, J>
@@ -17,8 +20,20 @@ where
     J: ConcurrentIter<Item = I::Item>,
 {
     pub(super) fn new(i: I, j: J) -> Self {
-        let len_i = 1.into();
-        Self { i, j, len_i }
+        Self {
+            i,
+            j,
+            num_pulled_i: 0.into(),
+        }
+    }
+
+    #[inline(always)]
+    pub(super) fn num_pulled_i(&self) -> usize {
+        self.num_pulled_i.load(Ordering::Relaxed)
+        // match self.num_pulled_i.load(Ordering::Relaxed) {
+        //     0 => 0,
+        //     n => n + 1,
+        // }
     }
 }
 
@@ -32,7 +47,7 @@ where
     type SequentialIter = core::iter::Chain<I::SequentialIter, J::SequentialIter>;
 
     type ChunkPuller<'i>
-        = ChainedChunkPuller<'i, I, J>
+        = ChainedChunkPullerUnknownLenI<'i, I, J>
     where
         Self: 'i;
 
@@ -46,9 +61,10 @@ where
     }
 
     fn next(&self) -> Option<Self::Item> {
-        match self.i.next_with_idx() {
-            Some((idx, x)) => {
-                _ = self.len_i.fetch_max(idx, Ordering::Relaxed);
+        match self.i.next() {
+            Some(x) => {
+                // _ = self.num_pulled_i.fetch_max(idx, Ordering::Relaxed);
+                _ = self.num_pulled_i.fetch_add(1, Ordering::Relaxed);
                 Some(x)
             }
             None => self.j.next(),
@@ -58,16 +74,13 @@ where
     fn next_with_idx(&self) -> Option<(usize, Self::Item)> {
         match self.i.next_with_idx() {
             Some((idx, x)) => {
-                _ = self.len_i.fetch_max(idx, Ordering::Relaxed);
+                _ = self.num_pulled_i.fetch_add(1, Ordering::Relaxed);
                 Some((idx, x))
             }
-            None => self.j.next_with_idx().map(|(idx, x)| {
-                let len_i = match self.len_i.load(Ordering::Relaxed) {
-                    0 => 0,
-                    n => n + 1,
-                };
-                (len_i + idx, x)
-            }),
+            None => self
+                .j
+                .next_with_idx()
+                .map(|(idx, x)| (self.num_pulled_i() + idx, x)),
         }
     }
 
@@ -81,7 +94,7 @@ where
     }
 
     fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
-        ChainedChunkPuller::new(&self.i, &self.j, chunk_size)
+        ChainedChunkPullerUnknownLenI::new(self, chunk_size)
     }
 }
 
