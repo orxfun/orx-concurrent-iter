@@ -16,7 +16,7 @@ where
     I: ConcurrentIter,
     J: ConcurrentIter<Item = I::Item>,
 {
-    pub(crate) fn new(i: I, j: J) -> Self {
+    pub(super) fn new(i: I, j: J) -> Self {
         let len_i = 0.into();
         Self { i, j, len_i }
     }

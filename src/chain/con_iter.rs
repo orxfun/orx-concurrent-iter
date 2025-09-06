@@ -1,14 +1,18 @@
-use crate::{ConcurrentIter, chain::chunk_puller::ChainedChunkPuller};
-use core::sync::atomic::{AtomicUsize, Ordering};
+use crate::{
+    ConcurrentIter,
+    chain::{
+        chunk_puller::ChainedChunkPuller, con_iter_known_len_i::ChainKnownLenI,
+        con_iter_unknown_len_i::ChainUnknownLenI,
+    },
+};
 
-pub struct Chain<I, J>
+pub enum Chain<I, J>
 where
     I: ConcurrentIter,
     J: ConcurrentIter<Item = I::Item>,
 {
-    i: I,
-    j: J,
-    len_i: AtomicUsize,
+    KnownLenI(ChainKnownLenI<I, J>),
+    UnknownLenI(ChainUnknownLenI<I, J>),
 }
 
 impl<I, J> Chain<I, J>
@@ -17,8 +21,10 @@ where
     J: ConcurrentIter<Item = I::Item>,
 {
     pub(crate) fn new(i: I, j: J) -> Self {
-        let len_i = usize::MAX.into();
-        Self { i, j, len_i }
+        match i.try_get_len() {
+            Some(len_i) => Self::KnownLenI(ChainKnownLenI::new(i, j, len_i)),
+            None => Self::UnknownLenI(ChainUnknownLenI::new(i, j)),
+        }
     }
 }
 
@@ -41,41 +47,37 @@ where
     }
 
     fn skip_to_end(&self) {
-        self.i.skip_to_end();
-        self.j.skip_to_end();
+        match self {
+            Self::KnownLenI(k) => k.skip_to_end(),
+            Self::UnknownLenI(u) => u.skip_to_end(),
+        }
     }
 
     fn next(&self) -> Option<Self::Item> {
-        match self.len_i.load(Ordering::Relaxed) {
-            usize::MAX => {
-                let i = self.i.next();
-                match i.is_some() {
-                    true => i,
-                    false => {
-                        //
-                        todo!()
-                    }
-                }
-            }
-            _ => self.j.next(),
+        match self {
+            Self::KnownLenI(k) => k.next(),
+            Self::UnknownLenI(u) => u.next(),
         }
     }
 
     fn next_with_idx(&self) -> Option<(usize, Self::Item)> {
-        match self.len_i.load(Ordering::Relaxed) {
-            usize::MAX => {
-                //
-                todo!()
-            }
-            len_i => self.j.next_with_idx().map(|(idx, x)| (len_i + idx, x)),
+        match self {
+            Self::KnownLenI(k) => k.next_with_idx(),
+            Self::UnknownLenI(u) => u.next_with_idx(),
         }
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        todo!()
+        match self {
+            Self::KnownLenI(k) => k.size_hint(),
+            Self::UnknownLenI(u) => u.size_hint(),
+        }
     }
 
     fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
-        todo!()
+        match self {
+            Self::KnownLenI(k) => k.chunk_puller(chunk_size),
+            Self::UnknownLenI(u) => u.chunk_puller(chunk_size),
+        }
     }
 }
