@@ -38,7 +38,7 @@ where
         Self: 'i;
 
     fn into_seq_iter(self) -> Self::SequentialIter {
-        todo!()
+        self.i.into_seq_iter().chain(self.j.into_seq_iter())
     }
 
     fn skip_to_end(&self) {
