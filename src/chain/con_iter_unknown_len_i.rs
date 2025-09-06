@@ -32,10 +32,6 @@ where
     #[inline(always)]
     pub(super) fn num_pulled_i(&self) -> usize {
         self.num_pulled_i.load(Ordering::Relaxed)
-        // match self.num_pulled_i.load(Ordering::Relaxed) {
-        //     0 => 0,
-        //     n => n + 1,
-        // }
     }
 }
 
@@ -65,7 +61,6 @@ where
     fn next(&self) -> Option<Self::Item> {
         match self.i.next() {
             Some(x) => {
-                // _ = self.num_pulled_i.fetch_max(idx, Ordering::Relaxed);
                 _ = self.num_pulled_i.fetch_add(1, Ordering::Relaxed);
                 Some(x)
             }
