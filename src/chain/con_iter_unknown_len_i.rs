@@ -4,6 +4,8 @@ use crate::{
 };
 use core::sync::atomic::{AtomicUsize, Ordering};
 
+/// Chain of two concurrent iterators where the length of the first iterator is not
+/// known with certainly; i.e., `I` does not implement `ExactSizeConcurrentIter`.
 pub struct ChainUnknownLenI<I, J>
 where
     I: ConcurrentIter,

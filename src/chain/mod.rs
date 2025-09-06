@@ -2,7 +2,6 @@
 mod tests;
 
 mod chunk;
-mod chunk_puller;
 mod chunk_puller_known_len_i;
 mod chunk_puller_unknown_len_i;
 mod con_iter;

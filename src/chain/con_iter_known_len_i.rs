@@ -3,6 +3,8 @@ use crate::{
     chain::chunk_puller_known_len_i::ChainedChunkPullerKnownLenI,
 };
 
+/// Chain of two concurrent iterators where the length of the first iterator is
+/// known with certainly; i.e., `I` implements `ExactSizeConcurrentIter`.
 pub struct ChainKnownLenI<I, J>
 where
     I: ConcurrentIter,
