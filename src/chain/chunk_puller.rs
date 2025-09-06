@@ -15,8 +15,8 @@ where
     P: ChunkPuller,
     Q: ChunkPuller<ChunkItem = P::ChunkItem>,
 {
-    pub(crate) fn new(p: P, q: Q) -> Self {
-        let p_consumed = false;
+    pub(super) fn new(p: P, q: Q, p_consumed: bool) -> Self {
+        debug_assert_eq!(p.chunk_size(), q.chunk_size());
         Self { p, q, p_consumed }
     }
 }
@@ -34,10 +34,8 @@ where
         Self: 'c;
 
     fn chunk_size(&self) -> usize {
-        match self.p_consumed {
-            false => self.p.chunk_size(),
-            true => self.q.chunk_size(),
-        }
+        // p and q have the same chunk size
+        self.p.chunk_size()
     }
 
     fn pull(&mut self) -> Option<Self::Chunk<'_>> {
@@ -96,11 +94,11 @@ where
 
 impl<P, Q> Default for ChunkOfEither<P, Q>
 where
-    P: ExactSizeIterator,
+    P: ExactSizeIterator + Default,
     Q: ExactSizeIterator<Item = P::Item>,
 {
     fn default() -> Self {
-        todo!()
+        Self::P(Default::default())
     }
 }
 
