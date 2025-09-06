@@ -1,6 +1,7 @@
 use crate::{
-    IntoConcurrentIter, chain::con_iter::Chain, concurrent_iter::ConcurrentIter,
-    exact_size_concurrent_iter::ExactSizeConcurrentIter, pullers::ChunkPuller,
+    IntoConcurrentIter, IterIntoConcurrentIter, chain::con_iter::Chain,
+    concurrent_iter::ConcurrentIter, exact_size_concurrent_iter::ExactSizeConcurrentIter,
+    pullers::ChunkPuller,
 };
 use alloc::{
     string::{String, ToString},
@@ -45,42 +46,181 @@ fn enumeration() {
     assert_eq!(iter.next_with_idx(), None);
 }
 
-// #[test]
-// fn size_hint() {
-//     let n1 = 12;
-//     let n2 = 13;
-//     let mut n = n1 + n2;
-//     let v1 = new_vec(n1, |x| (x + 10).to_string());
-//     let v2 = new_vec(n2, |x| (x + 10).to_string());
-//     let iter = Chain::new(v1.into_con_iter(), v2.into_con_iter());
+#[test]
+fn size_hint() {
+    let v1 = || new_vec(12, |x| (x + 10).to_string());
+    let v2 = || new_vec(13, |x| (x + 10).to_string());
 
-//     for _ in 0..10 {
-//         assert_eq!(iter.size_hint(), (n, Some(n)));
-//         let _ = iter.next();
-//         n -= 1;
-//     }
+    test_k_k(Chain::new(v1().into_con_iter(), v2().into_con_iter()));
+    test_u_k(Chain::new(
+        v1().into_iter()
+            .filter(|x| !x.starts_with('x'))
+            .iter_into_con_iter(),
+        v2().into_con_iter(),
+    ));
+    test_k_u(Chain::new(
+        v1().into_con_iter(),
+        v2().into_iter()
+            .filter(|x| !x.starts_with('x'))
+            .iter_into_con_iter(),
+    ));
+    test_u_u(Chain::new(
+        v1().into_iter()
+            .filter(|x| !x.starts_with('x'))
+            .iter_into_con_iter(),
+        v2().into_iter()
+            .filter(|x| !x.starts_with('x'))
+            .iter_into_con_iter(),
+    ));
 
-//     let mut chunks_iter = iter.chunk_puller(7);
+    fn test_u_k(iter: impl ConcurrentIter<Item = String>) {
+        let mut n = 25;
+        for _ in 0..10 {
+            assert_eq!(iter.size_hint(), (13, Some(n)));
+            let _ = iter.next();
+            n -= 1;
+        }
 
-//     assert_eq!(iter.size_hint(), (n, Some(n)));
-//     assert_eq!(iter.len(), n);
-//     let _ = chunks_iter.pull();
-//     n -= 7;
+        let mut chunks_iter = iter.chunk_puller(7);
 
-//     assert_eq!(iter.size_hint(), (n, Some(n)));
-//     assert_eq!(iter.len(), n);
-//     let _ = chunks_iter.pull();
-//     assert_eq!(iter.size_hint(), (1, Some(1)));
+        {
+            assert_eq!(iter.size_hint(), (13, Some(15)));
+            let c = chunks_iter.pull().unwrap();
+            assert_eq!(c.len(), 2);
+        }
 
-//     let _ = chunks_iter.pull();
-//     assert_eq!(iter.len(), 0);
-//     assert_eq!(iter.size_hint(), (0, Some(0)));
+        {
+            assert_eq!(iter.size_hint(), (13, Some(13)));
+            let c = chunks_iter.pull().unwrap();
+            assert_eq!(c.len(), 7);
+            assert_eq!(iter.size_hint(), (6, Some(6)));
+        }
 
-//     let _ = chunks_iter.pull();
-//     assert_eq!(iter.len(), 0);
-//     assert_eq!(iter.size_hint(), (0, Some(0)));
+        {
+            let c = chunks_iter.pull().unwrap();
+            assert_eq!(c.len(), 6);
+            assert_eq!(iter.size_hint(), (0, Some(0)));
+        }
 
-//     let _ = iter.next();
-//     assert_eq!(iter.len(), 0);
-//     assert_eq!(iter.size_hint(), (0, Some(0)));
-// }
+        {
+            let _ = chunks_iter.pull();
+            assert_eq!(iter.size_hint(), (0, Some(0)));
+        }
+
+        let _ = iter.next();
+        assert_eq!(iter.size_hint(), (0, Some(0)));
+    }
+
+    fn test_k_u(iter: impl ConcurrentIter<Item = String>) {
+        for i in 0..10 {
+            assert_eq!(iter.size_hint(), (12 - i, Some(25 - i)));
+            let _ = iter.next();
+        }
+
+        let mut chunks_iter = iter.chunk_puller(7);
+
+        {
+            assert_eq!(iter.size_hint(), (2, Some(15)));
+            let c = chunks_iter.pull().unwrap();
+            assert_eq!(c.len(), 2);
+        }
+
+        {
+            assert_eq!(iter.size_hint(), (0, Some(13)));
+            let c = chunks_iter.pull().unwrap();
+            assert_eq!(c.len(), 7);
+            assert_eq!(iter.size_hint(), (0, Some(6)));
+        }
+
+        {
+            let c = chunks_iter.pull().unwrap();
+            assert_eq!(c.len(), 6);
+            assert_eq!(iter.size_hint(), (0, Some(0)));
+        }
+
+        {
+            let _ = chunks_iter.pull();
+            assert_eq!(iter.size_hint(), (0, Some(0)));
+        }
+
+        let _ = iter.next();
+        assert_eq!(iter.size_hint(), (0, Some(0)));
+    }
+
+    fn test_k_k(iter: impl ExactSizeConcurrentIter<Item = String>) {
+        let mut n = 25;
+        for _ in 0..10 {
+            assert_eq!(iter.size_hint(), (n, Some(n)));
+            let _ = iter.next();
+            n -= 1;
+        }
+
+        let mut chunks_iter = iter.chunk_puller(7);
+
+        {
+            assert_eq!(iter.size_hint(), (15, Some(15)));
+            assert_eq!(iter.len(), 15);
+            let c = chunks_iter.pull().unwrap();
+            assert_eq!(c.len(), 2);
+        }
+
+        {
+            assert_eq!(iter.size_hint(), (13, Some(13)));
+            assert_eq!(iter.len(), 13);
+            let c = chunks_iter.pull().unwrap();
+            assert_eq!(c.len(), 7);
+            assert_eq!(iter.size_hint(), (6, Some(6)));
+        }
+        {
+            let c = chunks_iter.pull().unwrap();
+            assert_eq!(c.len(), 6);
+            assert_eq!(iter.len(), 0);
+            assert_eq!(iter.size_hint(), (0, Some(0)));
+        }
+        {
+            let _ = chunks_iter.pull();
+            assert_eq!(iter.len(), 0);
+            assert_eq!(iter.size_hint(), (0, Some(0)));
+        }
+
+        let _ = iter.next();
+        assert_eq!(iter.len(), 0);
+        assert_eq!(iter.size_hint(), (0, Some(0)));
+    }
+
+    fn test_u_u(iter: impl ConcurrentIter<Item = String>) {
+        for i in 0..10 {
+            assert_eq!(iter.size_hint(), (0, Some(25 - i)));
+            let _ = iter.next();
+        }
+
+        let mut chunks_iter = iter.chunk_puller(7);
+
+        {
+            assert_eq!(iter.size_hint(), (0, Some(15)));
+            let c = chunks_iter.pull().unwrap();
+            assert_eq!(c.len(), 2);
+        }
+
+        {
+            assert_eq!(iter.size_hint(), (0, Some(13)));
+            let c = chunks_iter.pull().unwrap();
+            assert_eq!(c.len(), 7);
+            assert_eq!(iter.size_hint(), (0, Some(6)));
+        }
+
+        {
+            let c = chunks_iter.pull().unwrap();
+            assert_eq!(c.len(), 6);
+            assert_eq!(iter.size_hint(), (0, Some(0)));
+        }
+
+        {
+            let _ = chunks_iter.pull();
+            assert_eq!(iter.size_hint(), (0, Some(0)));
+        }
+
+        let _ = iter.next();
+        assert_eq!(iter.size_hint(), (0, Some(0)));
+    }
+}

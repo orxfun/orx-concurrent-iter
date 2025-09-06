@@ -1,5 +1,5 @@
 use crate::{
-    ConcurrentIter,
+    ConcurrentIter, ExactSizeConcurrentIter,
     chain::{
         chunk_puller::ChainedChunkPuller, con_iter_known_len_i::ChainKnownLenI,
         con_iter_unknown_len_i::ChainUnknownLenI,
@@ -78,6 +78,19 @@ where
         match self {
             Self::KnownLenI(k) => k.chunk_puller(chunk_size),
             Self::UnknownLenI(u) => u.chunk_puller(chunk_size),
+        }
+    }
+}
+
+impl<I, J> ExactSizeConcurrentIter for Chain<I, J>
+where
+    I: ExactSizeConcurrentIter,
+    J: ExactSizeConcurrentIter<Item = I::Item>,
+{
+    fn len(&self) -> usize {
+        match self {
+            Self::KnownLenI(k) => k.len(),
+            Self::UnknownLenI(u) => u.len(),
         }
     }
 }

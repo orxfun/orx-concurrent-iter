@@ -1,4 +1,4 @@
-use crate::{ConcurrentIter, chain::chunk_puller::ChainedChunkPuller};
+use crate::{ConcurrentIter, ExactSizeConcurrentIter, chain::chunk_puller::ChainedChunkPuller};
 use core::sync::atomic::{AtomicUsize, Ordering};
 
 pub struct ChainUnknownLenI<I, J>
@@ -83,5 +83,15 @@ where
             self.j.chunk_puller(chunk_size),
             false,
         )
+    }
+}
+
+impl<I, J> ExactSizeConcurrentIter for ChainUnknownLenI<I, J>
+where
+    I: ExactSizeConcurrentIter,
+    J: ExactSizeConcurrentIter<Item = I::Item>,
+{
+    fn len(&self) -> usize {
+        self.i.len() + self.j.len()
     }
 }

@@ -1,4 +1,4 @@
-use crate::{ConcurrentIter, chain::chunk_puller::ChainedChunkPuller};
+use crate::{ConcurrentIter, ExactSizeConcurrentIter, chain::chunk_puller::ChainedChunkPuller};
 
 pub struct ChainKnownLenI<I, J>
 where
@@ -54,8 +54,12 @@ where
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let (l, u) = self.j.size_hint();
-        (self.len_i + l, u.map(|u| self.len_i + u))
+        let (l1, u1) = self.i.size_hint();
+        let (l2, u2) = self.j.size_hint();
+        match (u1, u2) {
+            (Some(u1), Some(u2)) => (l1 + l2, Some(u1 + u2)),
+            _ => (l1 + l2, None),
+        }
     }
 
     fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
@@ -64,5 +68,15 @@ where
             self.j.chunk_puller(chunk_size),
             false,
         )
+    }
+}
+
+impl<I, J> ExactSizeConcurrentIter for ChainKnownLenI<I, J>
+where
+    I: ExactSizeConcurrentIter,
+    J: ExactSizeConcurrentIter<Item = I::Item>,
+{
+    fn len(&self) -> usize {
+        self.i.len() + self.j.len()
     }
 }
