@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 mod chunk_puller;
 mod con_iter;
 mod con_iter_known_len_i;
