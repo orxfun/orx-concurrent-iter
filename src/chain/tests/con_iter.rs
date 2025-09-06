@@ -694,11 +694,8 @@ fn chunk_puller(n: usize, nt: usize) {
     );
 }
 
-#[test]
-fn abc() {
-    let n = 4;
-    let nt = 1;
-
+#[test_matrix([0, 1, N], [1, 2, 4])]
+fn chunk_puller_with_idx(n: usize, nt: usize) {
     let v1 = || new_vec(n / 3, |x| (x + 10).to_string());
     let v2 = || new_vec(n - n / 3, |x| (n / 3 + x + 10).to_string());
     fn test(iter: impl ConcurrentIter<Item = String>, n: usize, nt: usize) {
@@ -755,143 +752,150 @@ fn abc() {
         n,
         nt,
     );
-    // test(
-    //     ChainUnknownLenI::new(
-    //         v1().into_iter()
-    //             .filter(|x| !x.starts_with('x'))
-    //             .iter_into_con_iter(),
-    //         v2().into_iter()
-    //             .filter(|x| !x.starts_with('x'))
-    //             .iter_into_con_iter(),
-    //     ),
-    //     n,
-    //     nt,
-    // );
+    test(
+        ChainUnknownLenI::new(
+            v1().into_iter()
+                .filter(|x| !x.starts_with('x'))
+                .iter_into_con_iter(),
+            v2().into_iter()
+                .filter(|x| !x.starts_with('x'))
+                .iter_into_con_iter(),
+        ),
+        n,
+        nt,
+    );
 }
 
-// // #[test_matrix([0, 1, N], [1, 2, 4])]
-// // fn chunk_puller_with_idx(n: usize, nt: usize) {
-// //     let v1 = || new_vec(n / 3, |x| (x + 10).to_string());
-// //     let v2 = || new_vec(n - n / 3, |x| (n / 3 + x + 10).to_string());
-// //     fn test(iter: impl ConcurrentIter<Item = String>, n: usize, nt: usize) {
-// //         let bag = ConcurrentBag::new();
-// //         let num_spawned = ConcurrentBag::new();
-// //         std::thread::scope(|s| {
-// //             for _ in 0..nt {
-// //                 s.spawn(|| {
-// //                     num_spawned.push(true);
-// //                     while num_spawned.len() < nt {} // allow all threads to be spawned
+#[test_matrix([0, 1, N], [1, 2, 4])]
+fn flattened_chunk_puller(n: usize, nt: usize) {
+    let v1 = || new_vec(n / 3, |x| (x + 10).to_string());
+    let v2 = || new_vec(n - n / 3, |x| (n / 3 + x + 10).to_string());
+    fn test(iter: impl ConcurrentIter<Item = String>, n: usize, nt: usize) {
+        let bag = ConcurrentBag::new();
+        let num_spawned = ConcurrentBag::new();
+        std::thread::scope(|s| {
+            for _ in 0..nt {
+                s.spawn(|| {
+                    num_spawned.push(true);
+                    while num_spawned.len() < nt {} // allow all threads to be spawned
 
-// //                     let mut puller = iter.chunk_puller(7);
+                    for x in iter.chunk_puller(7).flattened() {
+                        bag.push(x);
+                    }
+                });
+            }
+        });
 
-// //                     while let Some((begin_idx, chunk)) = puller.pull_with_idx() {
-// //                         assert!(chunk.len() <= 7);
-// //                         for (i, x) in chunk.enumerate() {
-// //                             bag.push((begin_idx + i, x));
-// //                         }
-// //                     }
-// //                 });
-// //             }
-// //         });
+        let mut expected: Vec<_> = (0..n).map(|i| (i + 10).to_string()).collect();
+        expected.sort();
+        let mut collected = bag.into_inner().to_vec();
+        collected.sort();
 
-// //         let mut expected: Vec<_> = (0..n).map(|i| (i, (i + 10).to_string())).collect();
-// //         expected.sort();
-// //         let mut collected = bag.into_inner().to_vec();
-// //         collected.sort();
+        assert_eq!(expected, collected);
+    }
+    test(
+        ChainKnownLenI::new(v1().into_con_iter(), v2().into_con_iter(), n / 3),
+        n,
+        nt,
+    );
+    test(
+        ChainKnownLenI::new(
+            v1().into_con_iter(),
+            v2().into_iter()
+                .filter(|x| !x.starts_with('x'))
+                .iter_into_con_iter(),
+            n / 3,
+        ),
+        n,
+        nt,
+    );
+    test(
+        ChainUnknownLenI::new(
+            v1().into_iter()
+                .filter(|x| !x.starts_with('x'))
+                .iter_into_con_iter(),
+            v2().into_con_iter(),
+        ),
+        n,
+        nt,
+    );
+    test(
+        ChainUnknownLenI::new(
+            v1().into_iter()
+                .filter(|x| !x.starts_with('x'))
+                .iter_into_con_iter(),
+            v2().into_iter()
+                .filter(|x| !x.starts_with('x'))
+                .iter_into_con_iter(),
+        ),
+        n,
+        nt,
+    );
+}
 
-// //         assert_eq!(expected, collected);
-// //     }
-// //     test(
-// //         Chain::new(v1().into_con_iter(), v2().into_con_iter()),
-// //         n,
-// //         nt,
-// //     );
-// //     test(
-// //         Chain::new(
-// //             v1().into_con_iter(),
-// //             v2().into_iter()
-// //                 .filter(|x| !x.starts_with('x'))
-// //                 .iter_into_con_iter(),
-// //         ),
-// //         n,
-// //         nt,
-// //     );
-// //     test(
-// //         Chain::new(
-// //             v1().into_iter()
-// //                 .filter(|x| !x.starts_with('x'))
-// //                 .iter_into_con_iter(),
-// //             v2().into_con_iter(),
-// //         ),
-// //         n,
-// //         nt,
-// //     );
-// //     test(
-// //         Chain::new(
-// //             v1().into_iter()
-// //                 .filter(|x| !x.starts_with('x'))
-// //                 .iter_into_con_iter(),
-// //             v2().into_iter()
-// //                 .filter(|x| !x.starts_with('x'))
-// //                 .iter_into_con_iter(),
-// //         ),
-// //         n,
-// //         nt,
-// //     );
-// // }
+#[test_matrix([0, 1, N], [1, 2, 4])]
+fn flattened_chunk_puller_with_idx(n: usize, nt: usize) {
+    let v1 = || new_vec(n / 3, |x| (x + 10).to_string());
+    let v2 = || new_vec(n - n / 3, |x| (n / 3 + x + 10).to_string());
+    fn test(iter: impl ConcurrentIter<Item = String>, n: usize, nt: usize) {
+        let bag = ConcurrentBag::new();
+        let num_spawned = ConcurrentBag::new();
+        std::thread::scope(|s| {
+            for _ in 0..nt {
+                s.spawn(|| {
+                    num_spawned.push(true);
+                    while num_spawned.len() < nt {} // allow all threads to be spawned
 
-// // // #[test_matrix([0, 1, N], [1, 2, 4])]
-// // // fn flattened_chunk_puller(n: usize, nt: usize) {
-// // //     let vec = new_vec(n, |x| (x + 10).to_string());
-// // //     let iter = ConIterVec::new(vec);
+                    for x in iter.chunk_puller(7).flattened_with_idx() {
+                        bag.push(x);
+                    }
+                });
+            }
+        });
 
-// // //     let bag = ConcurrentBag::new();
-// // //     let num_spawned = ConcurrentBag::new();
-// // //     std::thread::scope(|s| {
-// // //         for _ in 0..nt {
-// // //             s.spawn(|| {
-// // //                 num_spawned.push(true);
-// // //                 while num_spawned.len() < nt {} // allow all threads to be spawned
+        let mut expected: Vec<_> = (0..n).map(|i| (i, (i + 10).to_string())).collect();
+        expected.sort();
+        let mut collected = bag.into_inner().to_vec();
+        collected.sort();
 
-// // //                 for x in iter.chunk_puller(7).flattened() {
-// // //                     bag.push(x);
-// // //                 }
-// // //             });
-// // //         }
-// // //     });
-
-// // //     let mut expected: Vec<_> = (0..n).map(|i| (i + 10).to_string()).collect();
-// // //     expected.sort();
-// // //     let mut collected = bag.into_inner().to_vec();
-// // //     collected.sort();
-
-// // //     assert_eq!(expected, collected);
-// // // }
-
-// // // #[test_matrix([0, 1, N], [1, 2, 4])]
-// // // fn flattened_chunk_puller_with_idx(n: usize, nt: usize) {
-// // //     let vec = new_vec(n, |x| (x + 10).to_string());
-// // //     let iter = ConIterVec::new(vec);
-
-// // //     let bag = ConcurrentBag::new();
-// // //     let num_spawned = ConcurrentBag::new();
-// // //     std::thread::scope(|s| {
-// // //         for _ in 0..nt {
-// // //             s.spawn(|| {
-// // //                 num_spawned.push(true);
-// // //                 while num_spawned.len() < nt {} // allow all threads to be spawned
-
-// // //                 for x in iter.chunk_puller(7).flattened_with_idx() {
-// // //                     bag.push(x);
-// // //                 }
-// // //             });
-// // //         }
-// // //     });
-
-// // //     let mut expected: Vec<_> = (0..n).map(|i| (i, (i + 10).to_string())).collect();
-// // //     expected.sort();
-// // //     let mut collected = bag.into_inner().to_vec();
-// // //     collected.sort();
-
-// // //     assert_eq!(expected, collected);
-// // // }
+        assert_eq!(expected, collected);
+    }
+    test(
+        ChainKnownLenI::new(v1().into_con_iter(), v2().into_con_iter(), n / 3),
+        n,
+        nt,
+    );
+    test(
+        ChainKnownLenI::new(
+            v1().into_con_iter(),
+            v2().into_iter()
+                .filter(|x| !x.starts_with('x'))
+                .iter_into_con_iter(),
+            n / 3,
+        ),
+        n,
+        nt,
+    );
+    test(
+        ChainUnknownLenI::new(
+            v1().into_iter()
+                .filter(|x| !x.starts_with('x'))
+                .iter_into_con_iter(),
+            v2().into_con_iter(),
+        ),
+        n,
+        nt,
+    );
+    test(
+        ChainUnknownLenI::new(
+            v1().into_iter()
+                .filter(|x| !x.starts_with('x'))
+                .iter_into_con_iter(),
+            v2().into_iter()
+                .filter(|x| !x.starts_with('x'))
+                .iter_into_con_iter(),
+        ),
+        n,
+        nt,
+    );
+}
