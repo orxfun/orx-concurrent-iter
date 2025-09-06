@@ -224,3 +224,57 @@ fn size_hint() {
         assert_eq!(iter.size_hint(), (0, Some(0)));
     }
 }
+
+#[test]
+fn size_hint_skip_to_end() {
+    let v1 = || new_vec(12, |x| (x + 10).to_string());
+    let v2 = || new_vec(13, |x| (x + 10).to_string());
+    fn test(iter: impl ConcurrentIter<Item = String>, chunk: usize) {
+        for _ in 0..10 {
+            let _ = iter.next();
+        }
+        let mut chunks_iter = iter.chunk_puller(chunk);
+        let _ = chunks_iter.pull();
+
+        iter.skip_to_end();
+
+        assert_eq!(iter.next(), None);
+        assert!(chunks_iter.pull().is_none());
+    }
+
+    for chunk in [4, 7, 12, 13, 20, 30] {
+        test(
+            Chain::new(v1().into_con_iter(), v2().into_con_iter()),
+            chunk,
+        );
+        test(
+            Chain::new(
+                v1().into_con_iter(),
+                v2().into_iter()
+                    .filter(|x| !x.starts_with('x'))
+                    .iter_into_con_iter(),
+            ),
+            chunk,
+        );
+        test(
+            Chain::new(
+                v1().into_iter()
+                    .filter(|x| !x.starts_with('x'))
+                    .iter_into_con_iter(),
+                v2().into_con_iter(),
+            ),
+            chunk,
+        );
+        test(
+            Chain::new(
+                v1().into_iter()
+                    .filter(|x| !x.starts_with('x'))
+                    .iter_into_con_iter(),
+                v2().into_iter()
+                    .filter(|x| !x.starts_with('x'))
+                    .iter_into_con_iter(),
+            ),
+            chunk,
+        );
+    }
+}
