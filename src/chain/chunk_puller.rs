@@ -43,13 +43,15 @@ where
     fn pull(&mut self) -> Option<Self::Chunk<'_>> {
         match self.p_consumed {
             false => {
+                // SAFETY: s will be used to recursively call this function iff pulled chunks is None
+                // in which case the mutable reference is not used.
+                let s = unsafe { &mut *(self as *mut Self) };
                 let p = self.p.pull().map(ChunkOfEither::P);
                 match p.is_some() {
                     true => p,
                     false => {
                         self.p_consumed = true;
-                        // self.pull()
-                        todo!()
+                        s.pull()
                     }
                 }
             }
