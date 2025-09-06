@@ -1,36 +1,34 @@
 use crate::{ChunkPuller, ConcurrentIter, chain::chunk::ChunkOfEither};
 
-pub struct ChainedChunkPuller<'i, I, J>
+pub struct ChainedChunkPullerKnownLenI<'i, I, J>
 where
-    I: ConcurrentIter,
-    J: ConcurrentIter<Item = I::Item>,
+    I: ConcurrentIter + 'i,
+    J: ConcurrentIter<Item = I::Item> + 'i,
 {
-    i: &'i I,
-    j: &'i J,
     p: I::ChunkPuller<'i>,
     q: J::ChunkPuller<'i>,
+    len_i: usize,
     p_consumed: bool,
 }
 
-impl<'i, I, J> ChainedChunkPuller<'i, I, J>
+impl<'i, I, J> ChainedChunkPullerKnownLenI<'i, I, J>
 where
     I: ConcurrentIter,
     J: ConcurrentIter<Item = I::Item>,
 {
-    pub(super) fn new(i: &'i I, j: &'i J, chunk_size: usize) -> Self {
+    pub(super) fn new(i: &'i I, j: &'i J, chunk_size: usize, len_i: usize) -> Self {
         let p = i.chunk_puller(chunk_size);
         let q = j.chunk_puller(chunk_size);
         Self {
-            i,
-            j,
             p,
             q,
+            len_i,
             p_consumed: false,
         }
     }
 }
 
-impl<'i, I, J> ChunkPuller for ChainedChunkPuller<'i, I, J>
+impl<'i, I, J> ChunkPuller for ChainedChunkPullerKnownLenI<'i, I, J>
 where
     I: ConcurrentIter,
     J: ConcurrentIter<Item = I::Item>,
@@ -86,7 +84,7 @@ where
             true => self
                 .q
                 .pull_with_idx()
-                .map(|(idx, q)| (idx, ChunkOfEither::Q(q))),
+                .map(|(idx, q)| (self.len_i + idx, ChunkOfEither::Q(q))),
         }
     }
 }
