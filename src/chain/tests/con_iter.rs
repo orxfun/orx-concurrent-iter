@@ -278,3 +278,57 @@ fn size_hint_skip_to_end() {
         );
     }
 }
+
+#[test_matrix([1, 2, 4])]
+fn empty(nt: usize) {
+    let v1 = || new_vec(0, |x| (x + 10).to_string());
+    let v2 = || new_vec(0, |x| (x + 10).to_string());
+    fn test(iter: impl ConcurrentIter, nt: usize) {
+        std::thread::scope(|s| {
+            for _ in 0..nt {
+                s.spawn(|| {
+                    assert!(iter.next().is_none());
+                    assert!(iter.next().is_none());
+
+                    let mut puller = iter.chunk_puller(5);
+                    assert!(puller.pull().is_none());
+                    assert!(puller.pull().is_none());
+
+                    let mut iter = iter.chunk_puller(5).flattened();
+                    assert!(iter.next().is_none());
+                    assert!(iter.next().is_none());
+                });
+            }
+        });
+    }
+    test(Chain::new(v1().into_con_iter(), v2().into_con_iter()), nt);
+    test(
+        Chain::new(
+            v1().into_con_iter(),
+            v2().into_iter()
+                .filter(|x| x.starts_with('x'))
+                .iter_into_con_iter(),
+        ),
+        nt,
+    );
+    test(
+        Chain::new(
+            v1().into_iter()
+                .filter(|x| x.starts_with('x'))
+                .iter_into_con_iter(),
+            v2().into_con_iter(),
+        ),
+        nt,
+    );
+    test(
+        Chain::new(
+            v1().into_iter()
+                .filter(|x| x.starts_with('x'))
+                .iter_into_con_iter(),
+            v2().into_iter()
+                .filter(|x| x.starts_with('x'))
+                .iter_into_con_iter(),
+        ),
+        nt,
+    );
+}
