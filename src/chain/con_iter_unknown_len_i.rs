@@ -19,7 +19,7 @@ where
     I: ConcurrentIter,
     J: ConcurrentIter<Item = I::Item>,
 {
-    pub(super) fn new(i: I, j: J) -> Self {
+    pub(crate) fn new(i: I, j: J) -> Self {
         Self {
             i,
             j,

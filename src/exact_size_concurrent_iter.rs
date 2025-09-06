@@ -1,4 +1,4 @@
-use crate::concurrent_iter::ConcurrentIter;
+use crate::{chain::ChainKnownLenI, concurrent_iter::ConcurrentIter};
 
 /// A concurrent iterator which has a certain information of the number of
 /// remaining elements.
@@ -77,4 +77,27 @@ pub trait ExactSizeConcurrentIter: ConcurrentIter {
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
+    fn chain<C>(self, other: C) -> ChainKnownLenI<Self, C>
+    where
+        C: ConcurrentIter<Item = Self::Item>,
+        Self: Sized,
+    {
+        let len_i = self.len();
+        ChainKnownLenI::new(self, other, len_i)
+    }
+}
+
+#[test]
+fn abc() {
+    use crate::*;
+
+    fn xyz(iter: impl IntoConcurrentIter) {}
+
+    let v = std::vec![1, 2,];
+    xyz(v);
+
+    let v = std::vec![1, 2,];
+    let iter = v.into_con_iter();
+    xyz(iter);
 }

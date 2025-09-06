@@ -1,4 +1,5 @@
 use crate::{
+    chain::ChainUnknownLenI,
     cloned::ConIterCloned,
     copied::ConIterCopied,
     enumerate::Enumerate,
@@ -922,5 +923,13 @@ pub trait ConcurrentIter: Sync {
         Self: Sized,
     {
         Enumerate::new(self)
+    }
+
+    fn chain_inexact<C>(self, other: C) -> ChainUnknownLenI<Self, C>
+    where
+        C: ConcurrentIter<Item = Self::Item>,
+        Self: Sized,
+    {
+        ChainUnknownLenI::new(self, other)
     }
 }
