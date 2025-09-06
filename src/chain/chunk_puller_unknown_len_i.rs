@@ -2,7 +2,7 @@ use crate::{
     ChunkPuller, ConcurrentIter,
     chain::{chunk::ChunkOfEither, con_iter_unknown_len_i::ChainUnknownLenI},
 };
-use std::sync::atomic::Ordering;
+use core::sync::atomic::Ordering;
 
 pub struct ChainedChunkPullerUnknownLenI<'i, I, J>
 where
