@@ -17,7 +17,7 @@ where
     J: ConcurrentIter<Item = I::Item>,
 {
     pub(super) fn new(i: I, j: J) -> Self {
-        let len_i = 0.into();
+        let len_i = 1.into();
         Self { i, j, len_i }
     }
 }
@@ -62,7 +62,10 @@ where
                 Some((idx, x))
             }
             None => self.j.next_with_idx().map(|(idx, x)| {
-                let len_i = self.len_i.load(Ordering::Relaxed);
+                let len_i = match self.len_i.load(Ordering::Relaxed) {
+                    0 => 0,
+                    n => n + 1,
+                };
                 (len_i + idx, x)
             }),
         }
