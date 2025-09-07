@@ -56,10 +56,7 @@ where
         match self.p_consumed {
             false => match self.p.pull() {
                 Some(p) => {
-                    _ = self
-                        .chain
-                        .num_pulled_i
-                        .fetch_add(p.len(), Ordering::Relaxed);
+                    _ = self.chain.num_pulled_i.fetch_add(p.len(), Ordering::SeqCst);
                     Some(ChunkOfEither::P(p))
                 }
                 None => {
@@ -75,10 +72,7 @@ where
         match self.p_consumed {
             false => match self.p.pull_with_idx() {
                 Some((idx, p)) => {
-                    _ = self
-                        .chain
-                        .num_pulled_i
-                        .fetch_add(p.len(), Ordering::Relaxed);
+                    _ = self.chain.num_pulled_i.fetch_add(p.len(), Ordering::SeqCst);
                     Some((idx, ChunkOfEither::P(p)))
                 }
                 None => {

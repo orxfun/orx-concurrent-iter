@@ -31,7 +31,7 @@ where
 
     #[inline(always)]
     pub(super) fn num_pulled_i(&self) -> usize {
-        self.num_pulled_i.load(Ordering::Relaxed)
+        self.num_pulled_i.load(Ordering::SeqCst)
     }
 }
 
@@ -61,7 +61,7 @@ where
     fn next(&self) -> Option<Self::Item> {
         match self.i.next() {
             Some(x) => {
-                _ = self.num_pulled_i.fetch_add(1, Ordering::Relaxed);
+                _ = self.num_pulled_i.fetch_add(1, Ordering::SeqCst);
                 Some(x)
             }
             None => self.j.next(),
@@ -71,7 +71,7 @@ where
     fn next_with_idx(&self) -> Option<(usize, Self::Item)> {
         match self.i.next_with_idx() {
             Some((idx, x)) => {
-                _ = self.num_pulled_i.fetch_add(1, Ordering::Relaxed);
+                _ = self.num_pulled_i.fetch_add(1, Ordering::SeqCst);
                 Some((idx, x))
             }
             None => self
