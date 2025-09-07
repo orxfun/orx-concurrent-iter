@@ -30,6 +30,8 @@ mod pullers;
 
 // exported modules: transformations
 
+/// Chain of two or more concurrent iterators.
+pub mod chain;
 /// Cloned transformation of concurrent iterators.
 pub mod cloned;
 /// Copied transformation of concurrent iterators.

@@ -57,3 +57,13 @@ pub trait IntoConcurrentIter {
     /// ```
     fn into_con_iter(self) -> Self::IntoIter;
 }
+
+impl<I: ConcurrentIter> IntoConcurrentIter for I {
+    type Item = I::Item;
+
+    type IntoIter = I;
+
+    fn into_con_iter(self) -> Self::IntoIter {
+        self
+    }
+}

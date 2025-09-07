@@ -1,4 +1,6 @@
 use crate::{
+    IntoConcurrentIter,
+    chain::ChainUnknownLenI,
     cloned::ConIterCloned,
     copied::ConIterCopied,
     enumerate::Enumerate,
@@ -922,5 +924,38 @@ pub trait ConcurrentIter: Sync {
         Self: Sized,
     {
         Enumerate::new(self)
+    }
+
+    /// Creates a chain of this and `other` concurrent iterators.
+    ///
+    /// It is preferable to call [`chain`] over `chain_inexact` whenever the first iterator
+    /// implements `ExactSizeConcurrentIter`.
+    ///
+    /// [`chain`]: crate::ExactSizeConcurrentIter::chain
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use orx_concurrent_iter::*;
+    ///
+    /// let s1 = "abcxyz".chars().filter(|x| !['x', 'y', 'z'].contains(x)); // inexact iter
+    /// let s2 = vec!['d', 'e', 'f'];
+    ///
+    /// let chain = s1.iter_into_con_iter().chain_inexact(s2);
+    ///
+    /// assert_eq!(chain.next(), Some('a'));
+    /// assert_eq!(chain.next(), Some('b'));
+    /// assert_eq!(chain.next(), Some('c'));
+    /// assert_eq!(chain.next(), Some('d'));
+    /// assert_eq!(chain.next(), Some('e'));
+    /// assert_eq!(chain.next(), Some('f'));
+    /// assert_eq!(chain.next(), None);
+    /// ```
+    fn chain_inexact<C>(self, other: C) -> ChainUnknownLenI<Self, C::IntoIter>
+    where
+        C: IntoConcurrentIter<Item = Self::Item>,
+        Self: Sized,
+    {
+        ChainUnknownLenI::new(self, other.into_con_iter())
     }
 }
