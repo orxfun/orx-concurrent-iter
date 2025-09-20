@@ -36,6 +36,7 @@ pub mod chain;
 pub mod cloned;
 /// Copied transformation of concurrent iterators.
 pub mod copied;
+pub mod dynamic;
 /// Enumerated transformation of concurrent iterators.
 pub mod enumerate;
 

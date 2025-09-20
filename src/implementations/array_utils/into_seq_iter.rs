@@ -37,7 +37,7 @@ impl<T, M> ArrayIntoSeqIter<T, M> {
     /// Finally, when provided, `allocation_to_drop` is expected to drop the allocation for the completely or partially
     /// given contiguous memory; however, not the elements. This iterator will make sure that all elements between
     /// `first` and `last` are dropped, regardless of whether the iterator is completely traversed or not.
-    pub(crate) fn new(
+    pub fn new(
         first: *const T,
         last: *const T,
         allocation_to_drop: Option<(*const T, usize)>,

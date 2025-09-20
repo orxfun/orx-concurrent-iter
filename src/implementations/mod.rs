@@ -1,4 +1,5 @@
-mod array_utils;
+/// Utility functions for iterators over arrays.
+pub mod array_utils;
 mod empty;
 mod iter;
 /// Generic implementations of jagged arrays or slice of slices, etc.
