@@ -1,6 +1,6 @@
 use crate::{
     ConcurrentIter, ExactSizeConcurrentIter,
-    chain::chunk_puller_unknown_len_i::ChainedChunkPullerUnknownLenI,
+    chain_arch::chunk_puller_unknown_len_i::ChainedChunkPullerUnknownLenI,
 };
 use core::sync::atomic::{AtomicUsize, Ordering};
 

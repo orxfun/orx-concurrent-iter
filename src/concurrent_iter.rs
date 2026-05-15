@@ -1,6 +1,6 @@
 use crate::{
     IntoConcurrentIter,
-    chain::ChainUnknownLenI,
+    chain_arch::ChainUnknownLenI,
     cloned::ConIterCloned,
     copied::ConIterCopied,
     enumerate::Enumerate,

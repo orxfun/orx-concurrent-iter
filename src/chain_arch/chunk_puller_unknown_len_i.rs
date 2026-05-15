@@ -1,6 +1,6 @@
 use crate::{
     ChunkPuller, ConcurrentIter,
-    chain::{chunk::ChunkOfEither, con_iter_unknown_len_i::ChainUnknownLenI},
+    chain_arch::{chunk::ChunkOfEither, con_iter_unknown_len_i::ChainUnknownLenI},
 };
 use core::sync::atomic::Ordering;
 

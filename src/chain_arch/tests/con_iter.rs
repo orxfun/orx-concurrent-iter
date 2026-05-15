@@ -1,6 +1,6 @@
 use crate::{
-    IntoConcurrentIter, IterIntoConcurrentIter, chain::con_iter_known_len_i::ChainKnownLenI,
-    chain::con_iter_unknown_len_i::ChainUnknownLenI, concurrent_iter::ConcurrentIter,
+    IntoConcurrentIter, IterIntoConcurrentIter, chain_arch::con_iter_known_len_i::ChainKnownLenI,
+    chain_arch::con_iter_unknown_len_i::ChainUnknownLenI, concurrent_iter::ConcurrentIter,
     exact_size_concurrent_iter::ExactSizeConcurrentIter, pullers::ChunkPuller,
 };
 use alloc::{

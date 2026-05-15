@@ -1,6 +1,6 @@
 use crate::{
     ConcurrentIter, ExactSizeConcurrentIter,
-    chain::chunk_puller_known_len_i::ChainedChunkPullerKnownLenI,
+    chain_arch::chunk_puller_known_len_i::ChainedChunkPullerKnownLenI,
 };
 
 /// Chain of two concurrent iterators where the length of the first iterator is

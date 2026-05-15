@@ -1,4 +1,4 @@
-use crate::{IntoConcurrentIter, chain::ChainKnownLenI, concurrent_iter::ConcurrentIter};
+use crate::{IntoConcurrentIter, chain_arch::ChainKnownLenI, concurrent_iter::ConcurrentIter};
 
 /// A concurrent iterator which has a certain information of the number of
 /// remaining elements.

@@ -32,6 +32,8 @@ mod pullers;
 
 /// Chain of two or more concurrent iterators.
 pub mod chain;
+/// Chain of two or more concurrent iterators.
+pub mod chain_arch;
 /// Cloned transformation of concurrent iterators.
 pub mod cloned;
 /// Copied transformation of concurrent iterators.

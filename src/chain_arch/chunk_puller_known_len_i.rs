@@ -1,4 +1,4 @@
-use crate::{ChunkPuller, ConcurrentIter, chain::chunk::ChunkOfEither};
+use crate::{ChunkPuller, ConcurrentIter, chain_arch::chunk::ChunkOfEither};
 
 pub struct ChainedChunkPullerKnownLenI<'i, I, J>
 where
