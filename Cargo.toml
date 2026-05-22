@@ -45,3 +45,7 @@ harness = false
 [[bench]]
 name = "con_iter_of_slice_mut"
 harness = false
+
+[[bench]]
+name = "con_iter_of_range"
+harness = false
