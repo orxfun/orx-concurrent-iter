@@ -27,6 +27,12 @@ jobs:
 
     - name: Install clippy
       run: rustup component add clippy
+    - name: Install musl cross toolchain prerequisites
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y musl-tools gcc-multilib libc6-dev-i386
+        command -v musl-gcc
+        musl-gcc --version
     - name: Install 32bit target
       run: rustup target add i686-unknown-linux-musl
     - name: Install wasm target
@@ -39,6 +45,9 @@ jobs:
     - name: Build
       run: cargo build --verbose
     - name: Build-32bit
+      env:
+        CC_i686_unknown_linux_musl: musl-gcc
+        CARGO_TARGET_I686_UNKNOWN_LINUX_MUSL_LINKER: musl-gcc
       run: cargo build --verbose --target i686-unknown-linux-musl
     - name: Build-wasm
       run: cargo build --verbose --target wasm32v1-none
@@ -46,6 +55,9 @@ jobs:
     - name: Test
       run: cargo test --verbose
     - name: Test-32bit
+      env:
+        CC_i686_unknown_linux_musl: musl-gcc
+        CARGO_TARGET_I686_UNKNOWN_LINUX_MUSL_LINKER: musl-gcc
       run: cargo test --verbose --target i686-unknown-linux-musl
     - name: Check-wasm
       run: cargo check --verbose --target wasm32v1-none
