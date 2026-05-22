@@ -1,6 +1,6 @@
 use super::slice::RawJaggedSlice;
 use crate::implementations::jagged_arrays::{
-    AsRawSlice, Slices, as_slice::AsSlice, index::JaggedIndex, indexer::JaggedIndexer,
+    AsRawSlice, Slices, index::JaggedIndex, indexer::JaggedIndexer,
 };
 use core::{cmp::Ordering, marker::PhantomData};
 use orx_pseudo_default::PseudoDefault;
@@ -77,7 +77,7 @@ where
     }
 
     pub(super) fn len_of(&self, f: usize) -> Option<usize> {
-        self.arrays.slice_at(f).map(|x| x.as_slice().len())
+        self.arrays.slice_at(f).map(|x| x.len())
     }
 
     /// Returns the [`JaggedIndex`] of the element at the given `flat_index` position of the flattened
@@ -116,7 +116,6 @@ where
 
     pub(super) fn slice(&self, f: usize, begin_within_slice: usize, len: usize) -> Option<&'a [T]> {
         self.arrays.slice_at(f).and_then(|array| {
-            let array = array.as_slice();
             (begin_within_slice < array.len()).then(|| {
                 let ptr = unsafe { array.as_ptr().add(begin_within_slice) };
                 unsafe { core::slice::from_raw_parts(ptr, len) }
