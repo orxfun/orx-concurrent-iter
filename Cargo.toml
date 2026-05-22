@@ -20,11 +20,44 @@ orx-split-vec = "3.21.0"
 orx-pinned-concurrent-col = "2.16.0"
 orx-concurrent-bag = "3.2.0"
 test-case = "3.3.1"
-criterion = "0.7.0"
+criterion = "0.8.0"
+orx-criterion = { git = "https://github.com/orxfun/orx-criterion" }
 rand = "0.9"
 rand_chacha = "0.9"
 rayon = "1.11.0"
 
 [[bench]]
+name = "con_iter_of_iter_small"
+harness = false
+
+[[bench]]
 name = "con_iter_of_iter"
+harness = false
+
+[[bench]]
+name = "con_iter_of_vec"
+harness = false
+
+[[bench]]
+name = "con_iter_of_slice"
+harness = false
+
+[[bench]]
+name = "con_iter_of_slice_mut"
+harness = false
+
+[[bench]]
+name = "con_iter_of_range"
+harness = false
+
+[[bench]]
+name = "con_iter_of_vec_drain"
+harness = false
+
+[[bench]]
+name = "con_iter_of_vec_deque_ref"
+harness = false
+
+[[bench]]
+name = "con_iter_copied"
 harness = false

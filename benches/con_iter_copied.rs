@@ -78,48 +78,53 @@ fn inputs(len: usize) -> Vec<usize> {
 fn seq(inputs: &[usize]) -> Vec<LargeOutput> {
     inputs
         .iter()
-        .filter(|x| *x % 3 > 0)
-        .map(|x| x + 1)
+        .filter(|x| **x % 3 > 0)
+        .map(|x| *x + 1)
         .map(to_large_output)
         .collect()
 }
 
-fn rayon(inputs: &[usize]) -> Vec<LargeOutput> {
-    use rayon::iter::{IntoParallelIterator, ParallelBridge, ParallelIterator};
-    inputs
-        .iter()
-        .filter(|x| *x % 3 > 0)
-        .map(|x| x + 1)
-        .par_bridge()
-        .into_par_iter()
-        .map(to_large_output)
-        .collect()
-}
-
-fn con_iter(inputs: &[usize], num_threads: usize, chunk_size: usize) -> Vec<LargeOutput> {
-    let iter = inputs.iter().filter(|x| *x % 3 > 0).map(|x| x + 1);
-    let con_iter = iter.iter_into_con_iter();
+fn con_iter_slice(inputs: &[usize], num_threads: usize) -> Vec<LargeOutput> {
+    let con_iter = inputs.into_con_iter();
 
     std::thread::scope(|s| {
         let mut handles = vec![];
         for _ in 0..num_threads {
-            let thread_vec = match chunk_size {
-                1 => s.spawn(|| {
-                    let mut vec = vec![];
-                    while let Some(x) = con_iter.next() {
-                        vec.push(to_large_output(x));
+            let thread_vec = s.spawn(|| {
+                let mut vec = vec![];
+                while let Some(x) = con_iter.next() {
+                    if *x % 3 > 0 {
+                        vec.push(to_large_output(*x + 1));
                     }
-                    vec
-                }),
-                _ => s.spawn(|| {
-                    let mut vec = vec![];
-                    let mut chunk_iter = con_iter.chunk_puller(chunk_size);
-                    while let Some(chunk) = chunk_iter.pull() {
-                        vec.extend(chunk.map(to_large_output));
+                }
+                vec
+            });
+            handles.push(thread_vec);
+        }
+
+        let mut vec = vec![];
+        for x in handles {
+            vec.extend(x.join().expect("failed to join the thread"));
+        }
+        vec
+    })
+}
+
+fn con_iter_copied_iter(inputs: &[usize], num_threads: usize) -> Vec<LargeOutput> {
+    let con_iter = inputs.into_con_iter().copied();
+
+    std::thread::scope(|s| {
+        let mut handles = vec![];
+        for _ in 0..num_threads {
+            let thread_vec = s.spawn(|| {
+                let mut vec = vec![];
+                while let Some(x) = con_iter.next() {
+                    if x % 3 > 0 {
+                        vec.push(to_large_output(x + 1));
                     }
-                    vec
-                }),
-            };
+                }
+                vec
+            });
             handles.push(thread_vec);
         }
 
@@ -152,10 +157,8 @@ impl Factors for Input {
 
 #[derive(Clone, Copy, Debug)]
 enum Method {
-    Seq,
-    Rayon,
-    ConcurrentIter,
-    ConcurrentIterChunk,
+    Slice,
+    Copied,
 }
 
 impl Factors for Method {
@@ -166,10 +169,8 @@ impl Factors for Method {
     fn factor_levels(&self) -> Vec<String> {
         vec![
             match self {
-                Self::Seq => "seq",
-                Self::Rayon => "rayon",
-                Self::ConcurrentIter => "orx",
-                Self::ConcurrentIterChunk => "orx-c64",
+                Self::Slice => "slice",
+                Self::Copied => "copied",
             }
             .to_string(),
         ]
@@ -203,10 +204,8 @@ impl Experiment for Exp {
     ) -> Self::Output {
         let (values, _) = input;
         match alg_variant {
-            Method::Seq => seq(values),
-            Method::Rayon => rayon(values),
-            Method::ConcurrentIter => con_iter(values, 8, 1),
-            Method::ConcurrentIterChunk => con_iter(values, 8, 64),
+            Method::Slice => con_iter_slice(values, 8),
+            Method::Copied => con_iter_copied_iter(values, 8),
         }
     }
 
@@ -221,17 +220,12 @@ impl Experiment for Exp {
     }
 }
 
-fn con_iter_of_iter(c: &mut Criterion) {
+fn con_iter_copied(c: &mut Criterion) {
     let treatments = vec![Input { len: 4096 }, Input { len: 65_536 }];
-    let variants = vec![
-        Method::Seq,
-        Method::Rayon,
-        Method::ConcurrentIter,
-        Method::ConcurrentIterChunk,
-    ];
+    let variants = vec![Method::Slice, Method::Copied];
 
-    Exp.bench(c, "con_iter_of_iter", &treatments, &variants);
+    Exp.bench(c, "con_iter_copied", &treatments, &variants);
 }
 
-criterion_group!(benches, con_iter_of_iter);
+criterion_group!(benches, con_iter_copied);
 criterion_main!(benches);

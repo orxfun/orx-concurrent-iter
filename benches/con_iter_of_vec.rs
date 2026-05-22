@@ -75,30 +75,27 @@ fn inputs(len: usize) -> Vec<usize> {
         .collect()
 }
 
-fn seq(inputs: &[usize]) -> Vec<LargeOutput> {
+fn seq(inputs: Vec<usize>) -> Vec<LargeOutput> {
     inputs
-        .iter()
-        .filter(|x| *x % 3 > 0)
+        .into_iter()
+        .filter(|x| x % 3 > 0)
         .map(|x| x + 1)
         .map(to_large_output)
         .collect()
 }
 
-fn rayon(inputs: &[usize]) -> Vec<LargeOutput> {
-    use rayon::iter::{IntoParallelIterator, ParallelBridge, ParallelIterator};
+fn rayon(inputs: Vec<usize>) -> Vec<LargeOutput> {
+    use rayon::iter::{IntoParallelIterator, ParallelIterator};
     inputs
-        .iter()
-        .filter(|x| *x % 3 > 0)
-        .map(|x| x + 1)
-        .par_bridge()
         .into_par_iter()
+        .filter(|x| x % 3 > 0)
+        .map(|x| x + 1)
         .map(to_large_output)
         .collect()
 }
 
-fn con_iter(inputs: &[usize], num_threads: usize, chunk_size: usize) -> Vec<LargeOutput> {
-    let iter = inputs.iter().filter(|x| *x % 3 > 0).map(|x| x + 1);
-    let con_iter = iter.iter_into_con_iter();
+fn con_iter(inputs: Vec<usize>, num_threads: usize, chunk_size: usize) -> Vec<LargeOutput> {
+    let con_iter = inputs.into_con_iter();
 
     std::thread::scope(|s| {
         let mut handles = vec![];
@@ -107,7 +104,9 @@ fn con_iter(inputs: &[usize], num_threads: usize, chunk_size: usize) -> Vec<Larg
                 1 => s.spawn(|| {
                     let mut vec = vec![];
                     while let Some(x) = con_iter.next() {
-                        vec.push(to_large_output(x));
+                        if x % 3 > 0 {
+                            vec.push(to_large_output(x + 1));
+                        }
                     }
                     vec
                 }),
@@ -115,7 +114,7 @@ fn con_iter(inputs: &[usize], num_threads: usize, chunk_size: usize) -> Vec<Larg
                     let mut vec = vec![];
                     let mut chunk_iter = con_iter.chunk_puller(chunk_size);
                     while let Some(chunk) = chunk_iter.pull() {
-                        vec.extend(chunk.map(to_large_output));
+                        vec.extend(chunk.filter(|x| x % 3 > 0).map(|x| to_large_output(x + 1)));
                     }
                     vec
                 }),
@@ -154,8 +153,8 @@ impl Factors for Input {
 enum Method {
     Seq,
     Rayon,
-    ConcurrentIter,
-    ConcurrentIterChunk,
+    ConIter,
+    ConIterChunk,
 }
 
 impl Factors for Method {
@@ -168,8 +167,8 @@ impl Factors for Method {
             match self {
                 Self::Seq => "seq",
                 Self::Rayon => "rayon",
-                Self::ConcurrentIter => "orx",
-                Self::ConcurrentIterChunk => "orx-c64",
+                Self::ConIter => "orx",
+                Self::ConIterChunk => "orx-c64",
             }
             .to_string(),
         ]
@@ -190,7 +189,7 @@ impl Experiment for Exp {
 
     fn input(&mut self, input_variant: &Self::InputFactors) -> Self::Input {
         let input = inputs(input_variant.len);
-        let mut expected = seq(&input);
+        let mut expected = seq(input.clone());
         expected.sort();
         (input, expected)
     }
@@ -203,10 +202,10 @@ impl Experiment for Exp {
     ) -> Self::Output {
         let (values, _) = input;
         match alg_variant {
-            Method::Seq => seq(values),
-            Method::Rayon => rayon(values),
-            Method::ConcurrentIter => con_iter(values, 8, 1),
-            Method::ConcurrentIterChunk => con_iter(values, 8, 64),
+            Method::Seq => seq(values.clone()),
+            Method::Rayon => rayon(values.clone()),
+            Method::ConIter => con_iter(values.clone(), 8, 1),
+            Method::ConIterChunk => con_iter(values.clone(), 8, 64),
         }
     }
 
@@ -221,17 +220,17 @@ impl Experiment for Exp {
     }
 }
 
-fn con_iter_of_iter(c: &mut Criterion) {
+fn con_iter_of_vec(c: &mut Criterion) {
     let treatments = vec![Input { len: 4096 }, Input { len: 65_536 }];
     let variants = vec![
         Method::Seq,
         Method::Rayon,
-        Method::ConcurrentIter,
-        Method::ConcurrentIterChunk,
+        Method::ConIter,
+        Method::ConIterChunk,
     ];
 
-    Exp.bench(c, "con_iter_of_iter", &treatments, &variants);
+    Exp.bench(c, "con_iter_of_vec", &treatments, &variants);
 }
 
-criterion_group!(benches, con_iter_of_iter);
+criterion_group!(benches, con_iter_of_vec);
 criterion_main!(benches);

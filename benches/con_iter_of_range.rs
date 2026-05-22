@@ -1,14 +1,11 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use orx_concurrent_iter::*;
 use orx_criterion::{Experiment, Factors};
-use rand::{Rng, SeedableRng};
-use rand_chacha::ChaCha8Rng;
 
 const NUM_NUMBERS: usize = 4;
 const NUM_VECTORS: usize = 4;
 const LEN_VECTORS: usize = 4;
-const SEED: u64 = 5426;
-const FIB_UPPER_BOUND: u32 = 999;
+const FIB_UPPER_BOUND: usize = 999;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 struct LargeOutput {
@@ -18,6 +15,8 @@ struct LargeOutput {
 }
 
 fn to_large_output(idx: usize) -> LargeOutput {
+    let idx = idx % FIB_UPPER_BOUND;
+
     let prefix = match idx % 7 {
         0 => "zero-",
         3 => "three-",
@@ -68,37 +67,26 @@ fn validate(expected: &[LargeOutput], unsorted_result: Vec<LargeOutput>) {
     assert_eq!(expected, sorted_result);
 }
 
-fn inputs(len: usize) -> Vec<usize> {
-    let mut rng = ChaCha8Rng::seed_from_u64(SEED);
-    (0..len)
-        .map(|_| rng.random_range(0..FIB_UPPER_BOUND) as usize)
-        .collect()
-}
-
-fn seq(inputs: &[usize]) -> Vec<LargeOutput> {
-    inputs
-        .iter()
-        .filter(|x| *x % 3 > 0)
+fn seq(begin: usize, len: usize) -> Vec<LargeOutput> {
+    (begin..begin + len)
+        .filter(|x| x % 3 > 0)
         .map(|x| x + 1)
         .map(to_large_output)
         .collect()
 }
 
-fn rayon(inputs: &[usize]) -> Vec<LargeOutput> {
-    use rayon::iter::{IntoParallelIterator, ParallelBridge, ParallelIterator};
-    inputs
-        .iter()
-        .filter(|x| *x % 3 > 0)
-        .map(|x| x + 1)
-        .par_bridge()
+fn rayon(begin: usize, len: usize) -> Vec<LargeOutput> {
+    use rayon::iter::{IntoParallelIterator, ParallelIterator};
+    (begin..begin + len)
         .into_par_iter()
+        .filter(|x| x % 3 > 0)
+        .map(|x| x + 1)
         .map(to_large_output)
         .collect()
 }
 
-fn con_iter(inputs: &[usize], num_threads: usize, chunk_size: usize) -> Vec<LargeOutput> {
-    let iter = inputs.iter().filter(|x| *x % 3 > 0).map(|x| x + 1);
-    let con_iter = iter.iter_into_con_iter();
+fn con_iter(begin: usize, len: usize, num_threads: usize, chunk_size: usize) -> Vec<LargeOutput> {
+    let con_iter = (begin..begin + len).into_con_iter();
 
     std::thread::scope(|s| {
         let mut handles = vec![];
@@ -107,7 +95,9 @@ fn con_iter(inputs: &[usize], num_threads: usize, chunk_size: usize) -> Vec<Larg
                 1 => s.spawn(|| {
                     let mut vec = vec![];
                     while let Some(x) = con_iter.next() {
-                        vec.push(to_large_output(x));
+                        if x % 3 > 0 {
+                            vec.push(to_large_output(x + 1));
+                        }
                     }
                     vec
                 }),
@@ -115,7 +105,7 @@ fn con_iter(inputs: &[usize], num_threads: usize, chunk_size: usize) -> Vec<Larg
                     let mut vec = vec![];
                     let mut chunk_iter = con_iter.chunk_puller(chunk_size);
                     while let Some(chunk) = chunk_iter.pull() {
-                        vec.extend(chunk.map(to_large_output));
+                        vec.extend(chunk.filter(|x| x % 3 > 0).map(|x| to_large_output(x + 1)));
                     }
                     vec
                 }),
@@ -133,6 +123,7 @@ fn con_iter(inputs: &[usize], num_threads: usize, chunk_size: usize) -> Vec<Larg
 
 #[derive(Clone)]
 struct Input {
+    begin: usize,
     len: usize,
 }
 
@@ -154,8 +145,8 @@ impl Factors for Input {
 enum Method {
     Seq,
     Rayon,
-    ConcurrentIter,
-    ConcurrentIterChunk,
+    ConIter,
+    ConIterChunk,
 }
 
 impl Factors for Method {
@@ -168,8 +159,8 @@ impl Factors for Method {
             match self {
                 Self::Seq => "seq",
                 Self::Rayon => "rayon",
-                Self::ConcurrentIter => "orx",
-                Self::ConcurrentIterChunk => "orx-c64",
+                Self::ConIter => "orx",
+                Self::ConIterChunk => "orx-c64",
             }
             .to_string(),
         ]
@@ -185,28 +176,26 @@ struct Exp;
 impl Experiment for Exp {
     type InputFactors = Input;
     type AlgFactors = Method;
-    type Input = (Vec<usize>, Vec<LargeOutput>);
+    type Input = Vec<LargeOutput>;
     type Output = Vec<LargeOutput>;
 
     fn input(&mut self, input_variant: &Self::InputFactors) -> Self::Input {
-        let input = inputs(input_variant.len);
-        let mut expected = seq(&input);
+        let mut expected = seq(input_variant.begin, input_variant.len);
         expected.sort();
-        (input, expected)
+        expected
     }
 
     fn execute(
         &mut self,
-        _input_variant: &Self::InputFactors,
+        input_variant: &Self::InputFactors,
         alg_variant: &Self::AlgFactors,
-        input: &Self::Input,
+        _input: &Self::Input,
     ) -> Self::Output {
-        let (values, _) = input;
         match alg_variant {
-            Method::Seq => seq(values),
-            Method::Rayon => rayon(values),
-            Method::ConcurrentIter => con_iter(values, 8, 1),
-            Method::ConcurrentIterChunk => con_iter(values, 8, 64),
+            Method::Seq => seq(input_variant.begin, input_variant.len),
+            Method::Rayon => rayon(input_variant.begin, input_variant.len),
+            Method::ConIter => con_iter(input_variant.begin, input_variant.len, 8, 1),
+            Method::ConIterChunk => con_iter(input_variant.begin, input_variant.len, 8, 64),
         }
     }
 
@@ -216,22 +205,30 @@ impl Experiment for Exp {
         input: &Self::Input,
         output: &Self::Output,
     ) {
-        let (_, expected) = input;
-        validate(expected, output.clone());
+        validate(input, output.clone());
     }
 }
 
-fn con_iter_of_iter(c: &mut Criterion) {
-    let treatments = vec![Input { len: 4096 }, Input { len: 65_536 }];
+fn con_iter_of_range(c: &mut Criterion) {
+    let treatments = vec![
+        Input {
+            begin: 0,
+            len: 4096,
+        },
+        Input {
+            begin: 0,
+            len: 65_536,
+        },
+    ];
     let variants = vec![
         Method::Seq,
         Method::Rayon,
-        Method::ConcurrentIter,
-        Method::ConcurrentIterChunk,
+        Method::ConIter,
+        Method::ConIterChunk,
     ];
 
-    Exp.bench(c, "con_iter_of_iter", &treatments, &variants);
+    Exp.bench(c, "con_iter_of_range", &treatments, &variants);
 }
 
-criterion_group!(benches, con_iter_of_iter);
+criterion_group!(benches, con_iter_of_range);
 criterion_main!(benches);
