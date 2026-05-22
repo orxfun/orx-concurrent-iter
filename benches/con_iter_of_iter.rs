@@ -1,5 +1,6 @@
-use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
+use criterion::{Criterion, criterion_group, criterion_main};
 use orx_concurrent_iter::*;
+use orx_criterion::{Experiment, Factors};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
@@ -9,7 +10,7 @@ const LEN_VECTORS: usize = 4;
 const SEED: u64 = 5426;
 const FIB_UPPER_BOUND: u32 = 999;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 struct LargeOutput {
     name: String,
     numbers: [i64; NUM_NUMBERS],
@@ -130,43 +131,106 @@ fn con_iter(inputs: &[usize], num_threads: usize, chunk_size: usize) -> Vec<Larg
     })
 }
 
-fn con_iter_of_iter(c: &mut Criterion) {
-    let treatments = [4096, 65_536];
-    let params = [(8, 1), (8, 64)];
+#[derive(Clone)]
+struct Input {
+    len: usize,
+}
 
-    let mut group = c.benchmark_group("con_iter_of_iter");
+impl Factors for Input {
+    fn factor_names() -> Vec<&'static str> {
+        vec!["len"]
+    }
 
-    for n in &treatments {
-        let input = inputs(*n);
+    fn factor_levels(&self) -> Vec<String> {
+        vec![self.len.to_string()]
+    }
+
+    fn factor_levels_short(&self) -> Vec<String> {
+        vec![self.len.to_string()]
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+enum Method {
+    Seq,
+    Rayon,
+    ConcurrentIter,
+    ConcurrentIterChunk,
+}
+
+impl Factors for Method {
+    fn factor_names() -> Vec<&'static str> {
+        vec!["method"]
+    }
+
+    fn factor_levels(&self) -> Vec<String> {
+        vec![
+            match self {
+                Self::Seq => "seq",
+                Self::Rayon => "rayon",
+                Self::ConcurrentIter => "orx",
+                Self::ConcurrentIterChunk => "orx-c64",
+            }
+            .to_string(),
+        ]
+    }
+
+    fn factor_levels_short(&self) -> Vec<String> {
+        self.factor_levels()
+    }
+}
+
+struct Exp;
+
+impl Experiment for Exp {
+    type InputFactors = Input;
+    type AlgFactors = Method;
+    type Input = (Vec<usize>, Vec<LargeOutput>);
+    type Output = Vec<LargeOutput>;
+
+    fn input(&mut self, input_variant: &Self::InputFactors) -> Self::Input {
+        let input = inputs(input_variant.len);
         let mut expected = seq(&input);
         expected.sort();
+        (input, expected)
+    }
 
-        group.bench_with_input(BenchmarkId::new("seq", n), n, |b, _| {
-            validate(&expected, seq(&input));
-            b.iter(|| seq(&input))
-        });
-
-        group.bench_with_input(BenchmarkId::new("rayon", n), n, |b, _| {
-            validate(&expected, rayon(&input));
-            b.iter(|| rayon(&input))
-        });
-
-        for (num_threads, chunk_size) in params {
-            let param = || {
-                format!(
-                    "{} (num-threads={}, chunk-size={})",
-                    n, num_threads, chunk_size
-                )
-            };
-
-            group.bench_with_input(BenchmarkId::new("ConcurrentIter", param()), n, |b, _| {
-                validate(&expected, con_iter(&input, num_threads, chunk_size));
-                b.iter(|| con_iter(&input, num_threads, chunk_size))
-            });
+    fn execute(
+        &mut self,
+        _input_variant: &Self::InputFactors,
+        alg_variant: &Self::AlgFactors,
+        input: &Self::Input,
+    ) -> Self::Output {
+        let (values, _) = input;
+        match alg_variant {
+            Method::Seq => seq(values),
+            Method::Rayon => rayon(values),
+            Method::ConcurrentIter => con_iter(values, 8, 1),
+            Method::ConcurrentIterChunk => con_iter(values, 8, 64),
         }
     }
 
-    group.finish();
+    fn validate_output(
+        &self,
+        _input_variant: &Self::InputFactors,
+        input: &Self::Input,
+        output: &Self::Output,
+    ) {
+        let (_, expected) = input;
+        validate(expected, output.clone());
+    }
+}
+
+fn con_iter_of_iter(c: &mut Criterion) {
+    let treatments = vec![Input { len: 4096 }, Input { len: 65_536 }];
+    let variants = vec![
+        Method::Seq,
+        Method::Rayon,
+        Method::ConcurrentIter,
+        Method::ConcurrentIterChunk,
+    ];
+
+    Exp.bench(c, "con_iter_of_iter", &treatments, &variants);
 }
 
 criterion_group!(benches, con_iter_of_iter);
