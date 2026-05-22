@@ -37,3 +37,7 @@ harness = false
 [[bench]]
 name = "con_iter_of_vec"
 harness = false
+
+[[bench]]
+name = "con_iter_of_slice"
+harness = false
