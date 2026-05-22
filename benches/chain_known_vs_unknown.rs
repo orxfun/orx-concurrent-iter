@@ -7,15 +7,20 @@ use std::hint::black_box;
 struct Input {
     n_i_exp: usize,
     n_j_exp: usize,
+    num_threads: usize,
 }
 
 impl Factors for Input {
     fn factor_names() -> Vec<&'static str> {
-        vec!["n_i", "n_j"]
+        vec!["n_i", "n_j", "num_threads"]
     }
 
     fn factor_levels(&self) -> Vec<String> {
-        vec![format!("2e{}", self.n_i_exp), format!("2e{}", self.n_j_exp)]
+        vec![
+            format!("2e{}", self.n_i_exp),
+            format!("2e{}", self.n_j_exp),
+            self.num_threads.to_string(),
+        ]
     }
 }
 
@@ -44,24 +49,52 @@ impl Factors for Method {
 struct Exp;
 
 impl Exp {
-    fn consume_known(i: &[usize], j: &[usize]) -> u64 {
+    fn consume_known(i: &[usize], j: &[usize], num_threads: usize) -> u64 {
         let chain = i.con_iter().chain(j);
 
-        let mut sum = 0u64;
-        while let Some(x) = chain.next() {
-            sum = sum.wrapping_add(*x as u64);
-        }
-        black_box(sum)
+        std::thread::scope(|s| {
+            let mut handles = Vec::with_capacity(num_threads);
+            for _ in 0..num_threads {
+                handles.push(s.spawn(|| {
+                    let mut sum = 0u64;
+                    while let Some(x) = chain.next() {
+                        sum = sum.wrapping_add(*x as u64);
+                    }
+                    sum
+                }));
+            }
+
+            let sum = handles
+                .into_iter()
+                .map(|handle| handle.join().expect("failed to join thread"))
+                .fold(0u64, |acc, value| acc.wrapping_add(value));
+
+            black_box(sum)
+        })
     }
 
-    fn consume_unknown(i: &[usize], j: &[usize]) -> u64 {
+    fn consume_unknown(i: &[usize], j: &[usize], num_threads: usize) -> u64 {
         let chain = i.con_iter().chain_inexact(j);
 
-        let mut sum = 0u64;
-        while let Some(x) = chain.next() {
-            sum = sum.wrapping_add(*x as u64);
-        }
-        black_box(sum)
+        std::thread::scope(|s| {
+            let mut handles = Vec::with_capacity(num_threads);
+            for _ in 0..num_threads {
+                handles.push(s.spawn(|| {
+                    let mut sum = 0u64;
+                    while let Some(x) = chain.next() {
+                        sum = sum.wrapping_add(*x as u64);
+                    }
+                    sum
+                }));
+            }
+
+            let sum = handles
+                .into_iter()
+                .map(|handle| handle.join().expect("failed to join thread"))
+                .fold(0u64, |acc, value| acc.wrapping_add(value));
+
+            black_box(sum)
+        })
     }
 }
 
@@ -83,14 +116,14 @@ impl Experiment for Exp {
 
     fn execute(
         &mut self,
-        _: &Self::InputFactors,
+        input_variant: &Self::InputFactors,
         alg_variant: &Self::AlgFactors,
         input: &Self::Input,
     ) -> Self::Output {
         let (i, j) = input;
         match alg_variant {
-            Method::KnownLen => Self::consume_known(i, j),
-            Method::UnknownLen => Self::consume_unknown(i, j),
+            Method::KnownLen => Self::consume_known(i, j, input_variant.num_threads),
+            Method::UnknownLen => Self::consume_unknown(i, j, input_variant.num_threads),
         }
     }
 
@@ -111,14 +144,47 @@ fn run(c: &mut Criterion) {
         Input {
             n_i_exp: 12,
             n_j_exp: 12,
+            num_threads: 1,
         },
         Input {
             n_i_exp: 16,
             n_j_exp: 12,
+            num_threads: 1,
         },
         Input {
             n_i_exp: 16,
             n_j_exp: 16,
+            num_threads: 1,
+        },
+        Input {
+            n_i_exp: 12,
+            n_j_exp: 12,
+            num_threads: 16,
+        },
+        Input {
+            n_i_exp: 16,
+            n_j_exp: 12,
+            num_threads: 16,
+        },
+        Input {
+            n_i_exp: 16,
+            n_j_exp: 16,
+            num_threads: 16,
+        },
+        Input {
+            n_i_exp: 12,
+            n_j_exp: 12,
+            num_threads: 32,
+        },
+        Input {
+            n_i_exp: 16,
+            n_j_exp: 12,
+            num_threads: 32,
+        },
+        Input {
+            n_i_exp: 16,
+            n_j_exp: 16,
+            num_threads: 32,
         },
     ];
 
