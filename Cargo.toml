@@ -49,3 +49,7 @@ harness = false
 [[bench]]
 name = "con_iter_of_range"
 harness = false
+
+[[bench]]
+name = "con_iter_of_vec_drain"
+harness = false
