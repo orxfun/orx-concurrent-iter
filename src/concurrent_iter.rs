@@ -852,24 +852,6 @@ pub trait ConcurrentIter: Sync {
         self.into()
     }
 
-    /// Behaves exactly as [`item_puller`] but additionally provides `thread_idx` to the iterator.
-    /// This information might be useful for certain concurrent iterators, such as the
-    /// [recursive concurrent iterator](https://crates.io/crates/orx-concurrent-recursive-iter).
-    ///
-    /// Assuming a program using `n` threads that accesses this iterator, `thread_idx` is
-    /// assumed to be the internal ordering within this pool of threads taking values in
-    /// `0..n`.
-    ///
-    /// [`item_puller`]: Self::item_puller
-    #[inline(always)]
-    #[allow(unused_variables)]
-    fn item_puller_by(&self, thread_idx: usize) -> ItemPuller<'_, Self>
-    where
-        Self: Sized,
-    {
-        self.item_puller()
-    }
-
     /// Creates a [`EnumeratedItemPuller`] from the concurrent iterator.
     /// The created item puller can be used to `pull` elements one by one from the
     /// data source together with the index of the elements.
@@ -913,24 +895,6 @@ pub trait ConcurrentIter: Sync {
         Self: Sized,
     {
         self.into()
-    }
-
-    /// Behaves exactly as [`item_puller_with_idx`] but additionally provides `thread_idx` to the iterator.
-    /// This information might be useful for certain concurrent iterators, such as the
-    /// [recursive concurrent iterator](https://crates.io/crates/orx-concurrent-recursive-iter).
-    ///
-    /// Assuming a program using `n` threads that accesses this iterator, `thread_idx` is
-    /// assumed to be the internal ordering within this pool of threads taking values in
-    /// `0..n`.
-    ///
-    /// [`item_puller_with_idx`]: Self::item_puller_with_idx
-    #[inline(always)]
-    #[allow(unused_variables)]
-    fn item_puller_with_idx_by(&self, thread_idx: usize) -> EnumeratedItemPuller<'_, Self>
-    where
-        Self: Sized,
-    {
-        self.item_puller_with_idx()
     }
 
     // provided transformations
