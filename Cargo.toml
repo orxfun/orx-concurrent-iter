@@ -53,3 +53,7 @@ harness = false
 [[bench]]
 name = "con_iter_of_vec_drain"
 harness = false
+
+[[bench]]
+name = "con_iter_of_vec_deque_ref"
+harness = false
