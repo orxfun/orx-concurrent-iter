@@ -104,7 +104,9 @@ fn con_iter(inputs: Vec<usize>, num_threads: usize, chunk_size: usize) -> Vec<La
                 1 => s.spawn(|| {
                     let mut vec = vec![];
                     while let Some(x) = con_iter.next() {
-                        vec.push(to_large_output(x));
+                        if x % 3 > 0 {
+                            vec.push(to_large_output(x + 1));
+                        }
                     }
                     vec
                 }),
@@ -112,7 +114,7 @@ fn con_iter(inputs: Vec<usize>, num_threads: usize, chunk_size: usize) -> Vec<La
                     let mut vec = vec![];
                     let mut chunk_iter = con_iter.chunk_puller(chunk_size);
                     while let Some(chunk) = chunk_iter.pull() {
-                        vec.extend(chunk.map(to_large_output));
+                        vec.extend(chunk.filter(|x| x % 3 > 0).map(|x| to_large_output(x + 1)));
                     }
                     vec
                 }),
