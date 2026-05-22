@@ -506,6 +506,36 @@ pub trait ConcurrentIter: Sync {
     /// ```
     fn next_with_idx(&self) -> Option<(usize, Self::Item)>;
 
+    /// Behaves exactly as [`next`] but additionally provides `thread_idx` to the iterator.
+    /// This information might be useful for certain concurrent iterators, such as the
+    /// [recursive concurrent iterator](https://crates.io/crates/orx-concurrent-recursive-iter).
+    ///
+    /// Assuming a program using `n` threads that accesses this iterator, `thread_idx` is
+    /// assumed to be the internal ordering within this pool of threads taking values in
+    /// `0..n`.
+    ///
+    /// [`next`]: Self::next
+    #[inline(always)]
+    #[allow(unused_variables)]
+    fn next_by(&self, thread_idx: usize) -> Option<Self::Item> {
+        self.next()
+    }
+
+    /// Behaves exactly as [`next_with_idx`] but additionally provides `thread_idx` to the iterator.
+    /// This information might be useful for certain concurrent iterators, such as the
+    /// [recursive concurrent iterator](https://crates.io/crates/orx-concurrent-recursive-iter).
+    ///
+    /// Assuming a program using `n` threads that accesses this iterator, `thread_idx` is
+    /// assumed to be the internal ordering within this pool of threads taking values in
+    /// `0..n`.
+    ///
+    /// [`next_with_idx`]: Self::next_with_idx
+    #[inline(always)]
+    #[allow(unused_variables)]
+    fn next_with_idx_by(&self, thread_idx: usize) -> Option<(usize, Self::Item)> {
+        self.next_with_idx()
+    }
+
     // len
 
     /// Returns the bounds on the remaining length of the iterator.
