@@ -1,5 +1,6 @@
 use crate::concurrent_collection::ConcurrentCollection;
 use crate::concurrent_iter::ConcurrentIter;
+use std::hint::black_box;
 use std::iter::Iterator;
 
 #[test]
@@ -173,11 +174,11 @@ fn item_and_enumerated_sum_values_same() {
 
     let con_iter1 = data.con_iter();
     let puller1 = con_iter1.item_puller();
-    let sum1 = puller1.fold(0, |acc, &x| acc + x);
+    let sum1 = puller1.fold(0, |acc, &x| black_box(acc + x));
 
     let con_iter2 = data.con_iter();
     let puller2 = con_iter2.item_puller_with_idx();
-    let sum2 = puller2.fold(0, |acc, (_idx, &x)| acc + x);
+    let sum2 = puller2.fold(0, |acc, (_idx, &x)| black_box(acc + x));
 
     assert_eq!(sum1, sum2);
     assert_eq!(sum1, 210); // 1+2+...+20 = 20*21/2 = 210

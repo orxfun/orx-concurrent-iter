@@ -51,7 +51,7 @@ fn concurrent_iter_exact_len<I: ConcurrentIter>(iter: I, expected_len: usize, ba
 
     match batch == 1 {
         true => {
-            while let Some(_) = iter.next() {
+            while iter.next().is_some() {
                 remaining -= 1;
                 assert_eq!(iter.try_get_len(), Some(remaining));
             }

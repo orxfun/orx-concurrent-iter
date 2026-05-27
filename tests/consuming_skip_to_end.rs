@@ -69,7 +69,7 @@ fn vec_string_skip_to_end(num_threads: usize, batch: usize) {
 )]
 fn vec_usize_skip_to_end(num_threads: usize, batch: usize) {
     for len in LEN {
-        let vec: Vec<_> = (0..len).map(|i| i as usize).collect();
+        let vec: Vec<_> = (0..len).collect();
         run(&vec.into_con_iter(), num_threads, batch);
     }
 }

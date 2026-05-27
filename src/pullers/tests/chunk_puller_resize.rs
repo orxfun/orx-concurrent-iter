@@ -16,7 +16,7 @@ fn chunk_puller_resize_vec_larger() {
     let mut chunk_puller = con_iter.chunk_puller(2);
 
     // First pull with size 2
-    let chunk1 = chunk_puller.pull().unwrap();
+    let chunk1 = chunk_puller.pull().expect("valid");
     assert_eq!(chunk1.len(), 2);
 
     // Resize to larger size
@@ -24,7 +24,7 @@ fn chunk_puller_resize_vec_larger() {
     assert_eq!(chunk_puller.chunk_size(), 4);
 
     // Next pull should have size 4
-    let chunk2 = chunk_puller.pull().unwrap();
+    let chunk2 = chunk_puller.pull().expect("valid");
     assert_eq!(chunk2.len(), 4);
 }
 
@@ -35,7 +35,7 @@ fn chunk_puller_resize_vec_smaller() {
     let mut chunk_puller = con_iter.chunk_puller(4);
 
     // First pull with size 4
-    let chunk1 = chunk_puller.pull().unwrap();
+    let chunk1 = chunk_puller.pull().expect("valid");
     assert_eq!(chunk1.len(), 4);
 
     // Resize to smaller size
@@ -43,7 +43,7 @@ fn chunk_puller_resize_vec_smaller() {
     assert_eq!(chunk_puller.chunk_size(), 2);
 
     // Next pull should have size 2
-    let chunk2 = chunk_puller.pull().unwrap();
+    let chunk2 = chunk_puller.pull().expect("valid");
     assert_eq!(chunk2.len(), 2);
 }
 
@@ -54,22 +54,22 @@ fn chunk_puller_resize_vec_multiple_times() {
     let mut chunk_puller = con_iter.chunk_puller(3);
 
     // Pull with size 3
-    let chunk1 = chunk_puller.pull().unwrap();
+    let chunk1 = chunk_puller.pull().expect("valid");
     assert_eq!(chunk1.len(), 3);
 
     // Resize to 5
     chunk_puller.resize_for_chunk_size(5);
-    let chunk2 = chunk_puller.pull().unwrap();
+    let chunk2 = chunk_puller.pull().expect("valid");
     assert_eq!(chunk2.len(), 5);
 
     // Resize to 2
     chunk_puller.resize_for_chunk_size(2);
-    let chunk3 = chunk_puller.pull().unwrap();
+    let chunk3 = chunk_puller.pull().expect("valid");
     assert_eq!(chunk3.len(), 2);
 
     // Resize back to 4
     chunk_puller.resize_for_chunk_size(4);
-    let chunk4 = chunk_puller.pull().unwrap();
+    let chunk4 = chunk_puller.pull().expect("valid");
     assert_eq!(chunk4.len(), 4);
 }
 
@@ -79,10 +79,10 @@ fn chunk_puller_resize_vec_to_size_one() {
     let con_iter = data.con_iter();
     let mut chunk_puller = con_iter.chunk_puller(2);
 
-    let _ = chunk_puller.pull().unwrap(); // size 2
+    let _ = chunk_puller.pull().expect("valid"); // size 2
     chunk_puller.resize_for_chunk_size(1);
 
-    let chunk = chunk_puller.pull().unwrap();
+    let chunk = chunk_puller.pull().expect("valid");
     assert_eq!(chunk.len(), 1);
 }
 
@@ -93,13 +93,13 @@ fn chunk_puller_resize_vec_larger_than_remaining() {
     let mut chunk_puller = con_iter.chunk_puller(2);
 
     // Pull 2 items (3 remain)
-    let _ = chunk_puller.pull().unwrap();
+    let _ = chunk_puller.pull().expect("valid");
 
     // Resize to larger than remaining (10)
     chunk_puller.resize_for_chunk_size(10);
 
     // Should return only 3 items (remaining)
-    let chunk = chunk_puller.pull().unwrap();
+    let chunk = chunk_puller.pull().expect("valid");
     assert_eq!(chunk.len(), 3);
 }
 
@@ -115,10 +115,10 @@ fn chunk_puller_resize_slice_larger() {
     let con_iter = data.con_iter();
     let mut chunk_puller = con_iter.chunk_puller(2);
 
-    let _ = chunk_puller.pull().unwrap(); // size 2
+    let _ = chunk_puller.pull().expect("valid"); // size 2
     chunk_puller.resize_for_chunk_size(4);
 
-    let chunk = chunk_puller.pull().unwrap();
+    let chunk = chunk_puller.pull().expect("valid");
     assert_eq!(chunk.len(), 4);
 }
 
@@ -128,10 +128,10 @@ fn chunk_puller_resize_slice_smaller() {
     let con_iter = data.con_iter();
     let mut chunk_puller = con_iter.chunk_puller(4);
 
-    let _ = chunk_puller.pull().unwrap(); // size 4
+    let _ = chunk_puller.pull().expect("valid"); // size 4
     chunk_puller.resize_for_chunk_size(2);
 
-    let chunk = chunk_puller.pull().unwrap();
+    let chunk = chunk_puller.pull().expect("valid");
     assert_eq!(chunk.len(), 2);
 }
 
@@ -141,11 +141,11 @@ fn chunk_puller_resize_slice_multiple() {
     let con_iter = data.con_iter();
     let mut chunk_puller = con_iter.chunk_puller(3);
 
-    let _ = chunk_puller.pull().unwrap();
+    let _ = chunk_puller.pull().expect("valid");
     chunk_puller.resize_for_chunk_size(5);
-    let _ = chunk_puller.pull().unwrap();
+    let _ = chunk_puller.pull().expect("valid");
     chunk_puller.resize_for_chunk_size(2);
-    let final_chunk = chunk_puller.pull().unwrap();
+    let final_chunk = chunk_puller.pull().expect("valid");
     assert_eq!(final_chunk.len(), 2);
 }
 
@@ -161,10 +161,10 @@ fn chunk_puller_resize_slice_mut_larger() {
         let con_iter = slice_mut.into_con_iter();
         let mut chunk_puller = con_iter.chunk_puller(2);
 
-        let _ = chunk_puller.pull().unwrap(); // size 2
+        let _ = chunk_puller.pull().expect("valid"); // size 2
         chunk_puller.resize_for_chunk_size(3);
 
-        let chunk = chunk_puller.pull().unwrap();
+        let chunk = chunk_puller.pull().expect("valid");
         assert_eq!(chunk.len(), 3);
     }
 }
@@ -177,10 +177,10 @@ fn chunk_puller_resize_slice_mut_smaller() {
         let con_iter = slice_mut.into_con_iter();
         let mut chunk_puller = con_iter.chunk_puller(4);
 
-        let _ = chunk_puller.pull().unwrap(); // size 4
+        let _ = chunk_puller.pull().expect("valid"); // size 4
         chunk_puller.resize_for_chunk_size(1);
 
-        let chunk = chunk_puller.pull().unwrap();
+        let chunk = chunk_puller.pull().expect("valid");
         assert_eq!(chunk.len(), 1);
     }
 }
@@ -198,10 +198,10 @@ fn chunk_puller_resize_vec_deque_larger() {
     let con_iter = deque.con_iter();
     let mut chunk_puller = con_iter.chunk_puller(2);
 
-    chunk_puller.pull().unwrap(); // size 2
+    chunk_puller.pull().expect("valid"); // size 2
     chunk_puller.resize_for_chunk_size(4);
 
-    let chunk = chunk_puller.pull().unwrap();
+    let chunk = chunk_puller.pull().expect("valid");
     assert_eq!(chunk.len(), 4);
 }
 
@@ -214,10 +214,10 @@ fn chunk_puller_resize_vec_deque_smaller() {
     let con_iter = deque.con_iter();
     let mut chunk_puller = con_iter.chunk_puller(4);
 
-    chunk_puller.pull().unwrap(); // size 4
+    chunk_puller.pull().expect("valid"); // size 4
     chunk_puller.resize_for_chunk_size(2);
 
-    let chunk = chunk_puller.pull().unwrap();
+    let chunk = chunk_puller.pull().expect("valid");
     assert_eq!(chunk.len(), 2);
 }
 
@@ -231,13 +231,13 @@ fn chunk_puller_resize_with_idx_vec_larger() {
     let con_iter = data.con_iter();
     let mut chunk_puller = con_iter.chunk_puller(2);
 
-    let (idx1, chunk1) = chunk_puller.pull_with_idx().unwrap();
+    let (idx1, chunk1) = chunk_puller.pull_with_idx().expect("valid");
     assert_eq!(idx1, 0);
     assert_eq!(chunk1.len(), 2);
 
     chunk_puller.resize_for_chunk_size(4);
 
-    let (idx2, chunk2) = chunk_puller.pull_with_idx().unwrap();
+    let (idx2, chunk2) = chunk_puller.pull_with_idx().expect("valid");
     assert_eq!(idx2, 2); // next chunk starts at index 2
     assert_eq!(chunk2.len(), 4);
 }
@@ -248,13 +248,13 @@ fn chunk_puller_resize_with_idx_vec_smaller() {
     let con_iter = data.con_iter();
     let mut chunk_puller = con_iter.chunk_puller(4);
 
-    let (idx1, chunk1) = chunk_puller.pull_with_idx().unwrap();
+    let (idx1, chunk1) = chunk_puller.pull_with_idx().expect("valid");
     assert_eq!(idx1, 0);
     assert_eq!(chunk1.len(), 4);
 
     chunk_puller.resize_for_chunk_size(2);
 
-    let (idx2, chunk2) = chunk_puller.pull_with_idx().unwrap();
+    let (idx2, chunk2) = chunk_puller.pull_with_idx().expect("valid");
     assert_eq!(idx2, 4); // next chunk starts at index 4
     assert_eq!(chunk2.len(), 2);
 }
@@ -266,19 +266,19 @@ fn chunk_puller_resize_with_idx_multiple() {
     let mut chunk_puller = con_iter.chunk_puller(2);
 
     // First chunk: indices 0-1
-    let (idx1, chunk1) = chunk_puller.pull_with_idx().unwrap();
+    let (idx1, chunk1) = chunk_puller.pull_with_idx().expect("valid");
     assert_eq!(idx1, 0);
     assert_eq!(chunk1.len(), 2);
 
     // Resize to 3
     chunk_puller.resize_for_chunk_size(3);
-    let (idx2, chunk2) = chunk_puller.pull_with_idx().unwrap();
+    let (idx2, chunk2) = chunk_puller.pull_with_idx().expect("valid");
     assert_eq!(idx2, 2);
     assert_eq!(chunk2.len(), 3);
 
     // Resize to 4
     chunk_puller.resize_for_chunk_size(4);
-    let (idx3, chunk3) = chunk_puller.pull_with_idx().unwrap();
+    let (idx3, chunk3) = chunk_puller.pull_with_idx().expect("valid");
     assert_eq!(idx3, 5);
     assert_eq!(chunk3.len(), 4);
 }
@@ -293,7 +293,7 @@ fn chunk_puller_resize_to_zero_then_pull() {
     let con_iter = data.con_iter();
     let mut chunk_puller = con_iter.chunk_puller(2);
 
-    let _ = chunk_puller.pull().unwrap();
+    let _ = chunk_puller.pull().expect("valid");
 
     // Resize to 0 (edge case)
     chunk_puller.resize_for_chunk_size(0);
@@ -333,10 +333,10 @@ fn chunk_puller_resize_very_large_size() {
     let con_iter = data.con_iter();
     let mut chunk_puller = con_iter.chunk_puller(10);
 
-    let _ = chunk_puller.pull().unwrap();
+    let _ = chunk_puller.pull().expect("valid");
     chunk_puller.resize_for_chunk_size(1000); // Much larger than remaining
 
-    let chunk = chunk_puller.pull().unwrap();
+    let chunk = chunk_puller.pull().expect("valid");
     assert_eq!(chunk.len(), 90); // Only 90 items left
 }
 
@@ -347,7 +347,7 @@ fn chunk_puller_resize_small_dataset() {
     let mut chunk_puller = con_iter.chunk_puller(5);
 
     // First pull with size 5 but only 3 items available
-    let chunk1 = chunk_puller.pull().unwrap();
+    let chunk1 = chunk_puller.pull().expect("valid");
     assert_eq!(chunk1.len(), 3);
 
     // No more items
@@ -365,27 +365,27 @@ fn chunk_puller_resize_alternating_larger_and_smaller() {
     let mut chunk_puller = con_iter.chunk_puller(2);
 
     // 2, 4, 2, 4, 2, 4
-    let _ = chunk_puller.pull().unwrap(); // 2 items (0-1)
+    let _ = chunk_puller.pull().expect("valid"); // 2 items (0-1)
 
     chunk_puller.resize_for_chunk_size(4);
-    let _ = chunk_puller.pull().unwrap(); // 4 items (2-5)
+    let _ = chunk_puller.pull().expect("valid"); // 4 items (2-5)
 
     chunk_puller.resize_for_chunk_size(2);
-    let _ = chunk_puller.pull().unwrap(); // 2 items (6-7)
+    let _ = chunk_puller.pull().expect("valid"); // 2 items (6-7)
 
     chunk_puller.resize_for_chunk_size(4);
-    let _ = chunk_puller.pull().unwrap(); // 4 items (8-11)
+    let _ = chunk_puller.pull().expect("valid"); // 4 items (8-11)
 
     chunk_puller.resize_for_chunk_size(2);
-    let _ = chunk_puller.pull().unwrap(); // 2 items (12-13)
+    let _ = chunk_puller.pull().expect("valid"); // 2 items (12-13)
 
     chunk_puller.resize_for_chunk_size(4);
-    let final_chunk = chunk_puller.pull().unwrap(); // 4 items (14-17)
+    let final_chunk = chunk_puller.pull().expect("valid"); // 4 items (14-17)
     assert_eq!(final_chunk.len(), 4);
 
     // Remaining 6 items can be pulled
     chunk_puller.resize_for_chunk_size(10);
-    let last_chunk = chunk_puller.pull().unwrap();
+    let last_chunk = chunk_puller.pull().expect("valid");
     assert_eq!(last_chunk.len(), 6); // 18-23
 }
 
@@ -406,7 +406,7 @@ fn chunk_puller_of_iter_resize_larger_with_strings() {
     assert_eq!(chunk_puller.chunk_size(), 2);
 
     // First pull with size 2
-    let chunk1: Vec<_> = chunk_puller.pull().unwrap().collect();
+    let chunk1: Vec<_> = chunk_puller.pull().expect("valid").collect();
     assert_eq!(chunk1.len(), 2);
     assert_eq!(chunk1[0], "item_0");
     assert_eq!(chunk1[1], "item_1");
@@ -416,7 +416,7 @@ fn chunk_puller_of_iter_resize_larger_with_strings() {
     assert_eq!(chunk_puller.chunk_size(), 4);
 
     // Next pull should have size 4
-    let chunk2: Vec<_> = chunk_puller.pull().unwrap().collect();
+    let chunk2: Vec<_> = chunk_puller.pull().expect("valid").collect();
     assert_eq!(chunk2.len(), 4);
     assert_eq!(chunk2[0], "item_2");
     assert_eq!(chunk2[1], "item_3");
@@ -434,7 +434,7 @@ fn chunk_puller_of_iter_resize_smaller_with_strings() {
     assert_eq!(chunk_puller.chunk_size(), 4);
 
     // First pull with size 4
-    let chunk1: Vec<_> = chunk_puller.pull().unwrap().collect();
+    let chunk1: Vec<_> = chunk_puller.pull().expect("valid").collect();
     assert_eq!(chunk1.len(), 4);
     assert_eq!(chunk1[0], "item_0");
     assert_eq!(chunk1[3], "item_3");
@@ -444,7 +444,7 @@ fn chunk_puller_of_iter_resize_smaller_with_strings() {
     assert_eq!(chunk_puller.chunk_size(), 2);
 
     // Next pull should have size 2
-    let chunk2: Vec<_> = chunk_puller.pull().unwrap().collect();
+    let chunk2: Vec<_> = chunk_puller.pull().expect("valid").collect();
     assert_eq!(chunk2.len(), 2);
     assert_eq!(chunk2[0], "item_4");
     assert_eq!(chunk2[1], "item_5");
@@ -458,28 +458,28 @@ fn chunk_puller_of_iter_resize_multiple_times_with_strings() {
     let mut chunk_puller = con_iter.chunk_puller(3);
 
     // Pull with size 3
-    let chunk1: Vec<_> = chunk_puller.pull().unwrap().collect();
+    let chunk1: Vec<_> = chunk_puller.pull().expect("valid").collect();
     assert_eq!(chunk1.len(), 3);
     assert_eq!(chunk1[0], "item_0");
     assert_eq!(chunk1[2], "item_2");
 
     // Resize to 5
     chunk_puller.resize_for_chunk_size(5);
-    let chunk2: Vec<_> = chunk_puller.pull().unwrap().collect();
+    let chunk2: Vec<_> = chunk_puller.pull().expect("valid").collect();
     assert_eq!(chunk2.len(), 5);
     assert_eq!(chunk2[0], "item_3");
     assert_eq!(chunk2[4], "item_7");
 
     // Resize to 2
     chunk_puller.resize_for_chunk_size(2);
-    let chunk3: Vec<_> = chunk_puller.pull().unwrap().collect();
+    let chunk3: Vec<_> = chunk_puller.pull().expect("valid").collect();
     assert_eq!(chunk3.len(), 2);
     assert_eq!(chunk3[0], "item_8");
     assert_eq!(chunk3[1], "item_9");
 
     // Resize back to 4
     chunk_puller.resize_for_chunk_size(4);
-    let chunk4: Vec<_> = chunk_puller.pull().unwrap().collect();
+    let chunk4: Vec<_> = chunk_puller.pull().expect("valid").collect();
     assert_eq!(chunk4.len(), 4);
     assert_eq!(chunk4[0], "item_10");
     assert_eq!(chunk4[3], "item_13");
@@ -508,7 +508,7 @@ fn chunk_puller_of_iter_with_idx_larger_with_strings() {
     let con_iter = iter.iter_into_con_iter();
     let mut chunk_puller = con_iter.chunk_puller(2);
 
-    let (idx1, chunk1) = chunk_puller.pull_with_idx().unwrap();
+    let (idx1, chunk1) = chunk_puller.pull_with_idx().expect("valid");
     assert_eq!(idx1, 0);
     let chunk1_vec: Vec<_> = chunk1.collect();
     assert_eq!(chunk1_vec.len(), 2);
@@ -517,7 +517,7 @@ fn chunk_puller_of_iter_with_idx_larger_with_strings() {
 
     chunk_puller.resize_for_chunk_size(4);
 
-    let (idx2, chunk2) = chunk_puller.pull_with_idx().unwrap();
+    let (idx2, chunk2) = chunk_puller.pull_with_idx().expect("valid");
     assert_eq!(idx2, 2); // next chunk starts at index 2
     let chunk2_vec: Vec<_> = chunk2.collect();
     assert_eq!(chunk2_vec.len(), 4);
@@ -532,7 +532,7 @@ fn chunk_puller_of_iter_with_idx_smaller_with_strings() {
     let con_iter = iter.iter_into_con_iter();
     let mut chunk_puller = con_iter.chunk_puller(4);
 
-    let (idx1, chunk1) = chunk_puller.pull_with_idx().unwrap();
+    let (idx1, chunk1) = chunk_puller.pull_with_idx().expect("valid");
     assert_eq!(idx1, 0);
     let chunk1_vec: Vec<_> = chunk1.collect();
     assert_eq!(chunk1_vec.len(), 4);
@@ -540,7 +540,7 @@ fn chunk_puller_of_iter_with_idx_smaller_with_strings() {
 
     chunk_puller.resize_for_chunk_size(2);
 
-    let (idx2, chunk2) = chunk_puller.pull_with_idx().unwrap();
+    let (idx2, chunk2) = chunk_puller.pull_with_idx().expect("valid");
     assert_eq!(idx2, 4); // next chunk starts at index 4
     let chunk2_vec: Vec<_> = chunk2.collect();
     assert_eq!(chunk2_vec.len(), 2);
@@ -556,7 +556,7 @@ fn chunk_puller_of_iter_with_idx_multiple_with_strings() {
     let mut chunk_puller = con_iter.chunk_puller(2);
 
     // First chunk: indices 0-1
-    let (idx1, chunk1) = chunk_puller.pull_with_idx().unwrap();
+    let (idx1, chunk1) = chunk_puller.pull_with_idx().expect("valid");
     assert_eq!(idx1, 0);
     let chunk1_vec: Vec<_> = chunk1.collect();
     assert_eq!(chunk1_vec.len(), 2);
@@ -564,7 +564,7 @@ fn chunk_puller_of_iter_with_idx_multiple_with_strings() {
 
     // Resize to 3
     chunk_puller.resize_for_chunk_size(3);
-    let (idx2, chunk2) = chunk_puller.pull_with_idx().unwrap();
+    let (idx2, chunk2) = chunk_puller.pull_with_idx().expect("valid");
     assert_eq!(idx2, 2);
     let chunk2_vec: Vec<_> = chunk2.collect();
     assert_eq!(chunk2_vec.len(), 3);
@@ -573,7 +573,7 @@ fn chunk_puller_of_iter_with_idx_multiple_with_strings() {
 
     // Resize to 4
     chunk_puller.resize_for_chunk_size(4);
-    let (idx3, chunk3) = chunk_puller.pull_with_idx().unwrap();
+    let (idx3, chunk3) = chunk_puller.pull_with_idx().expect("valid");
     assert_eq!(idx3, 5);
     let chunk3_vec: Vec<_> = chunk3.collect();
     assert_eq!(chunk3_vec.len(), 4);
@@ -588,13 +588,13 @@ fn chunk_puller_of_iter_pull_to_completion_with_strings() {
     let con_iter = iter.iter_into_con_iter();
     let mut chunk_puller = con_iter.chunk_puller(2);
 
-    let chunk1: Vec<_> = chunk_puller.pull().unwrap().collect();
+    let chunk1: Vec<_> = chunk_puller.pull().expect("valid").collect();
     assert_eq!(chunk1.len(), 2);
     assert_eq!(chunk1[0], "item_0");
 
     chunk_puller.resize_for_chunk_size(3);
 
-    let chunk2: Vec<_> = chunk_puller.pull().unwrap().collect();
+    let chunk2: Vec<_> = chunk_puller.pull().expect("valid").collect();
     assert_eq!(chunk2.len(), 3);
     assert_eq!(chunk2[0], "item_2");
     assert_eq!(chunk2[2], "item_4");
@@ -624,38 +624,38 @@ fn chunk_puller_of_iter_alternating_resize_with_strings() {
     let mut chunk_puller = con_iter.chunk_puller(2);
 
     // 2, 4, 2, 4, 2, 4 pattern
-    let chunk1: Vec<_> = chunk_puller.pull().unwrap().collect();
+    let chunk1: Vec<_> = chunk_puller.pull().expect("valid").collect();
     assert_eq!(chunk1.len(), 2);
     assert_eq!(chunk1[0], "item_0");
 
     chunk_puller.resize_for_chunk_size(4);
-    let chunk2: Vec<_> = chunk_puller.pull().unwrap().collect();
+    let chunk2: Vec<_> = chunk_puller.pull().expect("valid").collect();
     assert_eq!(chunk2.len(), 4);
     assert_eq!(chunk2[0], "item_2");
 
     chunk_puller.resize_for_chunk_size(2);
-    let chunk3: Vec<_> = chunk_puller.pull().unwrap().collect();
+    let chunk3: Vec<_> = chunk_puller.pull().expect("valid").collect();
     assert_eq!(chunk3.len(), 2);
     assert_eq!(chunk3[0], "item_6");
 
     chunk_puller.resize_for_chunk_size(4);
-    let chunk4: Vec<_> = chunk_puller.pull().unwrap().collect();
+    let chunk4: Vec<_> = chunk_puller.pull().expect("valid").collect();
     assert_eq!(chunk4.len(), 4);
     assert_eq!(chunk4[0], "item_8");
 
     chunk_puller.resize_for_chunk_size(2);
-    let chunk5: Vec<_> = chunk_puller.pull().unwrap().collect();
+    let chunk5: Vec<_> = chunk_puller.pull().expect("valid").collect();
     assert_eq!(chunk5.len(), 2);
     assert_eq!(chunk5[0], "item_12");
 
     chunk_puller.resize_for_chunk_size(4);
-    let chunk6: Vec<_> = chunk_puller.pull().unwrap().collect();
+    let chunk6: Vec<_> = chunk_puller.pull().expect("valid").collect();
     assert_eq!(chunk6.len(), 4);
     assert_eq!(chunk6[0], "item_14");
 
     // Remaining 6 items can be pulled
     chunk_puller.resize_for_chunk_size(10);
-    let final_chunk: Vec<_> = chunk_puller.pull().unwrap().collect();
+    let final_chunk: Vec<_> = chunk_puller.pull().expect("valid").collect();
     assert_eq!(final_chunk.len(), 6);
     assert_eq!(final_chunk[0], "item_18");
     assert_eq!(final_chunk[5], "item_23");

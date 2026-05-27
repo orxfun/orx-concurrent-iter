@@ -132,7 +132,7 @@ impl<T> Iterator for ChunksIterOfIter<'_, T> {
         let end = self.buffer.len();
         let remaining_buffer = &mut self.buffer[begin..end];
         self.current = end;
-        let remaining = remaining_buffer.into_iter().map_while(|x| x.take());
+        let remaining = remaining_buffer.iter_mut().map_while(|x| x.take());
         remaining.fold(init, f)
     }
 

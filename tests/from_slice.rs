@@ -139,7 +139,7 @@ fn into_seq_iter_not_used(len: usize) {
     let values: Vec<_> = (100..(100 + len)).collect();
     let slice = values.as_slice();
     let iter = slice.con_iter().into_seq_iter();
-    let result: Vec<_> = iter.map(|x| *x).collect();
+    let result: Vec<_> = iter.copied().collect();
 
     assert_eq!(result, values);
 }
@@ -153,7 +153,7 @@ fn into_seq_iter_used(len: usize, take: usize) {
     for _ in 0..take {
         _ = iter.next();
     }
-    let result: Vec<_> = iter.into_seq_iter().map(|x| *x).collect();
+    let result: Vec<_> = iter.into_seq_iter().copied().collect();
 
     let mut iter = values.into_iter();
     for _ in 0..take {

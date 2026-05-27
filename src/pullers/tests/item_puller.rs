@@ -1,5 +1,6 @@
 use crate::concurrent_collection::ConcurrentCollection;
 use crate::concurrent_iter::ConcurrentIter;
+use std::hint::black_box;
 use std::iter::Iterator;
 
 #[test]
@@ -41,7 +42,7 @@ fn item_puller_fold_sum() {
     let con_iter = data.con_iter();
     let puller = con_iter.item_puller();
 
-    let sum = puller.fold(0, |acc, &x| acc + x);
+    let sum = puller.fold(0, |acc, &x| black_box(acc + x));
     assert_eq!(sum, 55); // 1+2+3+...+10 = 55
 }
 
@@ -51,7 +52,7 @@ fn item_puller_fold_product() {
     let con_iter = data.con_iter();
     let puller = con_iter.item_puller();
 
-    let product = puller.fold(1, |acc, &x| acc * x);
+    let product = puller.fold(1, |acc, &x| black_box(acc * x));
     assert_eq!(product, 120); // 5! = 120
 }
 
@@ -61,7 +62,7 @@ fn item_puller_fold_concatenation() {
     let con_iter = data.con_iter();
     let puller = con_iter.item_puller();
 
-    let result = puller.fold(String::new(), |acc, &x| acc + x);
+    let result = puller.fold(String::new(), |acc, &x| black_box(acc + x));
     assert_eq!(result, "hello world");
 }
 
@@ -84,7 +85,7 @@ fn item_puller_fold_empty() {
     let con_iter = data.con_iter();
     let puller = con_iter.item_puller();
 
-    let sum = puller.fold(0, |acc, &x| acc + x);
+    let sum = puller.fold(0, |acc, &x| black_box(acc + x));
     assert_eq!(sum, 0);
 }
 
@@ -94,7 +95,7 @@ fn item_puller_fold_with_init() {
     let con_iter = data.con_iter();
     let puller = con_iter.item_puller();
 
-    let result = puller.fold(10, |acc, &x| acc + x);
+    let result = puller.fold(10, |acc, &x| black_box(acc + x));
     assert_eq!(result, 16); // 10 + 1 + 2 + 3 = 16
 }
 

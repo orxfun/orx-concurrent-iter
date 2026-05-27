@@ -164,7 +164,7 @@ fn next_with_idx(n: usize, nt: usize) {
 
                 while let Some(x) = iter.next_with_idx() {
                     _ = iter.size_hint();
-                    assert_eq!(x.0 + 10, x.1.parse::<usize>().unwrap());
+                    assert_eq!(x.0 + 10, x.1.parse::<usize>().expect("valid"));
                     x.1.push('!');
                 }
             });
@@ -215,7 +215,7 @@ fn item_puller_with_idx(n: usize, nt: usize) {
 
                 for x in iter.item_puller_with_idx() {
                     _ = iter.size_hint();
-                    assert_eq!(x.0 + 10, x.1.parse::<usize>().unwrap());
+                    assert_eq!(x.0 + 10, x.1.parse::<usize>().expect("valid"));
                     x.1.push('!');
                 }
             });
@@ -273,7 +273,7 @@ fn chunk_puller_with_idx(n: usize, nt: usize) {
                 while let Some((begin_idx, chunk)) = puller.pull_with_idx() {
                     assert!(chunk.len() <= 7);
                     for (i, x) in chunk.enumerate() {
-                        assert_eq!(begin_idx + i + 10, x.parse::<usize>().unwrap());
+                        assert_eq!(begin_idx + i + 10, x.parse::<usize>().expect("valid"));
                         x.push('!');
                     }
                 }
@@ -323,7 +323,7 @@ fn flattened_chunk_puller_with_idx(n: usize, nt: usize) {
                 while num_spawned.len() < nt {} // allow all threads to be spawned
 
                 for x in iter.chunk_puller(7).flattened_with_idx() {
-                    assert_eq!(x.0 + 10, x.1.parse::<usize>().unwrap());
+                    assert_eq!(x.0 + 10, x.1.parse::<usize>().expect("valid"));
                     x.1.push('!');
                 }
             });
@@ -355,7 +355,7 @@ fn skip_to_end(n: usize, nt: usize) {
                     0 => {
                         while let Some(num) = con_iter.next() {
                             match num.parse::<usize>().expect("") < until + 10 {
-                                true => _ = num.push('!'),
+                                true => num.push('!'),
                                 false => con_iter.skip_to_end(),
                             }
                         }
@@ -363,7 +363,7 @@ fn skip_to_end(n: usize, nt: usize) {
                     _ => {
                         for num in con_iter.chunk_puller(7).flattened() {
                             match num.parse::<usize>().expect("") < until + 10 {
-                                true => _ = num.push('!'),
+                                true => num.push('!'),
                                 false => con_iter.skip_to_end(),
                             }
                         }

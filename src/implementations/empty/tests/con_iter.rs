@@ -292,7 +292,7 @@ fn flattened_chunk_puller_with_idx(nt: usize) {
 fn skip_to_end(nt: usize) {
     let iter = ConIterEmpty::<String>::new();
 
-    let until = 0 / 2;
+    let until = 0;
 
     let bag = ConcurrentBag::new();
     let num_spawned = ConcurrentBag::new();

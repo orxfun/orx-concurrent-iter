@@ -99,19 +99,19 @@ fn size_hint() {
 
         {
             assert_eq!(iter.size_hint(), (13, Some(15)));
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 2);
         }
 
         {
             assert_eq!(iter.size_hint(), (13, Some(13)));
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 7);
             assert_eq!(iter.size_hint(), (6, Some(6)));
         }
 
         {
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 6);
             assert_eq!(iter.size_hint(), (0, Some(0)));
         }
@@ -135,19 +135,19 @@ fn size_hint() {
 
         {
             assert_eq!(iter.size_hint(), (2, Some(15)));
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 2);
         }
 
         {
             assert_eq!(iter.size_hint(), (0, Some(13)));
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 7);
             assert_eq!(iter.size_hint(), (0, Some(6)));
         }
 
         {
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 6);
             assert_eq!(iter.size_hint(), (0, Some(0)));
         }
@@ -174,19 +174,19 @@ fn size_hint() {
         {
             assert_eq!(iter.size_hint(), (15, Some(15)));
             assert_eq!(iter.len(), 15);
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 2);
         }
 
         {
             assert_eq!(iter.size_hint(), (13, Some(13)));
             assert_eq!(iter.len(), 13);
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 7);
             assert_eq!(iter.size_hint(), (6, Some(6)));
         }
         {
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 6);
             assert_eq!(iter.len(), 0);
             assert_eq!(iter.size_hint(), (0, Some(0)));
@@ -212,19 +212,19 @@ fn size_hint() {
 
         {
             assert_eq!(iter.size_hint(), (0, Some(15)));
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 2);
         }
 
         {
             assert_eq!(iter.size_hint(), (0, Some(13)));
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 7);
             assert_eq!(iter.size_hint(), (0, Some(6)));
         }
 
         {
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 6);
             assert_eq!(iter.size_hint(), (0, Some(0)));
         }
