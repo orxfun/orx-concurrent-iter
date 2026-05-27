@@ -49,20 +49,17 @@ where
     }
 
     fn resize_for_chunk_size(&mut self, new_chunk_size: usize) {
+        let additional_cap = new_chunk_size.saturating_sub(self.buffer.capacity());
+        self.buffer.reserve(additional_cap);
+
         match self.buffer.len().cmp(&new_chunk_size) {
             core::cmp::Ordering::Less => {
-                // Need to grow the buffer by adding None values
                 for _ in self.buffer.len()..new_chunk_size {
                     self.buffer.push(None);
                 }
             }
-            core::cmp::Ordering::Greater => {
-                // Need to shrink the buffer
-                self.buffer.truncate(new_chunk_size);
-            }
-            core::cmp::Ordering::Equal => {
-                // Already the right size
-            }
+            core::cmp::Ordering::Greater => self.buffer.truncate(new_chunk_size),
+            core::cmp::Ordering::Equal => {}
         }
         self.chunk_size = new_chunk_size;
     }
