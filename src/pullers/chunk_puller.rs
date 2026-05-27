@@ -200,7 +200,7 @@ pub trait ChunkPuller {
     /// assumed to be the internal ordering within this pool of threads taking values in
     /// `0..n`.
     ///
-    /// [`next`]: Self::next
+    /// [`pull`]: Self::pull
     #[inline(always)]
     #[allow(unused_variables)]
     fn pull_by(&mut self, thread_idx: usize) -> Option<Self::Chunk<'_>> {
@@ -248,7 +248,7 @@ pub trait ChunkPuller {
     /// assumed to be the internal ordering within this pool of threads taking values in
     /// `0..n`.
     ///
-    /// [`next`]: Self::next
+    /// [`pull_with_idx`]: Self::pull_with_idx
     #[inline(always)]
     #[allow(unused_variables)]
     fn pull_with_idx_by(&mut self, thread_idx: usize) -> Option<(usize, Self::Chunk<'_>)> {
