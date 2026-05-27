@@ -158,5 +158,12 @@ impl<I: ConcurrentIter> Iterator for ItemPuller<'_, I> {
         }
 
         acc
+    })
+
+    fn count(self) -> usize
+    where
+        Self: Sized,
+    {
+        self.fold(0, |count, _| count + 1)
     }
 }
