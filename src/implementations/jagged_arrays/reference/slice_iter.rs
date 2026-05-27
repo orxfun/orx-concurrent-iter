@@ -113,6 +113,13 @@ where
 
         acc
     }
+
+    fn count(self) -> usize
+    where
+        Self: Sized,
+    {
+        self.fold(0, |acc, _| acc + 1)
+    }
 }
 
 impl<'a, T, S, X> ExactSizeIterator for RawJaggedSliceIterRef<'a, T, S, X>
