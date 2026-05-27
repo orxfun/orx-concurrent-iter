@@ -172,6 +172,10 @@ pub trait ChunkPuller {
     /// loops.
     fn chunk_size(&self) -> usize;
 
+    /// Updates the chunk puller for the `new_chunk_size`, such that pull requests after this call
+    /// will return `new_chunk_size`, or fewer elements if the source iterator is shorter.
+    fn resize_for_chunk_size(&mut self, new_chunk_size: usize) {}
+
     /// Pulls the next chunk from the connected concurrent iterator.
     ///
     /// The pulled chunk has a known length, and hence, implements [`ExactSizeIterator`].
