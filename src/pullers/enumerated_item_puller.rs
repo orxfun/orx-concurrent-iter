@@ -41,6 +41,20 @@ where
     con_iter: &'a I,
 }
 
+impl<I: ConcurrentIter> EnumeratedItemPuller<'_, I> {
+    /// Behaves exactly as `next` but additionally provides `thread_idx` to the iterator.
+    /// This information might be useful for certain concurrent iterators, such as the
+    /// [recursive concurrent iterator](https://crates.io/crates/orx-concurrent-recursive-iter).
+    ///
+    /// Assuming a program using `n` threads that accesses this iterator, `thread_idx` is
+    /// assumed to be the internal ordering within this pool of threads taking values in
+    /// `0..n`.
+    #[inline(always)]
+    pub fn next_by(&mut self, thread_idx: usize) -> Option<(usize, I::Item)> {
+        self.con_iter.next_with_idx_by(thread_idx)
+    }
+}
+
 impl<'i, I> From<&'i I> for EnumeratedItemPuller<'i, I>
 where
     I: ConcurrentIter,
@@ -59,5 +73,32 @@ where
     #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         self.con_iter.next_with_idx()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        // lb: other threads might pull all of the elements, hence 0
+        // ub: we might pull all elements, hence ub(con_iter)
+        (0, self.con_iter.size_hint().1)
+    }
+
+    fn fold<B, F>(self, init: B, mut f: F) -> B
+    where
+        Self: Sized,
+        F: FnMut(B, Self::Item) -> B,
+    {
+        let mut acc = init;
+
+        while let Some(elem) = self.con_iter.next_with_idx() {
+            acc = f(acc, elem);
+        }
+
+        acc
+    }
+
+    fn count(self) -> usize
+    where
+        Self: Sized,
+    {
+        self.fold(0, |count, _| count + 1)
     }
 }

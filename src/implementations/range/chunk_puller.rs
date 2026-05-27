@@ -36,6 +36,10 @@ where
         self.chunk_size
     }
 
+    fn resize_for_chunk_size(&mut self, new_chunk_size: usize) {
+        self.chunk_size = new_chunk_size;
+    }
+
     fn pull(&mut self) -> Option<Self::Chunk<'_>> {
         self.con_iter
             .progress_and_get_range(self.chunk_size)

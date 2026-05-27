@@ -172,6 +172,10 @@ pub trait ChunkPuller {
     /// loops.
     fn chunk_size(&self) -> usize;
 
+    /// Updates the chunk puller for the `new_chunk_size`, such that pull requests after this call
+    /// will return `new_chunk_size`, or fewer elements if the source iterator is shorter.
+    fn resize_for_chunk_size(&mut self, new_chunk_size: usize);
+
     /// Pulls the next chunk from the connected concurrent iterator.
     ///
     /// The pulled chunk has a known length, and hence, implements [`ExactSizeIterator`].
@@ -187,6 +191,21 @@ pub trait ChunkPuller {
     /// choice allows to use the `while let Some(chunk) = chunk_puller.pull() { }`
     /// loops.
     fn pull(&mut self) -> Option<Self::Chunk<'_>>;
+
+    /// Behaves exactly as [`pull`] but additionally provides `thread_idx` to the iterator.
+    /// This information might be useful for certain concurrent iterators, such as the
+    /// [recursive concurrent iterator](https://crates.io/crates/orx-concurrent-recursive-iter).
+    ///
+    /// Assuming a program using `n` threads that accesses this iterator, `thread_idx` is
+    /// assumed to be the internal ordering within this pool of threads taking values in
+    /// `0..n`.
+    ///
+    /// [`pull`]: Self::pull
+    #[inline(always)]
+    #[allow(unused_variables)]
+    fn pull_by(&mut self, thread_idx: usize) -> Option<Self::Chunk<'_>> {
+        self.pull()
+    }
 
     /// Pulls the next chunk from the connected concurrent iterator together with the index
     /// of the first element of the chunk.
@@ -220,6 +239,21 @@ pub trait ChunkPuller {
     /// });
     /// ```
     fn pull_with_idx(&mut self) -> Option<(usize, Self::Chunk<'_>)>;
+
+    /// Behaves exactly as [`pull_with_idx`] but additionally provides `thread_idx` to the iterator.
+    /// This information might be useful for certain concurrent iterators, such as the
+    /// [recursive concurrent iterator](https://crates.io/crates/orx-concurrent-recursive-iter).
+    ///
+    /// Assuming a program using `n` threads that accesses this iterator, `thread_idx` is
+    /// assumed to be the internal ordering within this pool of threads taking values in
+    /// `0..n`.
+    ///
+    /// [`pull_with_idx`]: Self::pull_with_idx
+    #[inline(always)]
+    #[allow(unused_variables)]
+    fn pull_with_idx_by(&mut self, thread_idx: usize) -> Option<(usize, Self::Chunk<'_>)> {
+        self.pull_with_idx()
+    }
 
     /// Converts the [`ChunkPuller`] into a [`FlattenedChunkPuller`] which is still connected to
     /// and pulls its elements from the same concurrent iterator; while allowing for:

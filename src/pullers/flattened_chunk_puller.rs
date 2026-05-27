@@ -96,6 +96,39 @@ where
             None => None,
         }
     }
+
+    fn next_chunk_by(&mut self, thread_idx: usize) -> Option<P::ChunkItem> {
+        let puller = unsafe { &mut *(&mut self.puller as *mut P) };
+        match puller.pull_by(thread_idx) {
+            Some(chunk) => {
+                self.current_chunk = Some(chunk);
+                self.next()
+            }
+            None => None,
+        }
+    }
+
+    /// Behaves exactly as [`next`] but additionally provides `thread_idx` to the iterator.
+    /// This information might be useful for certain concurrent iterators, such as the
+    /// [recursive concurrent iterator](https://crates.io/crates/orx-concurrent-recursive-iter).
+    ///
+    /// Assuming a program using `n` threads that accesses this iterator, `thread_idx` is
+    /// assumed to be the internal ordering within this pool of threads taking values in
+    /// `0..n`.
+    ///
+    /// [`next`]: Self::next
+    pub fn next_by(&mut self, thread_idx: usize) -> Option<P::ChunkItem> {
+        match &mut self.current_chunk {
+            Some(chunk) => {
+                let next = chunk.next();
+                match next.is_some() {
+                    true => next,
+                    false => self.next_chunk_by(thread_idx),
+                }
+            }
+            None => self.next_chunk_by(thread_idx),
+        }
+    }
 }
 
 impl<P> Iterator for FlattenedChunkPuller<'_, P>

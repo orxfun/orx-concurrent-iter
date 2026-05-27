@@ -41,7 +41,7 @@ fn len() {
         assert_eq!(iter.try_get_len(), Some(0));
     }
 
-    let values = vec!['a', 'b', 'c', 'd'];
+    let values = ['a', 'b', 'c', 'd'];
 
     test(values.iter().iter_into_con_iter().cloned());
     test(values.iter().iter_into_con_iter().copied());
