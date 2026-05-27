@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 mod chunk_puller;
 mod enumerated_item_puller;
 mod flattened_chunk_puller;
