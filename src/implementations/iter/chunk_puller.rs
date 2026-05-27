@@ -10,6 +10,7 @@ where
 {
     con_iter: &'i ConIterOfIter<I>,
     buffer: Vec<Option<I::Item>>,
+    chunk_size: usize,
 }
 
 impl<'i, I> ChunkPullerOfIter<'i, I>
@@ -22,7 +23,11 @@ where
         for _ in 0..chunk_size {
             buffer.push(None);
         }
-        Self { con_iter, buffer }
+        Self {
+            con_iter,
+            buffer,
+            chunk_size,
+        }
     }
 }
 
@@ -38,8 +43,9 @@ where
     where
         Self: 'c;
 
+    #[inline(always)]
     fn chunk_size(&self) -> usize {
-        self.buffer.len()
+        self.chunk_size
     }
 
     fn resize_for_chunk_size(&mut self, new_chunk_size: usize) {
@@ -52,7 +58,8 @@ where
     }
 
     fn pull(&mut self) -> Option<Self::Chunk<'_>> {
-        match self.con_iter.next_chunk_to_buffer(&mut self.buffer) {
+        let buffer = &mut self.buffer[0..self.chunk_size];
+        match self.con_iter.next_chunk_to_buffer(buffer) {
             (_, 0) => None,
             (_, slice_len) => {
                 let buffer = &mut self.buffer[0..slice_len];
@@ -63,7 +70,8 @@ where
     }
 
     fn pull_with_idx(&mut self) -> Option<(usize, Self::Chunk<'_>)> {
-        match self.con_iter.next_chunk_to_buffer(&mut self.buffer) {
+        let buffer = &mut self.buffer[0..self.chunk_size];
+        match self.con_iter.next_chunk_to_buffer(buffer) {
             (_, 0) => None,
             (begin_idx, slice_len) => {
                 let buffer = &mut self.buffer[0..slice_len];
