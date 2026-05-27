@@ -108,26 +108,31 @@ use crate::concurrent_iter::ConcurrentIter;
 /// let sum = parallel_reduce(8, data.con_iter().copied(), |a, b| a + b);
 /// assert_eq!(sum, Some(n * (n - 1) / 2));
 /// ```
-pub struct ItemPuller<'a, I>
-where
-    I: ConcurrentIter,
-{
+pub struct ItemPuller<'a, I> {
     con_iter: &'a I,
 }
 
-impl<'i, I> From<&'i I> for ItemPuller<'i, I>
-where
-    I: ConcurrentIter,
-{
+impl<I: ConcurrentIter> ItemPuller<'_, I> {
+    /// Behaves exactly as `next` but additionally provides `thread_idx` to the iterator.
+    /// This information might be useful for certain concurrent iterators, such as the
+    /// [recursive concurrent iterator](https://crates.io/crates/orx-concurrent-recursive-iter).
+    ///
+    /// Assuming a program using `n` threads that accesses this iterator, `thread_idx` is
+    /// assumed to be the internal ordering within this pool of threads taking values in
+    /// `0..n`.
+    #[inline(always)]
+    pub fn next_by(&mut self, thread_idx: usize) -> Option<I::Item> {
+        self.con_iter.next_by(thread_idx)
+    }
+}
+
+impl<'i, I: ConcurrentIter> From<&'i I> for ItemPuller<'i, I> {
     fn from(con_iter: &'i I) -> Self {
         Self { con_iter }
     }
 }
 
-impl<I> Iterator for ItemPuller<'_, I>
-where
-    I: ConcurrentIter,
-{
+impl<I: ConcurrentIter> Iterator for ItemPuller<'_, I> {
     type Item = I::Item;
 
     #[inline(always)]
