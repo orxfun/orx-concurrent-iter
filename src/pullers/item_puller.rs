@@ -158,7 +158,7 @@ impl<I: ConcurrentIter> Iterator for ItemPuller<'_, I> {
         }
 
         acc
-    })
+    }
 
     fn count(self) -> usize
     where
