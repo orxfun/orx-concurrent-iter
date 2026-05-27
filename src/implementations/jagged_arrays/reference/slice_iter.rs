@@ -101,7 +101,15 @@ where
         Self: Sized,
         F: FnMut(B, Self::Item) -> B,
     {
-        let mut acc = self.current.fold(init, &mut f);
+        let mut current: core::slice::Iter<'a, T> = Default::default();
+        core::mem::swap(&mut current, &mut self.current);
+        let mut acc = current.fold(init, &mut f);
+
+        while self.progress_to_next_slice() {
+            let mut current: core::slice::Iter<'a, T> = Default::default();
+            core::mem::swap(&mut current, &mut self.current);
+            acc = current.fold(acc, &mut f);
+        }
 
         acc
     }
