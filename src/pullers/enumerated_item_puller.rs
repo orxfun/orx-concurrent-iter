@@ -74,4 +74,10 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         self.con_iter.next_with_idx()
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        // lb: other threads might pull all of the elements, hence 0
+        // ub: we might pull all elements, hence ub(con_iter)
+        (0, self.con_iter.size_hint().1)
+    }
 }
