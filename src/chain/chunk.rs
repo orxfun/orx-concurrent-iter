@@ -24,6 +24,7 @@ where
 {
     type Item = P::Item;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         match self {
             Self::P(p) => p.next(),
@@ -35,6 +36,28 @@ where
         match self {
             Self::P(p) => p.size_hint(),
             Self::Q(q) => q.size_hint(),
+        }
+    }
+
+    #[inline]
+    fn fold<B, F>(self, init: B, f: F) -> B
+    where
+        Self: Sized,
+        F: FnMut(B, Self::Item) -> B,
+    {
+        match self {
+            Self::P(p) => p.fold(init, f),
+            Self::Q(q) => q.fold(init, f),
+        }
+    }
+
+    fn count(self) -> usize
+    where
+        Self: Sized,
+    {
+        match self {
+            Self::P(p) => p.count(),
+            Self::Q(q) => q.count(),
         }
     }
 }
