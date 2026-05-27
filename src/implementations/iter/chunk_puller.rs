@@ -122,6 +122,26 @@ impl<T> Iterator for ChunksIterOfIter<'_, T> {
         let len = self.buffer.len().saturating_sub(self.current);
         (len, Some(len))
     }
+
+    fn fold<B, F>(mut self, init: B, f: F) -> B
+    where
+        Self: Sized,
+        F: FnMut(B, Self::Item) -> B,
+    {
+        let begin = self.current;
+        let end = self.buffer.len();
+        let remaining_buffer = &mut self.buffer[begin..end];
+        self.current = end;
+        let remaining = remaining_buffer.into_iter().map_while(|x| x.take());
+        remaining.fold(init, f)
+    }
+
+    fn count(self) -> usize
+    where
+        Self: Sized,
+    {
+        self.len()
+    }
 }
 
 impl<T> ExactSizeIterator for ChunksIterOfIter<'_, T> {
