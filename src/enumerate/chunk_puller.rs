@@ -82,6 +82,24 @@ where
         let len = self.chunk.len();
         (len, Some(len))
     }
+
+    #[inline]
+    fn fold<B, F>(self, init: B, mut f: F) -> B
+    where
+        Self: Sized,
+        F: FnMut(B, Self::Item) -> B,
+    {
+        self.chunk
+            .fold(init, |acc, (i, x)| f(acc, (self.begin_idx + i, x)))
+    }
+
+    #[inline]
+    fn count(self) -> usize
+    where
+        Self: Sized,
+    {
+        self.chunk.len()
+    }
 }
 
 impl<I> ExactSizeIterator for EnumeratedChunk<I>
