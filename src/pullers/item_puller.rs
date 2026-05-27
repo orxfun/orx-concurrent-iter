@@ -145,4 +145,18 @@ impl<I: ConcurrentIter> Iterator for ItemPuller<'_, I> {
         // ub: we might pull all elements, hence ub(con_iter)
         (0, self.con_iter.size_hint().1)
     }
+
+    fn fold<B, F>(self, init: B, mut f: F) -> B
+    where
+        Self: Sized,
+        F: FnMut(B, Self::Item) -> B,
+    {
+        let mut acc = init;
+
+        while let Some(elem) = self.con_iter.next() {
+            acc = f(acc, elem);
+        }
+
+        acc
+    }
 }
