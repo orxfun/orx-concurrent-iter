@@ -49,12 +49,22 @@ where
     }
 
     fn resize_for_chunk_size(&mut self, new_chunk_size: usize) {
-        match self.buffer.capacity() < new_chunk_size {
-            true => self
-                .buffer
-                .reserve_exact(new_chunk_size - self.buffer.capacity()),
-            false => {}
+        match self.buffer.len().cmp(&new_chunk_size) {
+            core::cmp::Ordering::Less => {
+                // Need to grow the buffer by adding None values
+                for _ in self.buffer.len()..new_chunk_size {
+                    self.buffer.push(None);
+                }
+            }
+            core::cmp::Ordering::Greater => {
+                // Need to shrink the buffer
+                self.buffer.truncate(new_chunk_size);
+            }
+            core::cmp::Ordering::Equal => {
+                // Already the right size
+            }
         }
+        self.chunk_size = new_chunk_size;
     }
 
     fn pull(&mut self) -> Option<Self::Chunk<'_>> {
