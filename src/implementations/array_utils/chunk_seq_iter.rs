@@ -34,6 +34,22 @@ impl<T> Iterator for ArrayChunkSeqIter<'_, T> {
         let len = self.iter.len();
         (len, Some(len))
     }
+
+    #[inline(always)]
+    fn fold<B, F>(self, init: B, f: F) -> B
+    where
+        Self: Sized,
+        F: FnMut(B, Self::Item) -> B,
+    {
+        self.iter.fold(init, f)
+    }
+
+    fn count(self) -> usize
+    where
+        Self: Sized,
+    {
+        self.iter.len()
+    }
 }
 
 impl<T> ExactSizeIterator for ArrayChunkSeqIter<'_, T> {
