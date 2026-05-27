@@ -52,6 +52,11 @@ where
         self.p.chunk_size()
     }
 
+    fn resize_for_chunk_size(&mut self, new_chunk_size: usize) {
+        self.p.resize_for_chunk_size(new_chunk_size);
+        self.q.resize_for_chunk_size(new_chunk_size);
+    }
+
     fn pull(&mut self) -> Option<Self::Chunk<'_>> {
         match self.p_consumed {
             false => match self.p.pull() {

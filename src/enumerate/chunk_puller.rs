@@ -34,6 +34,10 @@ where
         self.puller.chunk_size()
     }
 
+    fn resize_for_chunk_size(&mut self, new_chunk_size: usize) {
+        self.puller.resize_for_chunk_size(new_chunk_size);
+    }
+
     fn pull(&mut self) -> Option<Self::Chunk<'_>> {
         self.puller
             .pull_with_idx()

@@ -28,6 +28,10 @@ impl<T> ChunkPuller for ChunkPullerEmpty<'_, T> {
         self.chunk_size
     }
 
+    fn resize_for_chunk_size(&mut self, new_chunk_size: usize) {
+        self.chunk_size = new_chunk_size;
+    }
+
     fn pull(&mut self) -> Option<Self::Chunk<'_>> {
         None
     }

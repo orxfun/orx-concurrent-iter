@@ -27,6 +27,10 @@ impl<'a, T> ChunkPuller for ChunkPullerSlice<'_, 'a, T> {
         self.chunk_size
     }
 
+    fn resize_for_chunk_size(&mut self, new_chunk_size: usize) {
+        self.chunk_size = new_chunk_size;
+    }
+
     fn pull(&mut self) -> Option<Self::Chunk<'_>> {
         self.con_iter
             .progress_and_get_slice(self.chunk_size)

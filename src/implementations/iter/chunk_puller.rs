@@ -42,6 +42,15 @@ where
         self.buffer.len()
     }
 
+    fn resize_for_chunk_size(&mut self, new_chunk_size: usize) {
+        match self.buffer.capacity() < new_chunk_size {
+            true => self
+                .buffer
+                .reserve_exact(new_chunk_size - self.buffer.capacity()),
+            false => {}
+        }
+    }
+
     fn pull(&mut self) -> Option<Self::Chunk<'_>> {
         match self.con_iter.next_chunk_to_buffer(&mut self.buffer) {
             (_, 0) => None,
