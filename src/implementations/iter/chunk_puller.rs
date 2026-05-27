@@ -49,7 +49,7 @@ where
     }
 
     fn resize_for_chunk_size(&mut self, new_chunk_size: usize) {
-        let additional_cap = new_chunk_size.saturating_sub(self.buffer.capacity());
+        let additional_cap = new_chunk_size.saturating_sub(self.buffer.len());
         self.buffer.reserve(additional_cap);
 
         match self.buffer.len().cmp(&new_chunk_size) {
