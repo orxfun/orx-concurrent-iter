@@ -48,22 +48,31 @@ where
         self.len_of_remaining_slices + remaining_current
     }
 
-    fn next_slice(&mut self) -> Option<&'a T> {
-        self.slice.get_slice(self.f).and_then(|slice| {
-            match self.len_of_remaining_slices > slice.len() {
-                true => {
-                    self.len_of_remaining_slices -= slice.len();
-                    self.f += 1;
+    fn progress_to_next_slice(&mut self) -> bool {
+        match self.slice.get_slice(self.f) {
+            None => false,
+            Some(slice) => {
+                match self.len_of_remaining_slices > slice.len() {
+                    true => {
+                        self.len_of_remaining_slices -= slice.len();
+                        self.f += 1;
+                    }
+                    false => {
+                        self.len_of_remaining_slices = 0;
+                        self.f = self.slice.num_slices();
+                    }
                 }
-                false => {
-                    self.len_of_remaining_slices = 0;
-                    self.f = self.slice.num_slices();
-                }
+                self.current = slice.iter();
+                true
             }
+        }
+    }
 
-            self.current = slice.iter();
-            self.next()
-        })
+    fn next_slice(&mut self) -> Option<&'a T> {
+        match self.progress_to_next_slice() {
+            true => self.next(),
+            false => None,
+        }
     }
 }
 
@@ -85,6 +94,16 @@ where
     fn size_hint(&self) -> (usize, Option<usize>) {
         let len = self.remaining();
         (len, Some(len))
+    }
+
+    fn fold<B, F>(mut self, init: B, mut f: F) -> B
+    where
+        Self: Sized,
+        F: FnMut(B, Self::Item) -> B,
+    {
+        let mut acc = self.current.fold(init, &mut f);
+
+        acc
     }
 }
 
