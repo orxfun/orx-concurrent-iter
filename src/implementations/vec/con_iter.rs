@@ -115,7 +115,6 @@ impl<T> ArrayConIter for ConIterVec<T> {
         &self,
         chunk_size: usize,
     ) -> Option<ChunkPointers<Self::Item>> {
-        let chunk_size = chunk_size.min(self.vec_len);
         self.progress_and_get_begin_idx(chunk_size)
             .map(|begin_idx| {
                 let end_idx = (begin_idx + chunk_size).min(self.vec_len).max(begin_idx);
@@ -174,6 +173,7 @@ where
     }
 
     fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+        let chunk_size = chunk_size.min(self.vec_len);
         Self::ChunkPuller::new(self, chunk_size)
     }
 }
