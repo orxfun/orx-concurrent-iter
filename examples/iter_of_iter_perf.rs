@@ -4,7 +4,6 @@ use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use std::env;
 use std::hint::black_box;
-use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 // ---------------------------------------------------------------------------
