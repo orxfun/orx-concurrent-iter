@@ -120,6 +120,7 @@ where
     }
 
     fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+        let chunk_size = chunk_size.min(self.slice.len());
         Self::ChunkPuller::new(self, chunk_size)
     }
 }

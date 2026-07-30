@@ -503,3 +503,26 @@ fn into_seq_iter(n: usize, nt: usize, until: usize) {
 
     assert_eq!(all, expected);
 }
+
+#[test_matrix([0, 1, 100, 1000, 1500], [false, true])]
+fn pull_too_many(pulled_before: usize, by_idx: bool) {
+    let m = 35;
+    let n = m * m; // 1225
+    let matrix = get_matrix(m);
+    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let jagged = RawJagged::new(arrays, MatrixIndexer::new(m), Some(m * m));
+    let iter = ConIterJaggedOwned::new(jagged, 0);
+
+    for _ in 0..pulled_before {
+        _ = iter.next();
+    }
+
+    let mut puller = iter.chunk_puller_by(usize::MAX, 0);
+    let remaining = match by_idx {
+        false => puller.pull().map(|iter| iter.count()),
+        true => puller.pull_with_idx().map(|(_, iter)| iter.count()),
+    }
+    .unwrap_or(0);
+
+    assert_eq!(remaining, n.saturating_sub(pulled_before));
+}

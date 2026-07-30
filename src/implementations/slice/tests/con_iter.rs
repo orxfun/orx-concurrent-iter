@@ -1,11 +1,7 @@
-use crate::{
-    concurrent_iter::ConcurrentIter, exact_size_concurrent_iter::ExactSizeConcurrentIter,
-    implementations::slice::con_iter::ConIterSlice, pullers::ChunkPuller,
-};
-use alloc::{
-    string::{String, ToString},
-    vec::Vec,
-};
+use crate::{concurrent_iter::ConcurrentIter, exact_size_concurrent_iter::ExactSizeConcurrentIter};
+use crate::{implementations::slice::con_iter::ConIterSlice, pullers::ChunkPuller};
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 use orx_concurrent_bag::ConcurrentBag;
 use test_case::test_matrix;
 
@@ -476,4 +472,25 @@ fn into_seq_iter(n: usize, nt: usize, until: usize) {
     expected.sort();
 
     assert_eq!(all, expected);
+}
+
+#[test_matrix([0, 1, 100, 1000, 1500], [false, true])]
+fn pull_too_many(pulled_before: usize, by_idx: bool) {
+    let n = 1234;
+    let vec = new_vec(n, |x| (x + 10).to_string());
+    let slice = vec.as_slice();
+    let iter = ConIterSlice::new(slice);
+
+    for _ in 0..pulled_before {
+        _ = iter.next();
+    }
+
+    let mut puller = iter.chunk_puller_by(usize::MAX, 0);
+    let remaining = match by_idx {
+        false => puller.pull().map(|iter| iter.count()),
+        true => puller.pull_with_idx().map(|(_, iter)| iter.count()),
+    }
+    .unwrap_or(0);
+
+    assert_eq!(remaining, n.saturating_sub(pulled_before));
 }
