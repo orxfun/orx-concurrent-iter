@@ -69,7 +69,8 @@ impl<'a, T> ConIterSlice<'a, T> {
     pub(super) fn progress_and_get_slice(&self, chunk_size: usize) -> Option<(usize, &'a [T])> {
         self.progress_and_get_begin_idx(chunk_size)
             .map(|begin_idx| {
-                let end_idx = (begin_idx + chunk_size)
+                let end_idx = begin_idx
+                    .saturating_add(chunk_size)
                     .min(self.slice.len())
                     .max(begin_idx);
                 (begin_idx, &self.slice[begin_idx..end_idx])
