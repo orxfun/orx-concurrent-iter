@@ -85,10 +85,7 @@ where
     pub(super) fn progress_and_get_range(&self, chunk_size: usize) -> Option<(usize, T, T)> {
         self.progress_and_get_begin_idx(chunk_size)
             .map(|begin_idx| {
-                let end_idx = begin_idx
-                    .saturating_add(chunk_size)
-                    .min(self.len)
-                    .max(begin_idx);
+                let end_idx = (begin_idx + chunk_size).min(self.len).max(begin_idx);
                 let begin = self.begin + begin_idx;
                 let end = self.begin + end_idx;
                 (begin_idx, begin.into(), end.into())
@@ -142,6 +139,7 @@ where
     }
 
     fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+        let chunk_size = chunk_size.min(self.len);
         (self, chunk_size).into()
     }
 }

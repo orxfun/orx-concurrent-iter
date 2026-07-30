@@ -481,7 +481,7 @@ fn into_seq_iter(n: usize, nt: usize, until: usize) {
 }
 
 #[test_matrix([0, 1, 100, 1000, 1500], [false, true])]
-fn pull_too_many_xyz(pulled_before: usize, by_idx: bool) {
+fn pull_too_many(pulled_before: usize, by_idx: bool) {
     let n = 1234;
     let vec = new_vec(n, |x| (x + 10).to_string());
     let slice = vec.as_slice();
