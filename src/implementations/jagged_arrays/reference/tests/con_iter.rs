@@ -491,9 +491,10 @@ fn into_seq_iter(n: usize, nt: usize, until: usize) {
 
 #[test_matrix([0, 1, 100, 1000, 1500], [false, true])]
 fn pull_too_many(pulled_before: usize, by_idx: bool) {
-    let n = 1234;
-    let matrix = get_matrix(n);
-    let jagged = RawJaggedRef::new(matrix.as_slice(), MatrixIndexer::new(n), Some(n * n));
+    let m = 35;
+    let n = m * m; // 1225
+    let matrix = get_matrix(m);
+    let jagged = RawJaggedRef::new(matrix.as_slice(), MatrixIndexer::new(m), Some(m * m));
     let iter = ConIterJaggedRef::new(jagged, 0);
 
     for _ in 0..pulled_before {

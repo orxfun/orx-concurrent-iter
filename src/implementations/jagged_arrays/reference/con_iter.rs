@@ -1,11 +1,7 @@
-use super::{
-    chunk_puller::ChunkPullerJaggedRef, raw_jagged_ref::RawJaggedRef,
-    slice_iter::RawJaggedSliceIterRef,
-};
-use crate::{
-    ConcurrentIter, ExactSizeConcurrentIter,
-    implementations::jagged_arrays::{JaggedIndexer, Slices},
-};
+use super::slice_iter::RawJaggedSliceIterRef;
+use super::{chunk_puller::ChunkPullerJaggedRef, raw_jagged_ref::RawJaggedRef};
+use crate::implementations::jagged_arrays::{JaggedIndexer, Slices};
+use crate::{ConcurrentIter, ExactSizeConcurrentIter};
 use core::sync::atomic::{AtomicUsize, Ordering};
 
 /// Flattened concurrent iterator of a raw jagged array yielding references to elements.
@@ -38,11 +34,6 @@ where
             jagged,
             counter: begin.into(),
         }
-    }
-
-    #[inline(always)]
-    pub fn len(&self) -> usize {
-        self.jagged.len()
     }
 
     fn progress_and_get_begin_idx(&self, number_to_fetch: usize) -> Option<usize> {
@@ -116,6 +107,7 @@ where
     }
 
     fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+        let chunk_size = chunk_size.min(self.jagged.len());
         Self::ChunkPuller::new(self, chunk_size)
     }
 }
