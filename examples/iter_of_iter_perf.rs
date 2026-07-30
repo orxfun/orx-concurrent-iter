@@ -101,7 +101,7 @@ fn run_con_iter_chunk(input: &[u64], num_threads: usize, chunk_size: usize) -> O
         .map(map_item)
         .iter_into_con_iter();
 
-    let partial_results: Mutex<Vec<u64>> = Mutex::new(Vec::with_capacity(num_threads));
+    let partial_results = ConcurrentBag::new();
 
     std::thread::scope(|s| {
         for _ in 0..num_threads {
@@ -117,17 +117,13 @@ fn run_con_iter_chunk(input: &[u64], num_threads: usize, chunk_size: usize) -> O
                     }
                 }
                 if let Some(v) = local {
-                    partial_results.lock().unwrap().push(v);
+                    partial_results.push(v);
                 }
             });
         }
     });
 
-    partial_results
-        .into_inner()
-        .unwrap()
-        .into_iter()
-        .reduce(reduce_pair)
+    partial_results.into_inner().into_iter().reduce(reduce_pair)
 }
 
 // ---------------------------------------------------------------------------
