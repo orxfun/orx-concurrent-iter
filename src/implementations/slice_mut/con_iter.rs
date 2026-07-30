@@ -88,7 +88,10 @@ impl<'a, T: 'a> ConIterSliceMut<'a, T> {
 
         self.progress_and_get_begin_idx(chunk_size)
             .map(|begin_idx| {
-                let end_idx = (begin_idx + chunk_size).min(slice_len).max(begin_idx);
+                let end_idx = begin_idx
+                    .saturating_add(chunk_size)
+                    .min(slice_len)
+                    .max(begin_idx);
 
                 let ptr = unsafe { self.p.add(begin_idx) };
                 let len = end_idx - begin_idx;
