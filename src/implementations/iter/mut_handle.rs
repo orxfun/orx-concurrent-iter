@@ -1,3 +1,4 @@
+use core::hint::spin_loop;
 use core::sync::atomic::{AtomicU8, Ordering};
 
 pub(super) type AtomicState = AtomicU8;
@@ -14,6 +15,15 @@ pub(super) struct MutHandle<'a> {
 impl<'a> MutHandle<'a> {
     pub(super) fn get_handle(state: &'a AtomicState) -> Option<Self> {
         loop {
+            // Spin on a cheap shared-mode load until the lock appears free.
+            loop {
+                match state.load(Ordering::Relaxed) {
+                    AVAILABLE => break,
+                    COMPLETED => return None,
+                    _ => spin_loop(),
+                }
+            }
+            // Now try to actually acquire; re-check in case of races.
             match state.compare_exchange(
                 AVAILABLE,
                 IS_MUTATING,
