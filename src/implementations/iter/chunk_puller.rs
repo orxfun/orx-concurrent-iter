@@ -3,6 +3,8 @@ use crate::pullers::ChunkPuller;
 use alloc::vec::Vec;
 use core::iter::FusedIterator;
 
+pub(super) const MAX_CHUNK_SIZE: usize = 1 << 10;
+
 pub struct ChunkPullerOfIter<'i, I>
 where
     I: Iterator,
@@ -19,6 +21,7 @@ where
     I::Item: Send,
 {
     pub(super) fn new(con_iter: &'i ConIterOfIter<I>, chunk_size: usize) -> Self {
+        let chunk_size = chunk_size.min(MAX_CHUNK_SIZE);
         let mut buffer = Vec::with_capacity(chunk_size);
         for _ in 0..chunk_size {
             buffer.push(None);

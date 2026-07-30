@@ -1090,3 +1090,24 @@ fn into_seq_iter(n: usize, nt: usize, until: usize) {
         until,
     );
 }
+
+#[test_matrix([0, 1, 100, 1000, 1500], [false, true])]
+fn pull_too_many(pulled_before: usize, by_idx: bool) {
+    let n = 1234;
+    let v1 = || new_vec(n / 3, |x| (x + 10).to_string());
+    let v2 = || new_vec(n - n / 3, |x| (n / 3 + x + 10).to_string());
+    let iter = ChainKnownLenI::new(v1().into_con_iter(), v2().into_con_iter(), n / 3);
+
+    for _ in 0..pulled_before {
+        _ = iter.next();
+    }
+
+    let mut puller = iter.chunk_puller_by(usize::MAX, 0);
+    let remaining = match by_idx {
+        false => puller.pull().map(|iter| iter.count()),
+        true => puller.pull_with_idx().map(|(_, iter)| iter.count()),
+    }
+    .unwrap_or(0);
+
+    assert_eq!(remaining, n.saturating_sub(pulled_before));
+}

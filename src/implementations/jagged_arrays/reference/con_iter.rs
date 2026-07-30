@@ -52,6 +52,7 @@ where
         &self,
         chunk_size: usize,
     ) -> Option<(usize, RawJaggedSliceIterRef<'a, T, S, X>)> {
+        let chunk_size = chunk_size.min(self.jagged.len());
         self.progress_and_get_begin_idx(chunk_size)
             .map(|begin_idx| {
                 let end_idx = (begin_idx + chunk_size)
