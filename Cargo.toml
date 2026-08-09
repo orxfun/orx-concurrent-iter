@@ -21,7 +21,7 @@ orx-pinned-concurrent-col = "2.16.0"
 orx-concurrent-bag = "3.2.0"
 test-case = "3.3.1"
 criterion = "0.8.0"
-orx-criterion = { git = "https://github.com/orxfun/orx-criterion" }
+orx-criterion = "1.0.0"
 rand = "0.9"
 rand_chacha = "0.9"
 rayon = "1.11.0"
