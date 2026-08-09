@@ -3,6 +3,8 @@ use crate::pullers::ChunkPuller;
 use alloc::vec::Vec;
 use core::iter::FusedIterator;
 
+pub(super) const MAX_CHUNK_SIZE: usize = 1 << 10;
+
 pub struct ChunkPullerOfIter<'i, I>
 where
     I: Iterator,
@@ -10,6 +12,7 @@ where
 {
     con_iter: &'i ConIterOfIter<I>,
     buffer: Vec<Option<I::Item>>,
+    chunk_size: usize,
 }
 
 impl<'i, I> ChunkPullerOfIter<'i, I>
@@ -18,11 +21,16 @@ where
     I::Item: Send,
 {
     pub(super) fn new(con_iter: &'i ConIterOfIter<I>, chunk_size: usize) -> Self {
+        let chunk_size = chunk_size.min(MAX_CHUNK_SIZE);
         let mut buffer = Vec::with_capacity(chunk_size);
         for _ in 0..chunk_size {
             buffer.push(None);
         }
-        Self { con_iter, buffer }
+        Self {
+            con_iter,
+            buffer,
+            chunk_size,
+        }
     }
 }
 
@@ -38,12 +46,30 @@ where
     where
         Self: 'c;
 
+    #[inline(always)]
     fn chunk_size(&self) -> usize {
-        self.buffer.len()
+        self.chunk_size
+    }
+
+    fn resize_for_chunk_size(&mut self, new_chunk_size: usize) {
+        let additional_cap = new_chunk_size.saturating_sub(self.buffer.len());
+        self.buffer.reserve(additional_cap);
+
+        match self.buffer.len().cmp(&new_chunk_size) {
+            core::cmp::Ordering::Less => {
+                for _ in self.buffer.len()..new_chunk_size {
+                    self.buffer.push(None);
+                }
+            }
+            core::cmp::Ordering::Greater => self.buffer.truncate(new_chunk_size),
+            core::cmp::Ordering::Equal => {}
+        }
+        self.chunk_size = new_chunk_size;
     }
 
     fn pull(&mut self) -> Option<Self::Chunk<'_>> {
-        match self.con_iter.next_chunk_to_buffer(&mut self.buffer) {
+        let buffer = &mut self.buffer[0..self.chunk_size];
+        match self.con_iter.next_chunk_to_buffer(buffer) {
             (_, 0) => None,
             (_, slice_len) => {
                 let buffer = &mut self.buffer[0..slice_len];
@@ -54,7 +80,8 @@ where
     }
 
     fn pull_with_idx(&mut self) -> Option<(usize, Self::Chunk<'_>)> {
-        match self.con_iter.next_chunk_to_buffer(&mut self.buffer) {
+        let buffer = &mut self.buffer[0..self.chunk_size];
+        match self.con_iter.next_chunk_to_buffer(buffer) {
             (_, 0) => None,
             (begin_idx, slice_len) => {
                 let buffer = &mut self.buffer[0..slice_len];
@@ -94,6 +121,26 @@ impl<T> Iterator for ChunksIterOfIter<'_, T> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         let len = self.buffer.len().saturating_sub(self.current);
         (len, Some(len))
+    }
+
+    fn fold<B, F>(mut self, init: B, f: F) -> B
+    where
+        Self: Sized,
+        F: FnMut(B, Self::Item) -> B,
+    {
+        let begin = self.current;
+        let end = self.buffer.len();
+        let remaining_buffer = &mut self.buffer[begin..end];
+        self.current = end;
+        let remaining = remaining_buffer.iter_mut().map_while(|x| x.take());
+        remaining.fold(init, f)
+    }
+
+    fn count(self) -> usize
+    where
+        Self: Sized,
+    {
+        self.len()
     }
 }
 

@@ -153,7 +153,7 @@ fn into_seq_iter_not_used(len: usize) {
         .filter(|x| *x % 2 == 0)
         .iter_into_con_iter()
         .into_seq_iter();
-    let result: Vec<_> = iter.map(|x| *x).collect();
+    let result: Vec<_> = iter.copied().collect();
 
     let expected: Vec<_> = values.into_iter().filter(|x| x % 2 == 0).collect();
 
@@ -168,7 +168,7 @@ fn into_seq_iter_used(len: usize, take: usize) {
     for _ in 0..take {
         _ = iter.next();
     }
-    let result: Vec<_> = iter.into_seq_iter().map(|x| *x).collect();
+    let result: Vec<_> = iter.into_seq_iter().copied().collect();
 
     let mut iter = values.into_iter().filter(|x| x % 2 == 0);
     for _ in 0..take {

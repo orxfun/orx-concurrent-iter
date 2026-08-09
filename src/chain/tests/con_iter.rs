@@ -99,19 +99,19 @@ fn size_hint() {
 
         {
             assert_eq!(iter.size_hint(), (13, Some(15)));
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 2);
         }
 
         {
             assert_eq!(iter.size_hint(), (13, Some(13)));
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 7);
             assert_eq!(iter.size_hint(), (6, Some(6)));
         }
 
         {
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 6);
             assert_eq!(iter.size_hint(), (0, Some(0)));
         }
@@ -135,19 +135,19 @@ fn size_hint() {
 
         {
             assert_eq!(iter.size_hint(), (2, Some(15)));
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 2);
         }
 
         {
             assert_eq!(iter.size_hint(), (0, Some(13)));
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 7);
             assert_eq!(iter.size_hint(), (0, Some(6)));
         }
 
         {
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 6);
             assert_eq!(iter.size_hint(), (0, Some(0)));
         }
@@ -174,19 +174,19 @@ fn size_hint() {
         {
             assert_eq!(iter.size_hint(), (15, Some(15)));
             assert_eq!(iter.len(), 15);
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 2);
         }
 
         {
             assert_eq!(iter.size_hint(), (13, Some(13)));
             assert_eq!(iter.len(), 13);
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 7);
             assert_eq!(iter.size_hint(), (6, Some(6)));
         }
         {
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 6);
             assert_eq!(iter.len(), 0);
             assert_eq!(iter.size_hint(), (0, Some(0)));
@@ -212,19 +212,19 @@ fn size_hint() {
 
         {
             assert_eq!(iter.size_hint(), (0, Some(15)));
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 2);
         }
 
         {
             assert_eq!(iter.size_hint(), (0, Some(13)));
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 7);
             assert_eq!(iter.size_hint(), (0, Some(6)));
         }
 
         {
-            let c = chunks_iter.pull().unwrap();
+            let c = chunks_iter.pull().expect("valid");
             assert_eq!(c.len(), 6);
             assert_eq!(iter.size_hint(), (0, Some(0)));
         }
@@ -1089,4 +1089,31 @@ fn into_seq_iter(n: usize, nt: usize, until: usize) {
         nt,
         until,
     );
+}
+
+#[test_matrix([0, 1, 100, 1000, 1500], [false, true])]
+fn pull_too_many(pulled_before: usize, by_idx: bool) {
+    let n = 1234;
+    let v1_len = n / 3;
+    let v1 = || new_vec(v1_len, |x| (x + 10).to_string());
+    let v2 = || new_vec(n - v1_len, |x| (n / 3 + x + 10).to_string());
+    let iter = ChainKnownLenI::new(v1().into_con_iter(), v2().into_con_iter(), n / 3);
+
+    for _ in 0..pulled_before {
+        _ = iter.next();
+    }
+
+    let mut puller = iter.chunk_puller_by(usize::MAX, 0);
+    let pulled = match by_idx {
+        false => puller.pull().map(|iter| iter.count()),
+        true => puller.pull_with_idx().map(|(_, iter)| iter.count()),
+    }
+    .unwrap_or(0);
+
+    let expected = match pulled_before < v1_len {
+        true => v1_len - pulled_before,
+        false => n.saturating_sub(pulled_before),
+    };
+
+    assert_eq!(pulled, expected);
 }

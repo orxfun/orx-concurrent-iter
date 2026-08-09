@@ -164,7 +164,7 @@ fn next_with_idx(n: usize, nt: usize) {
 
                 while let Some(x) = iter.next_with_idx() {
                     _ = iter.size_hint();
-                    assert_eq!(x.0 + 10, x.1.parse::<usize>().unwrap());
+                    assert_eq!(x.0 + 10, x.1.parse::<usize>().expect("valid"));
                     x.1.push('!');
                 }
             });
@@ -215,7 +215,7 @@ fn item_puller_with_idx(n: usize, nt: usize) {
 
                 for x in iter.item_puller_with_idx() {
                     _ = iter.size_hint();
-                    assert_eq!(x.0 + 10, x.1.parse::<usize>().unwrap());
+                    assert_eq!(x.0 + 10, x.1.parse::<usize>().expect("valid"));
                     x.1.push('!');
                 }
             });
@@ -273,7 +273,7 @@ fn chunk_puller_with_idx(n: usize, nt: usize) {
                 while let Some((begin_idx, chunk)) = puller.pull_with_idx() {
                     assert!(chunk.len() <= 7);
                     for (i, x) in chunk.enumerate() {
-                        assert_eq!(begin_idx + i + 10, x.parse::<usize>().unwrap());
+                        assert_eq!(begin_idx + i + 10, x.parse::<usize>().expect("valid"));
                         x.push('!');
                     }
                 }
@@ -323,7 +323,7 @@ fn flattened_chunk_puller_with_idx(n: usize, nt: usize) {
                 while num_spawned.len() < nt {} // allow all threads to be spawned
 
                 for x in iter.chunk_puller(7).flattened_with_idx() {
-                    assert_eq!(x.0 + 10, x.1.parse::<usize>().unwrap());
+                    assert_eq!(x.0 + 10, x.1.parse::<usize>().expect("valid"));
                     x.1.push('!');
                 }
             });
@@ -355,7 +355,7 @@ fn skip_to_end(n: usize, nt: usize) {
                     0 => {
                         while let Some(num) = con_iter.next() {
                             match num.parse::<usize>().expect("") < until + 10 {
-                                true => _ = num.push('!'),
+                                true => num.push('!'),
                                 false => con_iter.skip_to_end(),
                             }
                         }
@@ -363,7 +363,7 @@ fn skip_to_end(n: usize, nt: usize) {
                     _ => {
                         for num in con_iter.chunk_puller(7).flattened() {
                             match num.parse::<usize>().expect("") < until + 10 {
-                                true => _ = num.push('!'),
+                                true => num.push('!'),
                                 false => con_iter.skip_to_end(),
                             }
                         }
@@ -456,4 +456,25 @@ fn into_seq_iter(n: usize, nt: usize, until: usize) {
         }),
     };
     assert_eq!(expected, vec);
+}
+
+#[test_matrix([0, 1, 100, 1000, 1500], [false, true])]
+fn pull_too_many(pulled_before: usize, by_idx: bool) {
+    let n = 1234;
+    let mut vec = new_vec(n, |x| (x + 10).to_string());
+    let slice = vec.as_mut_slice();
+    let iter = ConIterSliceMut::new(slice);
+
+    for _ in 0..pulled_before {
+        _ = iter.next();
+    }
+
+    let mut puller = iter.chunk_puller_by(usize::MAX, 0);
+    let remaining = match by_idx {
+        false => puller.pull().map(|iter| iter.count()),
+        true => puller.pull_with_idx().map(|(_, iter)| iter.count()),
+    }
+    .unwrap_or(0);
+
+    assert_eq!(remaining, n.saturating_sub(pulled_before));
 }

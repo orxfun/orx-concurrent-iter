@@ -34,6 +34,10 @@ where
         self.puller.chunk_size()
     }
 
+    fn resize_for_chunk_size(&mut self, new_chunk_size: usize) {
+        self.puller.resize_for_chunk_size(new_chunk_size);
+    }
+
     fn pull(&mut self) -> Option<Self::Chunk<'_>> {
         self.puller
             .pull_with_idx()
@@ -77,6 +81,24 @@ where
     fn size_hint(&self) -> (usize, Option<usize>) {
         let len = self.chunk.len();
         (len, Some(len))
+    }
+
+    #[inline]
+    fn fold<B, F>(self, init: B, mut f: F) -> B
+    where
+        Self: Sized,
+        F: FnMut(B, Self::Item) -> B,
+    {
+        self.chunk
+            .fold(init, |acc, (i, x)| f(acc, (self.begin_idx + i, x)))
+    }
+
+    #[inline]
+    fn count(self) -> usize
+    where
+        Self: Sized,
+    {
+        self.chunk.len()
     }
 }
 

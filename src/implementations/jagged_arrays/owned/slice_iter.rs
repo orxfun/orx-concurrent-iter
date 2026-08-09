@@ -53,17 +53,24 @@ impl<'a, T> RawJaggedSliceIterOwned<'a, T> {
         self.len_of_remaining_slices + remaining_current
     }
 
-    fn next_slice(&mut self) -> Option<T> {
+    fn progress_to_next_slice(&mut self) -> bool {
         match self.slice.get_raw_slice(self.f) {
-            Some(slice) if slice.is_empty() => self.next_slice(),
+            Some(slice) if slice.is_empty() => self.progress_to_next_slice(),
             Some(slice) => {
                 self.len_of_remaining_slices -= slice.length();
                 // SAFETY: pointers are not null since slice is not empty
                 [self.current_ptr, self.current_last] = slice.first_and_last_ptrs();
                 self.f += 1;
-                self.next()
+                true
             }
-            None => None,
+            None => false,
+        }
+    }
+
+    fn next_slice(&mut self) -> Option<T> {
+        match self.progress_to_next_slice() {
+            true => self.next(),
+            false => None,
         }
     }
 

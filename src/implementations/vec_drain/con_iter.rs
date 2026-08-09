@@ -225,6 +225,7 @@ where
     }
 
     fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+        let chunk_size = chunk_size.min(self.vec_len);
         Self::ChunkPuller::new(self, chunk_size)
     }
 }

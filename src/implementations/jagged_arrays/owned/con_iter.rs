@@ -1,10 +1,7 @@
-use super::{
-    chunk_puller::ChunkPullerJaggedOwned, into_iter::RawJaggedIterOwned, raw_jagged::RawJagged,
-    slice_iter::RawJaggedSliceIterOwned,
-};
-use crate::{
-    ConcurrentIter, ExactSizeConcurrentIter, implementations::jagged_arrays::indexer::JaggedIndexer,
-};
+use super::{chunk_puller::ChunkPullerJaggedOwned, into_iter::RawJaggedIterOwned};
+use super::{raw_jagged::RawJagged, slice_iter::RawJaggedSliceIterOwned};
+use crate::implementations::jagged_arrays::indexer::JaggedIndexer;
+use crate::{ConcurrentIter, ExactSizeConcurrentIter};
 use core::sync::atomic::{AtomicUsize, Ordering};
 
 /// Flattened concurrent iterator of a raw jagged array yielding owned elements.
@@ -112,6 +109,7 @@ where
     }
 
     fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+        let chunk_size = chunk_size.min(self.jagged.len());
         Self::ChunkPuller::new(self, chunk_size)
     }
 }
