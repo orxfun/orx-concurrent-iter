@@ -1,4 +1,4 @@
-use crate::{ConcurrentIter, ConcurrentIterable, IntoConcurrentIter, IterIntoConcurrentIter};
+use crate::{ConcurrentIter, ConcurrentIterable, IntoConcurrentIter};
 use alloc::vec::Vec;
 use orx_concurrent_bag::ConcurrentBag;
 
