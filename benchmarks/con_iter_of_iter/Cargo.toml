@@ -1,0 +1,23 @@
+[package]
+name = "con_iter_of_iter"
+version = "0.1.0"
+edition = "2024"
+publish = ["artifactory"]
+
+[dependencies]
+clap = { version = "4.6.6" }
+orx-criterion = { version = "1.0.0" }
+orx-concurrent-iter = { path = "../../../orx-concurrent-iter" }
+bench-helper = { git = "https://github.com/orxfun/orx-parallel-benchmarks" }
+rand = { version = "0.9" }
+rand_chacha = { version = "0.9" }
+rayon = { version = "1.12.0" }
+
+[features]
+seq = []
+rayon = []
+con-iter-single = []
+con-iter-c16 = []
+con-iter-c64 = []
+con-iter-c256 = []
+con-iter-c1024 = []
