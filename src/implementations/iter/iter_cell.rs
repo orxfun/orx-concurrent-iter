@@ -113,7 +113,10 @@ where
                     *x = Some(item);
                     num_taken_now += 1;
                 }
-                None => handle.set_target_to_completed(),
+                None => {
+                    handle.set_target_to_completed();
+                    break;
+                }
             }
         }
 
