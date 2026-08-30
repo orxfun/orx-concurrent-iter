@@ -40,7 +40,7 @@ where
         Self: 'i;
 
     fn is_source_serialized() -> bool {
-        I::is_source_serialized() && J::is_source_serialized()
+        I::is_source_serialized() || J::is_source_serialized()
     }
 
     fn into_seq_iter(self) -> Self::SequentialIter {
