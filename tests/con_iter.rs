@@ -2,6 +2,7 @@ use orx_concurrent_bag::*;
 use orx_concurrent_iter::*;
 use orx_iterable::Collection;
 use std::fmt::Debug;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use test_case::test_matrix;
 
 #[cfg(not(miri))]
@@ -70,6 +71,20 @@ fn concurrent_iter_exact_len<I: ConcurrentIter>(iter: I, expected_len: usize, ba
             assert_eq!(iter.try_get_len(), Some(0));
         }
     }
+}
+
+#[test]
+fn arbitrary_chunk_pull_stops_after_exhaustion() {
+    let next_calls = AtomicUsize::new(0);
+    let source = std::iter::from_fn(|| {
+        let call = next_calls.fetch_add(1, Ordering::Relaxed);
+        (call < 3).then_some(call)
+    });
+    let iter = source.iter_into_con_iter();
+    let mut puller = iter.chunk_puller(8);
+
+    assert_eq!(puller.pull().unwrap().collect::<Vec<_>>(), vec![0, 1, 2]);
+    assert_eq!(next_calls.load(Ordering::Relaxed), 4);
 }
 
 #[test_matrix(
