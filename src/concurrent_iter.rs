@@ -345,9 +345,7 @@ pub trait ConcurrentIter: Sync {
     ///
     /// This is used by parallel runners to avoid per-item exploration when the
     /// source cannot be split and every pull requires exclusive access.
-    fn is_source_serialized() -> bool {
-        false
-    }
+    fn is_source_serialized() -> bool;
 
     // transform
 

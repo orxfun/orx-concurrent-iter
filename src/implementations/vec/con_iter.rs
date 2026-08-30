@@ -142,6 +142,10 @@ where
     where
         Self: 'i;
 
+    fn is_source_serialized() -> bool {
+        true
+    }
+
     fn into_seq_iter(mut self) -> Self::SequentialIter {
         self.remaining_into_seq_iter()
     }

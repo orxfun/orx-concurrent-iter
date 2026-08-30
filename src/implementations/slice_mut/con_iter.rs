@@ -112,6 +112,10 @@ where
     where
         Self: 'i;
 
+    fn is_source_serialized() -> bool {
+        true
+    }
+
     fn into_seq_iter(self) -> Self::SequentialIter {
         let current = self.counter.load(Ordering::Acquire);
         self.slice().iter_mut().skip(current)

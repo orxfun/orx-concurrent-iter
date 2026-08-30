@@ -69,6 +69,10 @@ where
     where
         Self: 'i;
 
+    fn is_source_serialized() -> bool {
+        true
+    }
+
     fn into_seq_iter(mut self) -> Self::SequentialIter {
         let num_taken = self.counter.load(Ordering::Acquire).min(self.jagged.len());
 

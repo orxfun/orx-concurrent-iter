@@ -106,6 +106,10 @@ where
     where
         Self: 'i;
 
+    fn is_source_serialized() -> bool {
+        true
+    }
+
     fn into_seq_iter(self) -> Self::SequentialIter {
         self.con_iter.into_seq_iter()
     }

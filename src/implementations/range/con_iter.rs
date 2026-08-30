@@ -107,6 +107,10 @@ where
     where
         Self: 'i;
 
+    fn is_source_serialized() -> bool {
+        true
+    }
+
     fn into_seq_iter(self) -> Self::SequentialIter {
         let current = self.counter.load(Ordering::Acquire);
         let begin = T::from(self.begin + current);
