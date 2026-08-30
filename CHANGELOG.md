@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.3.0](https://github.com/orxfun/orx-concurrent-iter/compare/v4.2.0...v4.3.0) - 2026-08-30
+
+### Added
+
+- *(con-iter)* introduce is_source_serialized property ([#95](https://github.com/orxfun/orx-concurrent-iter/pull/95))
+
 ## [4.2.0](https://github.com/orxfun/orx-concurrent-iter/compare/v4.1.0...v4.2.0) - 2026-08-30
 
 ### Added
