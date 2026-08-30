@@ -52,6 +52,10 @@ where
     where
         Self: 'i;
 
+    fn is_source_serialized() -> bool {
+        I::is_source_serialized()
+    }
+
     fn into_seq_iter(self) -> Self::SequentialIter {
         self.con_iter.into_seq_iter().cloned()
     }

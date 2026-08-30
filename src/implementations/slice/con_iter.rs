@@ -90,6 +90,10 @@ where
     where
         Self: 'i;
 
+    fn is_source_serialized() -> bool {
+        false
+    }
+
     fn into_seq_iter(self) -> Self::SequentialIter {
         let current = self.counter.load(Ordering::Acquire);
         self.slice.iter().skip(current)

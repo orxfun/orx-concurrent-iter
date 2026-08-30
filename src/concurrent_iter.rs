@@ -341,6 +341,12 @@ pub trait ConcurrentIter: Sync {
     where
         Self: 'i;
 
+    /// Returns whether producing source items is serialized across threads.
+    ///
+    /// This is used by parallel runners to avoid per-item exploration when the
+    /// source cannot be split and every pull requires exclusive access.
+    fn is_source_serialized() -> bool;
+
     // transform
 
     /// Converts the concurrent iterator into its sequential regular counterpart.
