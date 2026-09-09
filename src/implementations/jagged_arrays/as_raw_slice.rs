@@ -85,7 +85,7 @@ impl<T> AsRawSlice<T> for &[T] {
     }
 
     fn raw_slice(&self, begin: usize, len: usize) -> RawSlice<T> {
-        debug_assert!(begin < self.len());
+        assert!(begin.checked_add(len).is_some_and(|end| end <= self.len()));
         let ptr = unsafe { self.as_ptr().add(begin) };
         RawSlice::new(ptr, len)
     }
@@ -101,7 +101,7 @@ impl<T> AsRawSlice<T> for Vec<T> {
     }
 
     fn raw_slice(&self, begin: usize, len: usize) -> RawSlice<T> {
-        debug_assert!(begin < self.len());
+        assert!(begin.checked_add(len).is_some_and(|end| end <= self.len()));
         let ptr = unsafe { self.as_ptr().add(begin) };
         RawSlice::new(ptr, len)
     }
