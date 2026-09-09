@@ -33,7 +33,7 @@ impl<T> AsRawSlice<T> for RawSlice<T> {
     }
 
     fn raw_slice(&self, begin: usize, len: usize) -> RawSlice<T> {
-        debug_assert!(begin + len <= self.len);
+        assert!(begin.checked_add(len).is_some_and(|end| end <= self.len));
         let ptr = unsafe { self.ptr.add(begin) };
         Self::new(ptr, len)
     }
