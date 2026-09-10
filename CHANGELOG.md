@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.0](https://github.com/orxfun/orx-concurrent-iter/compare/v4.3.1...v5.0.0) - 2026-09-10
+
+### Added
+
+- unsafe raw slice creators ([#100](https://github.com/orxfun/orx-concurrent-iter/pull/100))
+
 ## [4.3.1](https://github.com/orxfun/orx-concurrent-iter/compare/v4.3.0...v4.3.1) - 2026-09-09
 
 ### Fixed
