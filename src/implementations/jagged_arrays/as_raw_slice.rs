@@ -10,6 +10,10 @@ pub trait AsRawSlice<T> {
     fn length(&self) -> usize;
 
     /// Creates a slice from this slice with `len` elements starting from the `begin`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the slice `begin..(begin + len)` is out of range.
     fn raw_slice(&self, begin: usize, len: usize) -> RawSlice<T>;
 
     // provided
