@@ -28,7 +28,11 @@ impl<T> Default for RawJaggedSlice<'_, T> {
 
 impl<'a, T> RawJaggedSlice<'a, T> {
     /// Constructs a non-empty raw jagged slice.
-    pub(super) fn new(
+    ///
+    /// # SAFETY
+    ///
+    /// - (i) `begin` and `end` must be within bounds of `arrays`.
+    pub(super) unsafe fn new(
         arrays: &'a [RawVec<T>],
         begin: JaggedIndex,
         end: JaggedIndex,

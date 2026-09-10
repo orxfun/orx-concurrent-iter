@@ -1,13 +1,9 @@
 use super::indexers::{GeneralJaggedIndexer, MatrixIndexer};
 use crate::implementations::jagged_arrays::owned::{
-    into_iter::RawJaggedIterOwned, raw_jagged::RawJagged, raw_vec::RawVec,
-    slice_iter::RawJaggedSliceIterOwned,
+    into_iter::RawJaggedIterOwned, raw_jagged::RawJagged, slice_iter::RawJaggedSliceIterOwned,
 };
-use alloc::{
-    string::{String, ToString},
-    vec,
-    vec::Vec,
-};
+use alloc::string::{String, ToString};
+use alloc::{vec, vec::Vec};
 use test_case::test_matrix;
 
 // matrix
@@ -28,13 +24,7 @@ fn raw_jagged_iter_owned_matrix(consume_taken: bool, consume_remaining: bool) {
     let n = 4;
     let len = n * n;
 
-    let jagged = || {
-        let arrays: Vec<_> = get_matrix(n)
-            .into_iter()
-            .map(|x| unsafe { RawVec::new_from_vec(x) })
-            .collect();
-        RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n))
-    };
+    let jagged = || RawJagged::new(get_matrix(n), MatrixIndexer::new(n), Some(n * n));
 
     for num_taken in 0..len {
         let mut jagged = jagged();
@@ -73,13 +63,7 @@ fn get_jagged() -> Vec<Vec<String>> {
 fn raw_jagged_iter_owned_jagged(consume_taken: bool, consume_remaining: bool) {
     let len = 10;
 
-    let jagged = || {
-        let arrays: Vec<_> = get_jagged()
-            .into_iter()
-            .map(|x| unsafe { RawVec::new_from_vec(x) })
-            .collect();
-        RawJagged::new(arrays, GeneralJaggedIndexer, Some(10))
-    };
+    let jagged = || RawJagged::new(get_jagged(), GeneralJaggedIndexer, Some(10));
 
     for num_taken in 0..len {
         let mut jagged = jagged();

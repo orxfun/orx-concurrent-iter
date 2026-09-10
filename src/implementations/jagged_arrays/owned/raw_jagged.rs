@@ -1,12 +1,7 @@
 use super::{raw_vec::RawVec, slice::RawJaggedSlice};
-use crate::implementations::{
-    jagged_arrays::{
-        as_raw_slice::{AsOwningSlice, AsRawSlice},
-        index::JaggedIndex,
-        indexer::JaggedIndexer,
-    },
-    ptr_utils::take,
-};
+use crate::implementations::jagged_arrays::as_raw_slice::{AsOwningSlice, AsRawSlice};
+use crate::implementations::jagged_arrays::{index::JaggedIndex, indexer::JaggedIndexer};
+use crate::implementations::ptr_utils::take;
 use alloc::vec::Vec;
 use core::cmp::Ordering;
 
@@ -41,8 +36,18 @@ where
     ///
     /// Once the jagged array is dropped, the elements and allocation of the vectors
     /// will also be dropped.
-    pub fn new(arrays: Vec<RawVec<T>>, indexer: X, total_len: Option<usize>) -> Self {
+    pub fn new(
+        arrays: impl IntoIterator<Item = Vec<T>>,
+        indexer: X,
+        total_len: Option<usize>,
+    ) -> Self {
+        let arrays: Vec<_> = arrays
+            .into_iter()
+            // SAFETY: allocations will be dropped by `RawJagged::drop`
+            .map(|vec| unsafe { RawVec::new_from_vec(vec) })
+            .collect();
         let len = total_len.unwrap_or_else(|| arrays.iter().map(|v| v.length()).sum());
+
         Self {
             arrays,
             len,
@@ -210,7 +215,10 @@ where
             len => {
                 let [begin, end] = [flat_begin, flat_end].map(|i| self.jagged_index(i));
                 match (begin, end) {
-                    (Some(begin), Some(end)) => RawJaggedSlice::new(&self.arrays, begin, end, len),
+                    (Some(begin), Some(end)) => unsafe {
+                        // SAFETY: (i) is satisfied by `jagged_index` returning `Some` variants
+                        RawJaggedSlice::new(&self.arrays, begin, end, len)
+                    },
                     _ => Default::default(),
                 }
             }
