@@ -51,6 +51,12 @@ impl<T> AsRawSlice<T> for RawVec<T> {
     }
 
     fn raw_slice(&self, begin: usize, len: usize) -> RawSlice<T> {
+        assert!(begin.checked_add(len).is_some_and(|end| end <= self.len));
+        let ptr = unsafe { self.ptr.add(begin) };
+        RawSlice::new(ptr, len)
+    }
+
+    unsafe fn raw_slice_unchecked(&self, begin: usize, len: usize) -> RawSlice<T> {
         debug_assert!(begin + len <= self.len);
         let ptr = unsafe { self.ptr.add(begin) };
         RawSlice::new(ptr, len)

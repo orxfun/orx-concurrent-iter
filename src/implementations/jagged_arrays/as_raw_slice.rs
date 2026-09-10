@@ -16,6 +16,14 @@ pub trait AsRawSlice<T> {
     /// Panics if the slice `begin..(begin + len)` is out of range.
     fn raw_slice(&self, begin: usize, len: usize) -> RawSlice<T>;
 
+    /// Creates a slice from this slice with `len` elements starting from the `begin`.
+    /// Omits the bounds checks.
+    ///
+    /// # Safety
+    ///
+    /// * (i) Caller must guarantee that `begin..(begin + len)` is within bounds.
+    unsafe fn raw_slice_unchecked(&self, begin: usize, len: usize) -> RawSlice<T>;
+
     // provided
 
     /// True if length is zero; false otherwise.
@@ -93,6 +101,12 @@ impl<T> AsRawSlice<T> for &[T] {
         let ptr = unsafe { self.as_ptr().add(begin) };
         RawSlice::new(ptr, len)
     }
+
+    unsafe fn raw_slice_unchecked(&self, begin: usize, len: usize) -> RawSlice<T> {
+        debug_assert!(begin + len <= self.len());
+        let ptr = unsafe { self.as_ptr().add(begin) };
+        RawSlice::new(ptr, len)
+    }
 }
 
 impl<T> AsRawSlice<T> for Vec<T> {
@@ -106,6 +120,12 @@ impl<T> AsRawSlice<T> for Vec<T> {
 
     fn raw_slice(&self, begin: usize, len: usize) -> RawSlice<T> {
         assert!(begin.checked_add(len).is_some_and(|end| end <= self.len()));
+        let ptr = unsafe { self.as_ptr().add(begin) };
+        RawSlice::new(ptr, len)
+    }
+
+    unsafe fn raw_slice_unchecked(&self, begin: usize, len: usize) -> RawSlice<T> {
+        debug_assert!(begin + len <= self.len());
         let ptr = unsafe { self.as_ptr().add(begin) };
         RawSlice::new(ptr, len)
     }
