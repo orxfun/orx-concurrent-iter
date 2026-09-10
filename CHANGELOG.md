@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.3.1](https://github.com/orxfun/orx-concurrent-iter/compare/v4.3.0...v4.3.1) - 2026-09-09
+
+### Fixed
+
+- replace debug_assert with overflow-safe assert in AsRawSlice::ra… ([#98](https://github.com/orxfun/orx-concurrent-iter/pull/98))
+
 ## [4.3.0](https://github.com/orxfun/orx-concurrent-iter/compare/v4.2.0...v4.3.0) - 2026-08-30
 
 ### Added
