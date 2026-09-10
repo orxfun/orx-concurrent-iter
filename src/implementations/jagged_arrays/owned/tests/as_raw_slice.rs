@@ -48,7 +48,7 @@ fn raw_slice_implementations() {
     assert_slicing(&values);
     assert_out_of_bounds_panics(&values);
 
-    let raw_vec = RawVec::from(values.clone());
+    let raw_vec = unsafe { RawVec::new_from_vec(values.clone()) };
     assert_slicing(&raw_vec);
     assert_out_of_bounds_panics(&raw_vec);
     unsafe { raw_vec.drop_allocation() };

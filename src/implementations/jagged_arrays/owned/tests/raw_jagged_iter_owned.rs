@@ -29,7 +29,10 @@ fn raw_jagged_iter_owned_matrix(consume_taken: bool, consume_remaining: bool) {
     let len = n * n;
 
     let jagged = || {
-        let arrays: Vec<_> = get_matrix(n).into_iter().map(RawVec::from).collect();
+        let arrays: Vec<_> = get_matrix(n)
+            .into_iter()
+            .map(|x| unsafe { RawVec::new_from_vec(x) })
+            .collect();
         RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n))
     };
 
@@ -71,7 +74,10 @@ fn raw_jagged_iter_owned_jagged(consume_taken: bool, consume_remaining: bool) {
     let len = 10;
 
     let jagged = || {
-        let arrays: Vec<_> = get_jagged().into_iter().map(RawVec::from).collect();
+        let arrays: Vec<_> = get_jagged()
+            .into_iter()
+            .map(|x| unsafe { RawVec::new_from_vec(x) })
+            .collect();
         RawJagged::new(arrays, GeneralJaggedIndexer, Some(10))
     };
 

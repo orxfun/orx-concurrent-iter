@@ -35,7 +35,10 @@ fn get_matrix(n: usize) -> Vec<Vec<String>> {
 fn enumeration() {
     let n = 2;
     let matrix = get_matrix(n);
-    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let arrays: Vec<_> = matrix
+        .into_iter()
+        .map(|x| unsafe { RawVec::new_from_vec(x) })
+        .collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
@@ -56,7 +59,10 @@ fn enumeration() {
 fn size_hint() {
     let n = 5;
     let matrix = get_matrix(n);
-    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let arrays: Vec<_> = matrix
+        .into_iter()
+        .map(|x| unsafe { RawVec::new_from_vec(x) })
+        .collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
@@ -97,7 +103,10 @@ fn size_hint() {
 fn size_hint_skip_to_end() {
     let n = 5;
     let matrix = get_matrix(n);
-    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let arrays: Vec<_> = matrix
+        .into_iter()
+        .map(|x| unsafe { RawVec::new_from_vec(x) })
+        .collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
@@ -117,7 +126,10 @@ fn size_hint_skip_to_end() {
 fn empty(nt: usize) {
     let n = 0;
     let matrix = get_matrix(n);
-    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let arrays: Vec<_> = matrix
+        .into_iter()
+        .map(|x| unsafe { RawVec::new_from_vec(x) })
+        .collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
@@ -142,7 +154,10 @@ fn empty(nt: usize) {
 #[test_matrix([0, 2, N], [1, 2, 4])]
 fn next(n: usize, nt: usize) {
     let matrix = get_matrix(n);
-    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let arrays: Vec<_> = matrix
+        .into_iter()
+        .map(|x| unsafe { RawVec::new_from_vec(x) })
+        .collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
@@ -173,7 +188,10 @@ fn next(n: usize, nt: usize) {
 #[test_matrix([0, 2, N], [1, 2, 4])]
 fn next_with_idx(n: usize, nt: usize) {
     let matrix = get_matrix(n);
-    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let arrays: Vec<_> = matrix
+        .into_iter()
+        .map(|x| unsafe { RawVec::new_from_vec(x) })
+        .collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
@@ -204,7 +222,10 @@ fn next_with_idx(n: usize, nt: usize) {
 #[test_matrix([0, 2, N], [1, 2, 4])]
 fn item_puller(n: usize, nt: usize) {
     let matrix = get_matrix(n);
-    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let arrays: Vec<_> = matrix
+        .into_iter()
+        .map(|x| unsafe { RawVec::new_from_vec(x) })
+        .collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
@@ -235,7 +256,10 @@ fn item_puller(n: usize, nt: usize) {
 #[test_matrix( [0, 2, N], [1, 2, 4])]
 fn item_puller_with_idx(n: usize, nt: usize) {
     let matrix = get_matrix(n);
-    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let arrays: Vec<_> = matrix
+        .into_iter()
+        .map(|x| unsafe { RawVec::new_from_vec(x) })
+        .collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
@@ -266,7 +290,10 @@ fn item_puller_with_idx(n: usize, nt: usize) {
 #[test_matrix([0, 2, N], [1, 2, 4])]
 fn chunk_puller(n: usize, nt: usize) {
     let matrix = get_matrix(n);
-    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let arrays: Vec<_> = matrix
+        .into_iter()
+        .map(|x| unsafe { RawVec::new_from_vec(x) })
+        .collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
@@ -301,7 +328,10 @@ fn chunk_puller(n: usize, nt: usize) {
 #[test_matrix([0, 2, N], [1, 2, 4])]
 fn chunk_puller_with_idx(n: usize, nt: usize) {
     let matrix = get_matrix(n);
-    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let arrays: Vec<_> = matrix
+        .into_iter()
+        .map(|x| unsafe { RawVec::new_from_vec(x) })
+        .collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
@@ -336,7 +366,10 @@ fn chunk_puller_with_idx(n: usize, nt: usize) {
 #[test_matrix([0, 2, N], [1, 2, 4])]
 fn flattened_chunk_puller(n: usize, nt: usize) {
     let matrix = get_matrix(n);
-    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let arrays: Vec<_> = matrix
+        .into_iter()
+        .map(|x| unsafe { RawVec::new_from_vec(x) })
+        .collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
@@ -366,7 +399,10 @@ fn flattened_chunk_puller(n: usize, nt: usize) {
 #[test_matrix([0, 2, N], [1, 2, 4])]
 fn flattened_chunk_puller_with_idx(n: usize, nt: usize) {
     let matrix = get_matrix(n);
-    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let arrays: Vec<_> = matrix
+        .into_iter()
+        .map(|x| unsafe { RawVec::new_from_vec(x) })
+        .collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
@@ -396,7 +432,10 @@ fn flattened_chunk_puller_with_idx(n: usize, nt: usize) {
 #[test_matrix([0, 2, N], [1, 2, 4])]
 fn skip_to_end(n: usize, nt: usize) {
     let matrix = get_matrix(n);
-    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let arrays: Vec<_> = matrix
+        .into_iter()
+        .map(|x| unsafe { RawVec::new_from_vec(x) })
+        .collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
@@ -446,7 +485,10 @@ fn skip_to_end(n: usize, nt: usize) {
 #[test_matrix([0, 2, N], [1, 2, 4], [0, N * N / 2, N * N])]
 fn into_seq_iter(n: usize, nt: usize, until: usize) {
     let matrix = get_matrix(n);
-    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let arrays: Vec<_> = matrix
+        .into_iter()
+        .map(|x| unsafe { RawVec::new_from_vec(x) })
+        .collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(n), Some(n * n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
@@ -509,7 +551,10 @@ fn pull_too_many(pulled_before: usize, by_idx: bool) {
     let m = 35;
     let n = m * m; // 1225
     let matrix = get_matrix(m);
-    let arrays: Vec<_> = matrix.into_iter().map(RawVec::from).collect();
+    let arrays: Vec<_> = matrix
+        .into_iter()
+        .map(|x| unsafe { RawVec::new_from_vec(x) })
+        .collect();
     let jagged = RawJagged::new(arrays, MatrixIndexer::new(m), Some(m * m));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 

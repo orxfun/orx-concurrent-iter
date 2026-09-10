@@ -29,14 +29,20 @@ impl<T> Clone for RawVec<T> {
     }
 }
 
-impl<T> From<Vec<T>> for RawVec<T> {
-    fn from(value: Vec<T>) -> Self {
+impl<T> RawVec<T> {
+    /// Creates the raw vec from `vec`.
+    ///
+    /// # SAFETY
+    ///
+    /// `RawVec` created from `vec` does not drop allocation of the vec when it is dropped.
+    /// Must call [`AsOwningSlice::drop_allocation`] to prevent memory leaks.
+    pub unsafe fn new_from_vec(vec: Vec<T>) -> Self {
         let raw = Self {
-            ptr: value.as_ptr(),
-            len: value.len(),
-            capacity: value.capacity(),
+            ptr: vec.as_ptr(),
+            len: vec.len(),
+            capacity: vec.capacity(),
         };
-        let _ = ManuallyDrop::new(value);
+        let _ = ManuallyDrop::new(vec);
         raw
     }
 }
