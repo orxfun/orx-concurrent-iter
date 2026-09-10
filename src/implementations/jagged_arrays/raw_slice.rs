@@ -37,4 +37,10 @@ impl<T> AsRawSlice<T> for RawSlice<T> {
         let ptr = unsafe { self.ptr.add(begin) };
         Self::new(ptr, len)
     }
+
+    unsafe fn raw_slice_unchecked(&self, begin: usize, len: usize) -> RawSlice<T> {
+        debug_assert!(begin + len <= self.len);
+        let ptr = unsafe { self.ptr.add(begin) };
+        Self::new(ptr, len)
+    }
 }

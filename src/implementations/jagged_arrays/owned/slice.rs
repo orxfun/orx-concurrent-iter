@@ -28,7 +28,11 @@ impl<T> Default for RawJaggedSlice<'_, T> {
 
 impl<'a, T> RawJaggedSlice<'a, T> {
     /// Constructs a non-empty raw jagged slice.
-    pub(super) fn new(
+    ///
+    /// # SAFETY
+    ///
+    /// - (i) `begin` and `end` must be within bounds of `arrays`.
+    pub(super) unsafe fn new(
         arrays: &'a [RawVec<T>],
         begin: JaggedIndex,
         end: JaggedIndex,
@@ -80,14 +84,14 @@ impl<'a, T> RawJaggedSlice<'a, T> {
                 let vec = &self.vectors[f];
 
                 let start = match s == 0 {
-                    true => self.begin.i,
+                    true => self.begin.i, // (a) `begin.i < vectors[0].len()` by `new`
                     false => 0,
                 };
 
                 let end_exc = match s == self.num_slices - 1 {
-                    false => vec.length(),
+                    false => vec.length(), // (b) `end_exc` is correct for `vec`
                     true => match self.end.i {
-                        0 => vec.length(),
+                        0 => vec.length(), // (c) `end.i < vectors[last].len()` by `new`
                         end => end,
                     },
                 };
@@ -95,7 +99,9 @@ impl<'a, T> RawJaggedSlice<'a, T> {
                 let len = end_exc - start;
                 debug_assert!(len > 0);
 
-                Some(vec.raw_slice(start, len))
+                // SAFETY: (i) is satisfied by a, b, c
+                let slice = unsafe { vec.raw_slice_unchecked(start, len) };
+                Some(slice)
             }
             false => None,
         }

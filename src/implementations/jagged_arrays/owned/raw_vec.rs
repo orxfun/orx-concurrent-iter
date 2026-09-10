@@ -19,24 +19,20 @@ pub struct RawVec<T> {
     capacity: usize,
 }
 
-impl<T> Clone for RawVec<T> {
-    fn clone(&self) -> Self {
-        Self {
-            ptr: self.ptr,
-            len: self.len,
-            capacity: self.capacity,
-        }
-    }
-}
-
-impl<T> From<Vec<T>> for RawVec<T> {
-    fn from(value: Vec<T>) -> Self {
+impl<T> RawVec<T> {
+    /// Creates the raw vec from `vec`.
+    ///
+    /// # SAFETY
+    ///
+    /// `RawVec` created from `vec` does not drop allocation of the vec when it is dropped.
+    /// Must call [`AsOwningSlice::drop_allocation`] to prevent memory leaks.
+    pub unsafe fn new_from_vec(vec: Vec<T>) -> Self {
         let raw = Self {
-            ptr: value.as_ptr(),
-            len: value.len(),
-            capacity: value.capacity(),
+            ptr: vec.as_ptr(),
+            len: vec.len(),
+            capacity: vec.capacity(),
         };
-        let _ = ManuallyDrop::new(value);
+        let _ = ManuallyDrop::new(vec);
         raw
     }
 }
@@ -51,6 +47,12 @@ impl<T> AsRawSlice<T> for RawVec<T> {
     }
 
     fn raw_slice(&self, begin: usize, len: usize) -> RawSlice<T> {
+        assert!(begin.checked_add(len).is_some_and(|end| end <= self.len));
+        let ptr = unsafe { self.ptr.add(begin) };
+        RawSlice::new(ptr, len)
+    }
+
+    unsafe fn raw_slice_unchecked(&self, begin: usize, len: usize) -> RawSlice<T> {
         debug_assert!(begin + len <= self.len);
         let ptr = unsafe { self.ptr.add(begin) };
         RawSlice::new(ptr, len)
