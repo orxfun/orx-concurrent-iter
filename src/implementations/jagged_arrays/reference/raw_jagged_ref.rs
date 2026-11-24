@@ -58,7 +58,38 @@ where
     S: Slices<'a, T>,
 {
     /// Creates a new raw jagged array of references.
-    pub fn new(arrays: S, indexer: X, total_len: Option<usize>) -> Self {
+    ///
+    /// # Performance
+    ///
+    /// Note that this method sums the number of elements in all arrays,
+    /// which is linear time in the number of arrays.
+    ///
+    /// ```ignore
+    /// let len: usize = arrays.lengths().sum();
+    /// ```
+    ///
+    /// If the total number of elements are known with certainty, this computation
+    /// can be avoided by using [`new_unchecked`].
+    ///
+    /// [`new_unchecked`]: Self::new_unchecked
+    pub fn new(arrays: S, indexer: X) -> Self {
+        let len: usize = arrays.lengths().sum();
+        Self {
+            arrays,
+            len,
+            indexer,
+            phantom: PhantomData,
+        }
+    }
+
+    /// Creates a new raw jagged array of references.
+    ///
+    /// # SAFETY
+    ///
+    /// If the optional `total_len` is provided, it is assumed to be correct.
+    /// If the total length does not match `arrays.lengths().sum()`, using the jagged array
+    /// leads to undefined behavior.
+    pub unsafe fn new_unchecked(arrays: S, indexer: X, total_len: Option<usize>) -> Self {
         let len = total_len.unwrap_or_else(|| arrays.lengths().sum());
         Self {
             arrays,

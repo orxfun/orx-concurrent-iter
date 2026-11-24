@@ -28,10 +28,15 @@ fn raw_jagged_iter_ref_matrix(consume_taken: bool, consume_remaining: bool) {
     let len = n * n;
     let data = get_matrix(n);
 
-    let jagged = || RawJaggedRef::new(data.as_slice(), MatrixIndexer::new(n), Some(n * n));
+    let jagged = |use_unsafe| match use_unsafe {
+        true => unsafe {
+            RawJaggedRef::new_unchecked(data.as_slice(), MatrixIndexer::new(n), Some(n * n))
+        },
+        false => RawJaggedRef::new(data.as_slice(), MatrixIndexer::new(n)),
+    };
 
     for num_taken in 0..len {
-        let jagged = jagged();
+        let jagged = jagged(num_taken.is_multiple_of(3));
 
         let iter = RawJaggedSliceIterRef::new(jagged.jagged_slice(0, num_taken));
         if consume_taken {
@@ -67,10 +72,15 @@ fn raw_jagged_iter_ref_jagged(consume_taken: bool, consume_remaining: bool) {
     let len = 10;
     let data = get_jagged();
 
-    let jagged = || RawJaggedRef::new(data.as_slice(), GeneralJaggedIndexer, Some(10));
+    let jagged = |use_unsafe| match use_unsafe {
+        true => unsafe {
+            RawJaggedRef::new_unchecked(data.as_slice(), GeneralJaggedIndexer, Some(10))
+        },
+        false => RawJaggedRef::new(data.as_slice(), GeneralJaggedIndexer),
+    };
 
     for num_taken in 0..len {
-        let jagged = jagged();
+        let jagged = jagged(num_taken % 2 == 0);
 
         let iter = RawJaggedSliceIterRef::new(jagged.jagged_slice(0, num_taken));
         if consume_taken {

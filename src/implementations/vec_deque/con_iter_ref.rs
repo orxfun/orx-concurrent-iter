@@ -53,7 +53,9 @@ where
     pub(super) fn new(vec_deque_ref: &'a VecDeque<T>) -> Self {
         let len = vec_deque_ref.len();
         let vec_deque_ref = VecDequeRef::new(vec_deque_ref);
-        let jagged = RawJaggedRef::new(vec_deque_ref, VecDequeSlicesIndexer, Some(len));
+        // SAFETY: vec_deque_ref is guaranteed to have `len` elements.
+        let jagged =
+            unsafe { RawJaggedRef::new_unchecked(vec_deque_ref, VecDequeSlicesIndexer, Some(len)) };
         let con_iter = ConIterCore::new(jagged, 0);
         Self { con_iter }
     }
