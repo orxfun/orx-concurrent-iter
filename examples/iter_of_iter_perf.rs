@@ -4,6 +4,7 @@ use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use std::env;
 use std::hint::black_box;
+use std::num::NonZeroUsize;
 use std::time::{Duration, Instant};
 
 // ---------------------------------------------------------------------------
@@ -93,7 +94,7 @@ fn run_con_iter_single(input: &[u64], num_threads: usize) -> Option<u64> {
 // elements rather than a single one, reducing lock frequency.
 // ---------------------------------------------------------------------------
 
-fn run_con_iter_chunk(input: &[u64], num_threads: usize, chunk_size: usize) -> Option<u64> {
+fn run_con_iter_chunk(input: &[u64], num_threads: usize, chunk_size: NonZeroUsize) -> Option<u64> {
     let con_iter = black_box(input)
         .iter()
         .filter(|&&x| x % 2 == 0)
@@ -200,7 +201,11 @@ fn run_once(input: &[u64], args: &Args) -> Option<u64> {
     match args.method {
         Method::Seq => run_seq(input),
         Method::ConIterSingle => run_con_iter_single(input, args.num_threads),
-        Method::ConIterChunk => run_con_iter_chunk(input, args.num_threads, args.chunk_size),
+        Method::ConIterChunk => run_con_iter_chunk(
+            input,
+            args.num_threads,
+            NonZeroUsize::new(args.chunk_size).unwrap(),
+        ),
     }
 }
 
