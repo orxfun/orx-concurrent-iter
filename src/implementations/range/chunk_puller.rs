@@ -1,21 +1,21 @@
 use super::con_iter::ConIterRange;
 use crate::pullers::ChunkPuller;
-use core::ops::Range;
+use core::{num::NonZeroUsize, ops::Range};
 
 pub struct ChunkPullerRange<'i, T> {
     con_iter: &'i ConIterRange<T>,
     chunk_size: usize,
 }
 
-impl<'i, T> From<(&'i ConIterRange<T>, usize)> for ChunkPullerRange<'i, T>
+impl<'i, T> From<(&'i ConIterRange<T>, NonZeroUsize)> for ChunkPullerRange<'i, T>
 where
     T: Send + From<usize>,
     Range<T>: Default + Clone + ExactSizeIterator<Item = T>,
 {
-    fn from((con_iter, chunk_size): (&'i ConIterRange<T>, usize)) -> Self {
+    fn from((con_iter, chunk_size): (&'i ConIterRange<T>, NonZeroUsize)) -> Self {
         Self {
             con_iter,
-            chunk_size,
+            chunk_size: chunk_size.into(),
         }
     }
 }
