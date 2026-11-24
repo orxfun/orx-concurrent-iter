@@ -30,23 +30,18 @@ where
 {
     /// Creates the raw jagged array for the given `arrays` and `indexer`.
     ///
-    /// If the total number of elements in all `arrays` is known, it can be passed in as `total_len`,
-    /// which will be assumed to be correct.
-    /// If `None` is passed as the total length, it will be computed as sum of all vectors.
-    ///
     /// Once the jagged array is dropped, the elements and allocation of the vectors
     /// will also be dropped.
-    pub fn new(
-        arrays: impl IntoIterator<Item = Vec<T>>,
-        indexer: X,
-        total_len: Option<usize>,
-    ) -> Self {
+    pub fn new(arrays: impl IntoIterator<Item = Vec<T>>, indexer: X) -> Self {
+        let mut len = 0;
         let arrays: Vec<_> = arrays
             .into_iter()
             // SAFETY: allocations will be dropped by `RawJagged::drop`
-            .map(|vec| unsafe { RawVec::new_from_vec(vec) })
+            .map(|vec| {
+                len += vec.len();
+                unsafe { RawVec::new_from_vec(vec) }
+            })
             .collect();
-        let len = total_len.unwrap_or_else(|| arrays.iter().map(|v| v.length()).sum());
 
         Self {
             arrays,

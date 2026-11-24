@@ -26,7 +26,7 @@ fn raw_jagged_iter_owned_matrix(consume_taken: bool, consume_remaining: bool) {
     let n = 4;
     let len = n * n;
 
-    let jagged = || RawJagged::new(get_matrix(n), MatrixIndexer::new(n), Some(n * n));
+    let jagged = || RawJagged::new(get_matrix(n), MatrixIndexer::new(n));
 
     for num_taken in 0..len {
         let mut jagged = jagged();
@@ -65,7 +65,7 @@ fn get_jagged() -> Vec<Vec<String>> {
 fn raw_jagged_iter_owned_jagged(consume_taken: bool, consume_remaining: bool) {
     let len = 10;
 
-    let jagged = || RawJagged::new(get_jagged(), GeneralJaggedIndexer, Some(10));
+    let jagged = || RawJagged::new(get_jagged(), GeneralJaggedIndexer);
 
     for num_taken in 0..len {
         let mut jagged = jagged();
