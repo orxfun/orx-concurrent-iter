@@ -3,7 +3,7 @@ use crate::pullers::ChunkPuller;
 use alloc::vec::Vec;
 use core::{iter::FusedIterator, num::NonZeroUsize};
 
-pub(super) const MAX_CHUNK_SIZE: NonZeroUsize = unsafe { NonZeroUsize::new_unchecked(1 << 10) };
+pub(super) const MAX_CHUNK_SIZE: NonZeroUsize = NonZeroUsize::new(1 << 10).unwrap();
 
 pub struct ChunkPullerOfIter<'i, I>
 where
