@@ -4,7 +4,7 @@ use super::{
     mut_handle::{AtomicState, COMPLETED, MutHandle},
 };
 use crate::{concurrent_iter::ConcurrentIter, exact_size_concurrent_iter::ExactSizeConcurrentIter};
-use core::sync::atomic::Ordering;
+use core::{num::NonZeroUsize, sync::atomic::Ordering};
 
 /// Concurrent iterator of a any generic type implementing a
 /// regular [`Iterator`].
@@ -156,7 +156,7 @@ where
         true
     }
 
-    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+    fn chunk_puller(&self, chunk_size: NonZeroUsize) -> Self::ChunkPuller<'_> {
         Self::ChunkPuller::new(self, chunk_size)
     }
 }

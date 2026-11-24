@@ -1,3 +1,5 @@
+use core::num::NonZeroUsize;
+
 use crate::{
     concurrent_iter::ConcurrentIter, exact_size_concurrent_iter::ExactSizeConcurrentIter,
     implementations::empty::con_iter::ConIterEmpty, pullers::ChunkPuller,
@@ -8,6 +10,10 @@ use alloc::{
 };
 use orx_concurrent_bag::ConcurrentBag;
 use test_case::test_matrix;
+
+fn pos(x: usize) -> NonZeroUsize {
+    NonZeroUsize::new(x).unwrap()
+}
 
 #[test]
 fn enumeration() {
@@ -46,11 +52,11 @@ fn empty(nt: usize) {
                 assert!(iter.next().is_none());
                 assert!(iter.next().is_none());
 
-                let mut puller = iter.chunk_puller(5);
+                let mut puller = iter.chunk_puller(pos(5));
                 assert!(puller.pull().is_none());
                 assert!(puller.pull().is_none());
 
-                let mut iter = iter.chunk_puller(5).flattened();
+                let mut iter = iter.chunk_puller(pos(5)).flattened();
                 assert!(iter.next().is_none());
                 assert!(iter.next().is_none());
             });
@@ -182,7 +188,7 @@ fn chunk_puller(nt: usize) {
                 num_spawned.push(true);
                 while num_spawned.len() < nt {} // allow all threads to be spawned
 
-                let mut puller = iter.chunk_puller(7);
+                let mut puller = iter.chunk_puller(pos(7));
 
                 while let Some(chunk) = puller.pull() {
                     assert!(chunk.len() <= 7);
@@ -214,7 +220,7 @@ fn chunk_puller_with_idx(nt: usize) {
                 num_spawned.push(true);
                 while num_spawned.len() < nt {} // allow all threads to be spawned
 
-                let mut puller = iter.chunk_puller(7);
+                let mut puller = iter.chunk_puller(pos(7));
 
                 while let Some((begin_idx, chunk)) = puller.pull_with_idx() {
                     assert!(chunk.len() <= 7);
@@ -246,7 +252,7 @@ fn flattened_chunk_puller(nt: usize) {
                 num_spawned.push(true);
                 while num_spawned.len() < nt {} // allow all threads to be spawned
 
-                for x in iter.chunk_puller(7).flattened() {
+                for x in iter.chunk_puller(pos(7)).flattened() {
                     bag.push(x);
                 }
             });
@@ -273,7 +279,7 @@ fn flattened_chunk_puller_with_idx(nt: usize) {
                 num_spawned.push(true);
                 while num_spawned.len() < nt {} // allow all threads to be spawned
 
-                for x in iter.chunk_puller(7).flattened_with_idx() {
+                for x in iter.chunk_puller(pos(7)).flattened_with_idx() {
                     bag.push(x);
                 }
             });
@@ -315,7 +321,7 @@ fn skip_to_end(nt: usize) {
                         }
                     }
                     _ => {
-                        for num in con_iter.chunk_puller(7).flattened() {
+                        for num in con_iter.chunk_puller(pos(7)).flattened() {
                             match num.parse::<usize>().expect("") < until + 10 {
                                 true => _ = con_bag.push(num),
                                 false => con_iter.skip_to_end(),
@@ -356,7 +362,7 @@ fn pull_too_many(pulled_before: usize, by_idx: bool) {
         _ = iter.next();
     }
 
-    let mut puller = iter.chunk_puller_by(usize::MAX, 0);
+    let mut puller = iter.chunk_puller_by(pos(usize::MAX), 0);
     let remaining = match by_idx {
         false => puller.pull().map(|iter| iter.count()),
         true => puller.pull_with_idx().map(|(_, iter)| iter.count()),

@@ -1,6 +1,6 @@
 use super::chunk_puller::ChunkPullerEmpty;
 use crate::{ConcurrentIter, exact_size_concurrent_iter::ExactSizeConcurrentIter};
-use core::marker::PhantomData;
+use core::{marker::PhantomData, num::NonZeroUsize};
 
 /// An empty concurrent iterator which does not yield any elements.
 ///
@@ -78,7 +78,7 @@ where
         true
     }
 
-    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+    fn chunk_puller(&self, chunk_size: NonZeroUsize) -> Self::ChunkPuller<'_> {
         Self::ChunkPuller::new(self, chunk_size)
     }
 }
