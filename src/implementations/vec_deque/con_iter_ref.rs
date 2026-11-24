@@ -1,3 +1,5 @@
+use core::num::NonZeroUsize;
+
 use super::vec_deque_ref::VecDequeRef;
 use crate::{
     ConcurrentIter, ExactSizeConcurrentIter,
@@ -134,7 +136,7 @@ where
         true
     }
 
-    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+    fn chunk_puller(&self, chunk_size: NonZeroUsize) -> Self::ChunkPuller<'_> {
         self.con_iter.chunk_puller(chunk_size)
     }
 }
