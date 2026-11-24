@@ -1,9 +1,14 @@
+use core::num::NonZeroUsize;
 use orx_concurrent_bag::*;
 use orx_concurrent_iter::*;
 use orx_iterable::Collection;
 use std::fmt::Debug;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use test_case::test_matrix;
+
+fn pos(x: usize) -> NonZeroUsize {
+    NonZeroUsize::new(x).unwrap()
+}
 
 #[cfg(not(miri))]
 const LEN: [usize; 4] = [1, 4, 1024, 4 * 1024];
@@ -30,7 +35,7 @@ where
                     }
                 }
                 false => {
-                    let mut puller = iter.chunk_puller(batch);
+                    let mut puller = iter.chunk_puller(pos(batch));
                     while let Some((begin_idx, chunk)) = puller.pull_with_idx() {
                         for (i, value) in chunk.enumerate() {
                             bag.push((begin_idx + i, value));
@@ -61,7 +66,7 @@ fn concurrent_iter_exact_len<I: ConcurrentIter>(iter: I, expected_len: usize, ba
             assert_eq!(iter.try_get_len(), Some(0));
         }
         false => {
-            let mut puller = iter.chunk_puller(batch);
+            let mut puller = iter.chunk_puller(pos(batch));
             while let Some(chunk) = puller.pull() {
                 remaining -= chunk.len();
                 assert_eq!(iter.try_get_len(), Some(remaining));
@@ -81,7 +86,7 @@ fn arbitrary_chunk_pull_stops_after_exhaustion() {
         (call < 3).then_some(call)
     });
     let iter = source.iter_into_con_iter();
-    let mut puller = iter.chunk_puller(8);
+    let mut puller = iter.chunk_puller(pos(8));
 
     assert_eq!(puller.pull().unwrap().collect::<Vec<_>>(), vec![0, 1, 2]);
     assert_eq!(next_calls.load(Ordering::Relaxed), 4);

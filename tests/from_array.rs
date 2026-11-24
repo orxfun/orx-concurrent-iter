@@ -1,5 +1,10 @@
+use core::num::NonZeroUsize;
 use orx_concurrent_iter::*;
 use test_case::test_matrix;
+
+fn pos(x: usize) -> NonZeroUsize {
+    NonZeroUsize::new(x).unwrap()
+}
 
 #[cfg(not(miri))]
 const LEN: usize = 1024;
@@ -27,7 +32,7 @@ fn len() {
     _ = iter.next();
     assert_eq!(iter.try_get_len(), Some(3));
 
-    let mut puller = iter.chunk_puller(2);
+    let mut puller = iter.chunk_puller(pos(2));
     _ = puller.pull();
     assert_eq!(iter.try_get_len(), Some(1));
 
@@ -87,12 +92,12 @@ fn into_seq_iter_used_in_batches() {
 
     std::thread::scope(|s| {
         s.spawn(|| {
-            let mut puller = con_iter.chunk_puller(21);
+            let mut puller = con_iter.chunk_puller(pos(21));
             if let Some(batch) = puller.pull() {
                 for _ in batch {}
             }
 
-            let mut puller = con_iter.chunk_puller(20);
+            let mut puller = con_iter.chunk_puller(pos(20));
             if let Some(batch) = puller.pull() {
                 for _ in batch.take(12) {}
             }
@@ -121,7 +126,7 @@ fn into_seq_iter_doc() {
                 _ = con_iter.next();
             }
 
-            let mut puller = con_iter.chunk_puller(32);
+            let mut puller = con_iter.chunk_puller(pos(32));
             let _chunk = puller.pull().unwrap();
         });
     });
@@ -178,7 +183,7 @@ fn buffered(chunk_size: usize) {
         *x = 100 + i;
     }
     let iter = values.into_con_iter().cloned();
-    let mut puller = iter.chunk_puller(chunk_size);
+    let mut puller = iter.chunk_puller(pos(chunk_size));
 
     let mut current = 100;
     while let Some(chunk) = puller.pull() {

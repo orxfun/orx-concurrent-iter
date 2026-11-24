@@ -21,7 +21,8 @@ fn concurrent_iter<I: Iterator<Item = i64>>(
                         sum += value;
                     }
                 } else {
-                    let mut puller = iter.chunk_puller(batch);
+                    let mut puller =
+                        iter.chunk_puller(core::num::NonZeroUsize::new(batch).unwrap());
                     while let Some(chunk) = puller.pull() {
                         sum += chunk.sum::<i64>();
                     }

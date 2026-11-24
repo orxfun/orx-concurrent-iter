@@ -113,7 +113,8 @@ fn con_iter(inputs: &VecDeque<usize>, num_threads: usize, chunk_size: usize) -> 
                 }),
                 _ => s.spawn(|| {
                     let mut vec = vec![];
-                    let mut chunk_iter = con_iter.chunk_puller(chunk_size);
+                    let mut chunk_iter =
+                        con_iter.chunk_puller(core::num::NonZeroUsize::new(chunk_size).unwrap());
                     while let Some(chunk) = chunk_iter.pull() {
                         vec.extend(
                             chunk

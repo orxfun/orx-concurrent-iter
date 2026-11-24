@@ -120,7 +120,8 @@ fn con_iter(mut values: Vec<usize>, num_threads: usize, chunk_size: usize) -> Ve
                 }),
                 _ => s.spawn(|| {
                     let mut vec = vec![];
-                    let mut chunk_iter = con_iter.chunk_puller(chunk_size);
+                    let mut chunk_iter =
+                        con_iter.chunk_puller(core::num::NonZeroUsize::new(chunk_size).unwrap());
                     while let Some(chunk) = chunk_iter.pull() {
                         for x in chunk {
                             if *x % 3 > 0 {

@@ -186,7 +186,8 @@ let process = |_x: &String| { /* assume actual work */ };
 std::thread::scope(|s| {
     for _ in 0..num_threads {
         s.spawn(|| {
-            let mut puller = con_iter.chunk_puller(10);
+            let mut puller =
+                con_iter.chunk_puller(std::num::NonZeroUsize::new(10).unwrap());
             while let Some(chunk) = puller.pull() {
                 for value in chunk {
                     process(value);
@@ -208,7 +209,7 @@ use orx_concurrent_iter::*;
 
 fn parallel_reduce<T, F>(
     num_threads: usize,
-    chunk: usize,
+    chunk: std::num::NonZeroUsize,
     con_iter: impl ConcurrentIter<Item = T>,
     reduce: F,
 ) -> Option<T>
@@ -226,7 +227,12 @@ where
 
 let n = 10_000;
 let data: Vec<_> = (0..n).collect();
-let sum = parallel_reduce(8, 64, data.con_iter().copied(), |a, b| a + b);
+let sum = parallel_reduce(
+    8,
+    std::num::NonZeroUsize::new(64).unwrap(),
+    data.con_iter().copied(),
+    |a, b| a + b,
+);
 assert_eq!(sum, Some(n * (n - 1) / 2));
 ```
 

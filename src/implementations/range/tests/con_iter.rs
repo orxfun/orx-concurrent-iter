@@ -4,9 +4,14 @@ use crate::{
     pullers::ChunkPuller,
 };
 use alloc::vec::Vec;
+use core::num::NonZeroUsize;
 use core::ops::Range;
 use orx_concurrent_bag::ConcurrentBag;
 use test_case::test_matrix;
+
+fn pos(x: usize) -> NonZeroUsize {
+    NonZeroUsize::new(x).unwrap()
+}
 
 #[cfg(miri)]
 const N: usize = 125;
@@ -43,7 +48,7 @@ fn size_hint() {
         n -= 1;
     }
 
-    let mut chunks_iter = iter.chunk_puller(7);
+    let mut chunks_iter = iter.chunk_puller(pos(7));
 
     assert_eq!(iter.size_hint(), (n, Some(n)));
     assert_eq!(iter.len(), n);
@@ -76,7 +81,7 @@ fn size_hint_skip_to_end() {
     for _ in 0..10 {
         let _ = iter.next();
     }
-    let mut chunks_iter = iter.chunk_puller(7);
+    let mut chunks_iter = iter.chunk_puller(pos(7));
     let _ = chunks_iter.pull();
 
     assert_eq!(iter.len(), 8);
@@ -95,11 +100,11 @@ fn empty(nt: usize) {
                 assert!(iter.next().is_none());
                 assert!(iter.next().is_none());
 
-                let mut puller = iter.chunk_puller(5);
+                let mut puller = iter.chunk_puller(pos(5));
                 assert!(puller.pull().is_none());
                 assert!(puller.pull().is_none());
 
-                let mut iter = iter.chunk_puller(5).flattened();
+                let mut iter = iter.chunk_puller(pos(5)).flattened();
                 assert!(iter.next().is_none());
                 assert!(iter.next().is_none());
             });
@@ -231,7 +236,7 @@ fn chunk_puller(n: usize, nt: usize) {
                 num_spawned.push(true);
                 while num_spawned.len() < nt {} // allow all threads to be spawned
 
-                let mut puller = iter.chunk_puller(7);
+                let mut puller = iter.chunk_puller(pos(7));
 
                 while let Some(chunk) = puller.pull() {
                     assert!(chunk.len() <= 7);
@@ -263,7 +268,7 @@ fn chunk_puller_with_idx(n: usize, nt: usize) {
                 num_spawned.push(true);
                 while num_spawned.len() < nt {} // allow all threads to be spawned
 
-                let mut puller = iter.chunk_puller(7);
+                let mut puller = iter.chunk_puller(pos(7));
 
                 while let Some((begin_idx, chunk)) = puller.pull_with_idx() {
                     assert!(chunk.len() <= 7);
@@ -295,7 +300,7 @@ fn flattened_chunk_puller(n: usize, nt: usize) {
                 num_spawned.push(true);
                 while num_spawned.len() < nt {} // allow all threads to be spawned
 
-                for x in iter.chunk_puller(7).flattened() {
+                for x in iter.chunk_puller(pos(7)).flattened() {
                     bag.push(x);
                 }
             });
@@ -322,7 +327,7 @@ fn flattened_chunk_puller_with_idx(n: usize, nt: usize) {
                 num_spawned.push(true);
                 while num_spawned.len() < nt {} // allow all threads to be spawned
 
-                for x in iter.chunk_puller(7).flattened_with_idx() {
+                for x in iter.chunk_puller(pos(7)).flattened_with_idx() {
                     bag.push(x);
                 }
             });
@@ -363,7 +368,7 @@ fn skip_to_end(n: usize, nt: usize) {
                         }
                     }
                     _ => {
-                        for num in con_iter.chunk_puller(7).flattened() {
+                        for num in con_iter.chunk_puller(pos(7)).flattened() {
                             match num < until + 10 {
                                 true => _ = con_bag.push(num),
                                 false => con_iter.skip_to_end(),
@@ -409,7 +414,7 @@ fn into_seq_iter(n: usize, nt: usize, until: usize) {
                             }
                         }
                         _ => {
-                            let mut iter = con_iter.chunk_puller(7);
+                            let mut iter = con_iter.chunk_puller(pos(7));
                             while let Some(chunk) = iter.pull() {
                                 let mut do_break = false;
                                 for num in chunk {
@@ -449,7 +454,7 @@ fn pull_too_many(pulled_before: usize, by_idx: bool) {
         _ = iter.next();
     }
 
-    let mut puller = iter.chunk_puller_by(usize::MAX, 0);
+    let mut puller = iter.chunk_puller_by(pos(usize::MAX), 0);
     let remaining = match by_idx {
         false => puller.pull().map(|iter| iter.count()),
         true => puller.pull_with_idx().map(|(_, iter)| iter.count()),

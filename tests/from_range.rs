@@ -1,9 +1,14 @@
+use core::num::NonZeroUsize;
 use orx_concurrent_iter::{
     implementations::{ConIterOfIter, ConIterRange},
     *,
 };
 use std::cmp::Ordering;
 use test_case::test_matrix;
+
+fn pos(x: usize) -> NonZeroUsize {
+    NonZeroUsize::new(x).unwrap()
+}
 
 #[cfg(not(miri))]
 const LEN: usize = 1024;
@@ -47,7 +52,7 @@ fn len() {
     _ = iter.next();
     assert_eq!(iter.try_get_len(), Some(3));
 
-    _ = iter.chunk_puller(2).pull();
+    _ = iter.chunk_puller(pos(2)).pull();
     assert_eq!(iter.try_get_len(), Some(1));
 
     _ = iter.next();
@@ -97,11 +102,11 @@ fn into_seq_iter_used_in_batches() {
 
     std::thread::scope(|s| {
         s.spawn(|| {
-            if let Some(batch) = con_iter.chunk_puller(44).pull() {
+            if let Some(batch) = con_iter.chunk_puller(pos(44)).pull() {
                 for _ in batch {}
             }
 
-            if let Some(batch) = con_iter.chunk_puller(33).pull() {
+            if let Some(batch) = con_iter.chunk_puller(pos(33)).pull() {
                 for _ in batch.take(22) {}
             }
         });
@@ -126,7 +131,7 @@ fn into_seq_iter_doc() {
                 _ = con_iter.next();
             }
 
-            let mut buffered = con_iter.chunk_puller(32);
+            let mut buffered = con_iter.chunk_puller(pos(32));
             let _chunk = buffered.pull().unwrap();
         });
     });
@@ -172,7 +177,7 @@ fn into_seq_iter_used(begin: usize, end: usize, take: usize) {
 #[test_matrix([0, 42], [0, 1, 42, 43, 100], [1, 10, 100])]
 fn buffered(begin: usize, end: usize, chunk_size: usize) {
     let iter = (begin..end).con_iter();
-    let mut buffered = iter.chunk_puller(chunk_size);
+    let mut buffered = iter.chunk_puller(pos(chunk_size));
 
     let mut current = begin;
     while let Some(chunk) = buffered.pull() {
