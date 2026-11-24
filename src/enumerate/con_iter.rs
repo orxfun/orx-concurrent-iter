@@ -1,3 +1,5 @@
+use core::num::NonZeroUsize;
+
 use super::chunk_puller::EnumeratedChunkPuller;
 use crate::ConcurrentIter;
 
@@ -77,7 +79,7 @@ where
         true
     }
 
-    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+    fn chunk_puller(&self, chunk_size: NonZeroUsize) -> Self::ChunkPuller<'_> {
         Self::ChunkPuller::new(self.iter.chunk_puller(chunk_size))
     }
 }

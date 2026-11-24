@@ -2,7 +2,7 @@ use crate::{
     ChunkPuller, ConcurrentIter,
     chain::{chunk::ChunkOfEither, con_iter_unknown_len_i::ChainUnknownLenI},
 };
-use core::sync::atomic::Ordering;
+use core::{num::NonZeroUsize, sync::atomic::Ordering};
 
 pub struct ChainedChunkPullerUnknownLenI<'i, I, J>
 where
@@ -20,7 +20,7 @@ where
     I: ConcurrentIter,
     J: ConcurrentIter<Item = I::Item>,
 {
-    pub(super) fn new(chain: &'i ChainUnknownLenI<I, J>, chunk_size: usize) -> Self {
+    pub(super) fn new(chain: &'i ChainUnknownLenI<I, J>, chunk_size: NonZeroUsize) -> Self {
         let p = chain.i.chunk_puller(chunk_size);
         let q = chain.j.chunk_puller(chunk_size);
         Self {

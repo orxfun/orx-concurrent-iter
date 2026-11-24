@@ -1,6 +1,6 @@
 use super::chunk_puller::CopiedChunkPuller;
 use crate::{ExactSizeConcurrentIter, concurrent_iter::ConcurrentIter};
-use core::{iter::Copied, marker::PhantomData};
+use core::{iter::Copied, marker::PhantomData, num::NonZeroUsize};
 
 /// A concurrent iterator which copies all elements.
 ///
@@ -80,7 +80,7 @@ where
         true
     }
 
-    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+    fn chunk_puller(&self, chunk_size: NonZeroUsize) -> Self::ChunkPuller<'_> {
         self.con_iter.chunk_puller(chunk_size).into()
     }
 }
