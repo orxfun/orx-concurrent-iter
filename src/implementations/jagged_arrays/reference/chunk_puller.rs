@@ -3,6 +3,7 @@ use crate::{
     ChunkPuller,
     implementations::jagged_arrays::{JaggedIndexer, Slices},
 };
+use core::num::NonZeroUsize;
 
 pub struct ChunkPullerJaggedRef<'i, 'a, T, S, X>
 where
@@ -20,10 +21,13 @@ where
     X: JaggedIndexer,
     S: Slices<'a, T>,
 {
-    pub(super) fn new(con_iter: &'i ConIterJaggedRef<'a, T, S, X>, chunk_size: usize) -> Self {
+    pub(super) fn new(
+        con_iter: &'i ConIterJaggedRef<'a, T, S, X>,
+        chunk_size: NonZeroUsize,
+    ) -> Self {
         Self {
             con_iter,
-            chunk_size,
+            chunk_size: chunk_size.into(),
         }
     }
 }

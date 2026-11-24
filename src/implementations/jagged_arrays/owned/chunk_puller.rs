@@ -1,5 +1,6 @@
 use super::{con_iter::ConIterJaggedOwned, slice_iter::RawJaggedSliceIterOwned};
 use crate::{ChunkPuller, implementations::jagged_arrays::indexer::JaggedIndexer};
+use core::num::NonZeroUsize;
 
 pub struct ChunkPullerJaggedOwned<'i, T, X>
 where
@@ -15,10 +16,10 @@ where
     T: Send,
     X: JaggedIndexer,
 {
-    pub(super) fn new(con_iter: &'i ConIterJaggedOwned<T, X>, chunk_size: usize) -> Self {
+    pub(super) fn new(con_iter: &'i ConIterJaggedOwned<T, X>, chunk_size: NonZeroUsize) -> Self {
         Self {
             con_iter,
-            chunk_size,
+            chunk_size: chunk_size.into(),
         }
     }
 }

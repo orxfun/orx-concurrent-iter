@@ -2,6 +2,7 @@ use super::slice_iter::RawJaggedSliceIterRef;
 use super::{chunk_puller::ChunkPullerJaggedRef, raw_jagged_ref::RawJaggedRef};
 use crate::implementations::jagged_arrays::{JaggedIndexer, Slices};
 use crate::{ConcurrentIter, ExactSizeConcurrentIter};
+use core::num::NonZeroUsize;
 use core::sync::atomic::{AtomicUsize, Ordering};
 
 /// Flattened concurrent iterator of a raw jagged array yielding references to elements.
@@ -110,8 +111,9 @@ where
         true
     }
 
-    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
-        let chunk_size = chunk_size.min(self.jagged.len());
+    fn chunk_puller(&self, chunk_size: NonZeroUsize) -> Self::ChunkPuller<'_> {
+        let jagged_len_or_one = NonZeroUsize::new(self.jagged.len()).unwrap_or(NonZeroUsize::MIN);
+        let chunk_size = chunk_size.min(jagged_len_or_one);
         Self::ChunkPuller::new(self, chunk_size)
     }
 }
