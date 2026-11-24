@@ -1,3 +1,5 @@
+use core::num::NonZeroUsize;
+
 use crate::{
     IntoConcurrentIter,
     chain::ChainUnknownLenI,
@@ -750,7 +752,7 @@ pub trait ConcurrentIter: Sync {
     ///
     /// It is important to note that, when we say we pull 10 items, we actually only reserve these
     /// elements for the corresponding thread. We do not actually clone elements or copy memory.
-    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_>;
+    fn chunk_puller(&self, chunk_size: NonZeroUsize) -> Self::ChunkPuller<'_>;
 
     /// Behaves exactly as [`chunk_puller`] but additionally provides `thread_idx` to the iterator.
     /// This information might be useful for certain concurrent iterators, such as the
@@ -763,7 +765,11 @@ pub trait ConcurrentIter: Sync {
     /// [`chunk_puller`]: Self::chunk_puller
     #[inline(always)]
     #[allow(unused_variables)]
-    fn chunk_puller_by(&self, chunk_size: usize, thread_idx: usize) -> Self::ChunkPuller<'_> {
+    fn chunk_puller_by(
+        &self,
+        chunk_size: NonZeroUsize,
+        thread_idx: usize,
+    ) -> Self::ChunkPuller<'_> {
         self.chunk_puller(chunk_size)
     }
 
