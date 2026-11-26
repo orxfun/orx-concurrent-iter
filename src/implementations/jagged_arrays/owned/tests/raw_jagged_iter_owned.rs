@@ -4,6 +4,8 @@ use crate::implementations::jagged_arrays::owned::{
 };
 use alloc::string::{String, ToString};
 use alloc::{vec, vec::Vec};
+use core::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use test_case::test_matrix;
 
 // matrix
@@ -83,4 +85,41 @@ fn raw_jagged_iter_owned_jagged(consume_taken: bool, consume_remaining: bool) {
             assert_eq!(remaining, expected_remaining);
         }
     }
+}
+
+#[test]
+fn raw_jagged_drop_drops_remaining_elements_in_later_arrays() {
+    struct DropTracked {
+        num_dropped: Arc<AtomicUsize>,
+    }
+
+    impl Drop for DropTracked {
+        fn drop(&mut self) {
+            self.num_dropped.fetch_add(1, Ordering::Relaxed);
+        }
+    }
+
+    let num_dropped = Arc::new(AtomicUsize::new(0));
+    let tracked = || DropTracked {
+        num_dropped: num_dropped.clone(),
+    };
+
+    let mut jagged = RawJagged::new(
+        vec![
+            vec![tracked(), tracked()],
+            vec![tracked(), tracked()],
+            vec![tracked()],
+        ],
+        GeneralJaggedIndexer,
+        Some(5),
+    );
+
+    let taken = unsafe { jagged.take(0) }.expect("the first element must exist");
+    unsafe { jagged.set_num_taken(Some(1)) };
+
+    drop(jagged);
+    assert_eq!(num_dropped.load(Ordering::Relaxed), 4);
+
+    drop(taken);
+    assert_eq!(num_dropped.load(Ordering::Relaxed), 5);
 }

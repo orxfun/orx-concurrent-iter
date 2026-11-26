@@ -1,6 +1,7 @@
 use super::chunk_seq_iter::ArrayChunkSeqIter;
 use super::con_iter::ArrayConIter;
 use crate::pullers::ChunkPuller;
+use core::num::NonZeroUsize;
 
 pub struct ArrayChunkPuller<'i, C>
 where
@@ -14,10 +15,10 @@ impl<'i, C> ArrayChunkPuller<'i, C>
 where
     C: ArrayConIter,
 {
-    pub(crate) fn new(con_iter: &'i C, chunk_size: usize) -> Self {
+    pub(crate) fn new(con_iter: &'i C, chunk_size: NonZeroUsize) -> Self {
         Self {
             con_iter,
-            chunk_size,
+            chunk_size: chunk_size.into(),
         }
     }
 }

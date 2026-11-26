@@ -1,6 +1,11 @@
+use core::num::NonZeroUsize;
 use orx_concurrent_bag::ConcurrentBag;
 use orx_concurrent_iter::*;
 use std::{fmt::Debug, ops::Add};
+
+fn pos(x: usize) -> NonZeroUsize {
+    NonZeroUsize::new(x).unwrap()
+}
 
 #[cfg(not(miri))]
 const LEN: usize = 8564;
@@ -27,7 +32,7 @@ where
     }
 
     let iter = get_iter();
-    let mut puller = iter.chunk_puller(7);
+    let mut puller = iter.chunk_puller(pos(7));
     while let Some((begin_idx, chunk)) = puller.pull_with_idx() {
         for (idx, i) in chunk.enumerate() {
             let idx = begin_idx + idx;
@@ -83,7 +88,7 @@ where
     std::thread::scope(|s| {
         for _ in 0..num_threads {
             s.spawn(move || {
-                let mut puller = con_iter.chunk_puller(7);
+                let mut puller = con_iter.chunk_puller(pos(7));
                 while let Some(chunk) = puller.pull() {
                     for x in chunk {
                         con_bag.push(x);
@@ -103,7 +108,7 @@ where
     std::thread::scope(|s| {
         for _ in 0..num_threads {
             s.spawn(move || {
-                let mut puller = con_iter.chunk_puller(7);
+                let mut puller = con_iter.chunk_puller(pos(7));
                 while let Some((begin_idx, chunk)) = puller.pull_with_idx() {
                     let len = chunk.len();
                     assert!(len > 0);

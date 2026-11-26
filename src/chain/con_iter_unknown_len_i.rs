@@ -2,7 +2,10 @@ use crate::{
     ConcurrentIter, ExactSizeConcurrentIter,
     chain::chunk_puller_unknown_len_i::ChainedChunkPullerUnknownLenI,
 };
-use core::sync::atomic::{AtomicUsize, Ordering};
+use core::{
+    num::NonZeroUsize,
+    sync::atomic::{AtomicUsize, Ordering},
+};
 
 /// Chain of two concurrent iterators where the length of the first iterator is not
 /// known with certainly; i.e., `I` does not implement `ExactSizeConcurrentIter`.
@@ -98,7 +101,7 @@ where
         true
     }
 
-    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+    fn chunk_puller(&self, chunk_size: NonZeroUsize) -> Self::ChunkPuller<'_> {
         ChainedChunkPullerUnknownLenI::new(self, chunk_size)
     }
 }

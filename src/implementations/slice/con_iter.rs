@@ -2,6 +2,7 @@ use super::chunk_puller::ChunkPullerSlice;
 use crate::{concurrent_iter::ConcurrentIter, exact_size_concurrent_iter::ExactSizeConcurrentIter};
 use core::{
     iter::Skip,
+    num::NonZeroUsize,
     sync::atomic::{AtomicUsize, Ordering},
 };
 
@@ -123,8 +124,9 @@ where
         true
     }
 
-    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
-        let chunk_size = chunk_size.min(self.slice.len());
+    fn chunk_puller(&self, chunk_size: NonZeroUsize) -> Self::ChunkPuller<'_> {
+        let slice_len_or_one = NonZeroUsize::new(self.slice.len()).unwrap_or(NonZeroUsize::MIN);
+        let chunk_size = chunk_size.min(slice_len_or_one);
         Self::ChunkPuller::new(self, chunk_size)
     }
 }

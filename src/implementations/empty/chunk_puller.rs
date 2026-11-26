@@ -1,6 +1,6 @@
 use super::con_iter::ConIterEmpty;
 use crate::pullers::ChunkPuller;
-use core::marker::PhantomData;
+use core::{marker::PhantomData, num::NonZeroUsize};
 
 pub struct ChunkPullerEmpty<'i, T> {
     chunk_size: usize,
@@ -8,9 +8,9 @@ pub struct ChunkPullerEmpty<'i, T> {
 }
 
 impl<'i, T> ChunkPullerEmpty<'i, T> {
-    pub(super) fn new(_con_iter: &'i ConIterEmpty<T>, chunk_size: usize) -> Self {
+    pub(super) fn new(_con_iter: &'i ConIterEmpty<T>, chunk_size: NonZeroUsize) -> Self {
         Self {
-            chunk_size,
+            chunk_size: chunk_size.into(),
             phantom: PhantomData,
         }
     }

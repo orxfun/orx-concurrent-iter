@@ -1,6 +1,6 @@
 use crate::{ChunkPuller, ConcurrentIter, IterIntoConcurrentIter};
 use alloc::vec::Vec;
-use core::ops::Range;
+use core::{num::NonZeroUsize, ops::Range};
 
 #[test]
 fn enumerate_item() {
@@ -49,7 +49,7 @@ fn enumerate_chunk_puller() {
 
     let mut j = 0;
 
-    let mut puller = iter.chunk_puller(2);
+    let mut puller = iter.chunk_puller(NonZeroUsize::new(2).unwrap());
     while let Some(chunk) = puller.pull() {
         assert_eq!(chunk.len(), 2);
         for (i, x) in chunk {

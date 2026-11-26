@@ -50,7 +50,8 @@ use crate::pullers::{FlattenedChunkPuller, FlattenedEnumeratedChunkPuller};
 ///         s.spawn(|| {
 ///             // concurrently iterate over values in a `while let` loop
 ///             // while pulling (up to) 10 elements every time
-///             let mut chunk_puller = con_iter.chunk_puller(10);
+///             let mut chunk_puller =
+///                 con_iter.chunk_puller(std::num::NonZeroUsize::new(10).unwrap());
 ///             while let Some(chunk) = chunk_puller.pull() {
 ///                 // chunk is an ExactSizeIterator
 ///                 for value in chunk {
@@ -86,7 +87,10 @@ use crate::pullers::{FlattenedChunkPuller, FlattenedEnumeratedChunkPuller};
 ///         s.spawn(|| {
 ///             // concurrently iterate over values in a `for` loop
 ///             // while concurrently pulling (up to) 10 elements every time
-///             for value in con_iter.chunk_puller(10).flattened() {
+///             for value in con_iter
+///                 .chunk_puller(std::num::NonZeroUsize::new(10).unwrap())
+///                 .flattened()
+///             {
 ///                 process(value);
 ///             }
 ///         });
@@ -124,7 +128,7 @@ use crate::pullers::{FlattenedChunkPuller, FlattenedEnumeratedChunkPuller};
 ///
 /// fn parallel_reduce<T, F>(
 ///     num_threads: usize,
-///     chunk: usize,
+///     chunk: std::num::NonZeroUsize,
 ///     con_iter: impl ConcurrentIter<Item = T>,
 ///     reduce: F,
 /// ) -> Option<T>
@@ -142,7 +146,12 @@ use crate::pullers::{FlattenedChunkPuller, FlattenedEnumeratedChunkPuller};
 ///
 /// let n = 10_000;
 /// let data: Vec<_> = (0..n).collect();
-/// let sum = parallel_reduce(8, 64, data.con_iter().copied(), |a, b| a + b);
+/// let sum = parallel_reduce(
+///     8,
+///     std::num::NonZeroUsize::new(64).unwrap(),
+///     data.con_iter().copied(),
+///     |a, b| a + b,
+/// );
 /// assert_eq!(sum, Some(n * (n - 1) / 2));
 /// ```
 ///
@@ -212,7 +221,8 @@ pub trait ChunkPuller {
     /// std::thread::scope(|s| {
     ///     for _ in 0..num_threads {
     ///         s.spawn(|| {
-    ///             let mut chunk_puller = con_iter.chunk_puller(4);
+    ///             let mut chunk_puller =
+    ///                 con_iter.chunk_puller(std::num::NonZeroUsize::new(4).unwrap());
     ///             while let Some((begin_idx, chunk)) = chunk_puller.pull_with_idx() {
     ///                 for (i, value) in chunk.enumerate() { // i is the index within chunk
     ///                     let idx = begin_idx + i; // idx is the index in the input collection
@@ -253,7 +263,7 @@ pub trait ChunkPuller {
     ///
     /// fn parallel_reduce<T, F>(
     ///     num_threads: usize,
-    ///     chunk: usize,
+    ///     chunk: std::num::NonZeroUsize,
     ///     con_iter: impl ConcurrentIter<Item = T>,
     ///     reduce: F,
     /// ) -> Option<T>
@@ -271,7 +281,12 @@ pub trait ChunkPuller {
     ///
     /// let n = 10_000;
     /// let data: Vec<_> = (0..n).collect();
-    /// let sum = parallel_reduce(8, 64, data.con_iter().copied(), |a, b| a + b);
+    /// let sum = parallel_reduce(
+    ///     8,
+    ///     std::num::NonZeroUsize::new(64).unwrap(),
+    ///     data.con_iter().copied(),
+    ///     |a, b| a + b,
+    /// );
     /// assert_eq!(sum, Some(n * (n - 1) / 2));
     /// ```
     ///
@@ -308,7 +323,10 @@ pub trait ChunkPuller {
     /// std::thread::scope(|s| {
     ///     for _ in 0..num_threads {
     ///         s.spawn(|| {
-    ///             for (idx, value) in con_iter.chunk_puller(10).flattened_with_idx() {
+    ///             for (idx, value) in con_iter
+    ///                 .chunk_puller(std::num::NonZeroUsize::new(10).unwrap())
+    ///                 .flattened_with_idx()
+    ///             {
     ///                 assert_eq!(value, &idx.to_string());
     ///             }
     ///         });

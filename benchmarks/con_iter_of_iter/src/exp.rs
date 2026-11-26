@@ -6,6 +6,11 @@ use orx_criterion::Experiment;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use std::hint::black_box;
+use std::num::NonZeroUsize;
+
+fn pos(x: usize) -> NonZeroUsize {
+    NonZeroUsize::new(x).unwrap()
+}
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Agg {
@@ -303,7 +308,7 @@ fn execute_con_iter_chunk(
             let con_iter = iter.iter_into_con_iter();
             run_threads(num_threads, || {
                 let mut local = Agg::default();
-                let mut puller = con_iter.chunk_puller(chunk_size);
+                let mut puller = con_iter.chunk_puller(pos(chunk_size));
                 while let Some(chunk) = puller.pull() {
                     for x in chunk {
                         let v = apply_compute(compute, x);
@@ -318,7 +323,7 @@ fn execute_con_iter_chunk(
             let con_iter = iter.iter_into_con_iter();
             run_threads(num_threads, || {
                 let mut local = Agg::default();
-                let mut puller = con_iter.chunk_puller(chunk_size);
+                let mut puller = con_iter.chunk_puller(pos(chunk_size));
                 while let Some(chunk) = puller.pull() {
                     for x in chunk {
                         let v = apply_compute(compute, x);

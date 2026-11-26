@@ -34,7 +34,8 @@ where
                     }
                 }
                 _ => {
-                    let mut puller = iter.chunk_puller(batch);
+                    let mut puller =
+                        iter.chunk_puller(core::num::NonZeroUsize::new(batch).unwrap());
                     while let Some(chunk) = puller.pull() {
                         let idx = counter.fetch_add(chunk.len(), Ordering::Relaxed);
                         if idx > until {

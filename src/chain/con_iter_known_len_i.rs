@@ -1,3 +1,5 @@
+use core::num::NonZeroUsize;
+
 use crate::{
     ConcurrentIter, ExactSizeConcurrentIter,
     chain::chunk_puller_known_len_i::ChainedChunkPullerKnownLenI,
@@ -75,7 +77,7 @@ where
         true
     }
 
-    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
+    fn chunk_puller(&self, chunk_size: NonZeroUsize) -> Self::ChunkPuller<'_> {
         ChainedChunkPullerKnownLenI::new(&self.i, &self.j, chunk_size, self.len_i)
     }
 }

@@ -2,6 +2,7 @@ use super::{chunk_puller::ChunkPullerJaggedOwned, into_iter::RawJaggedIterOwned}
 use super::{raw_jagged::RawJagged, slice_iter::RawJaggedSliceIterOwned};
 use crate::implementations::jagged_arrays::indexer::JaggedIndexer;
 use crate::{ConcurrentIter, ExactSizeConcurrentIter};
+use core::num::NonZeroUsize;
 use core::sync::atomic::{AtomicUsize, Ordering};
 
 /// Flattened concurrent iterator of a raw jagged array yielding owned elements.
@@ -112,8 +113,9 @@ where
         true
     }
 
-    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
-        let chunk_size = chunk_size.min(self.jagged.len());
+    fn chunk_puller(&self, chunk_size: NonZeroUsize) -> Self::ChunkPuller<'_> {
+        let jagged_len_or_one = NonZeroUsize::new(self.jagged.len()).unwrap_or(NonZeroUsize::MIN);
+        let chunk_size = chunk_size.min(jagged_len_or_one);
         Self::ChunkPuller::new(self, chunk_size)
     }
 }
