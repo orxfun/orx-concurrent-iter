@@ -33,7 +33,7 @@ fn get_matrix(n: usize) -> Vec<Vec<String>> {
 fn enumeration() {
     let n = 2;
     let matrix = get_matrix(n);
-    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n), Some(n * n));
+    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
     assert_eq!(iter.next(), Some(10.to_string()));
@@ -53,7 +53,7 @@ fn enumeration() {
 fn size_hint() {
     let n = 5;
     let matrix = get_matrix(n);
-    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n), Some(n * n));
+    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
     let mut n = n * n;
@@ -93,7 +93,7 @@ fn size_hint() {
 fn size_hint_skip_to_end() {
     let n = 5;
     let matrix = get_matrix(n);
-    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n), Some(n * n));
+    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
     for _ in 0..10 {
@@ -112,7 +112,7 @@ fn size_hint_skip_to_end() {
 fn empty(nt: usize) {
     let n = 0;
     let matrix = get_matrix(n);
-    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n), Some(n * n));
+    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
     std::thread::scope(|s| {
@@ -136,7 +136,7 @@ fn empty(nt: usize) {
 #[test_matrix([0, 2, N], [1, 2, 4])]
 fn next(n: usize, nt: usize) {
     let matrix = get_matrix(n);
-    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n), Some(n * n));
+    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
     let bag = ConcurrentBag::new();
@@ -166,7 +166,7 @@ fn next(n: usize, nt: usize) {
 #[test_matrix([0, 2, N], [1, 2, 4])]
 fn next_with_idx(n: usize, nt: usize) {
     let matrix = get_matrix(n);
-    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n), Some(n * n));
+    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
     let bag = ConcurrentBag::new();
@@ -196,7 +196,7 @@ fn next_with_idx(n: usize, nt: usize) {
 #[test_matrix([0, 2, N], [1, 2, 4])]
 fn item_puller(n: usize, nt: usize) {
     let matrix = get_matrix(n);
-    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n), Some(n * n));
+    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
     let bag = ConcurrentBag::new();
@@ -226,7 +226,7 @@ fn item_puller(n: usize, nt: usize) {
 #[test_matrix( [0, 2, N], [1, 2, 4])]
 fn item_puller_with_idx(n: usize, nt: usize) {
     let matrix = get_matrix(n);
-    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n), Some(n * n));
+    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
     let bag = ConcurrentBag::new();
@@ -256,7 +256,7 @@ fn item_puller_with_idx(n: usize, nt: usize) {
 #[test_matrix([0, 2, N], [1, 2, 4])]
 fn chunk_puller(n: usize, nt: usize) {
     let matrix = get_matrix(n);
-    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n), Some(n * n));
+    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
     let bag = ConcurrentBag::new();
@@ -290,7 +290,7 @@ fn chunk_puller(n: usize, nt: usize) {
 #[test_matrix([0, 2, N], [1, 2, 4])]
 fn chunk_puller_with_idx(n: usize, nt: usize) {
     let matrix = get_matrix(n);
-    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n), Some(n * n));
+    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
     let bag = ConcurrentBag::new();
@@ -324,7 +324,7 @@ fn chunk_puller_with_idx(n: usize, nt: usize) {
 #[test_matrix([0, 2, N], [1, 2, 4])]
 fn flattened_chunk_puller(n: usize, nt: usize) {
     let matrix = get_matrix(n);
-    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n), Some(n * n));
+    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
     let bag = ConcurrentBag::new();
@@ -353,7 +353,7 @@ fn flattened_chunk_puller(n: usize, nt: usize) {
 #[test_matrix([0, 2, N], [1, 2, 4])]
 fn flattened_chunk_puller_with_idx(n: usize, nt: usize) {
     let matrix = get_matrix(n);
-    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n), Some(n * n));
+    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
     let bag = ConcurrentBag::new();
@@ -382,7 +382,7 @@ fn flattened_chunk_puller_with_idx(n: usize, nt: usize) {
 #[test_matrix([0, 2, N], [1, 2, 4])]
 fn skip_to_end(n: usize, nt: usize) {
     let matrix = get_matrix(n);
-    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n), Some(n * n));
+    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
     let until = (n * n) / 2;
@@ -431,7 +431,7 @@ fn skip_to_end(n: usize, nt: usize) {
 #[test_matrix([0, 2, N], [1, 2, 4], [0, N * N / 2, N * N])]
 fn into_seq_iter(n: usize, nt: usize, until: usize) {
     let matrix = get_matrix(n);
-    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n), Some(n * n));
+    let jagged = RawJagged::new(matrix, MatrixIndexer::new(n));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
     let bag = ConcurrentBag::new();
@@ -493,7 +493,7 @@ fn pull_too_many(pulled_before: usize, by_idx: bool) {
     let m = 35;
     let n = m * m; // 1225
     let matrix = get_matrix(m);
-    let jagged = RawJagged::new(matrix, MatrixIndexer::new(m), Some(m * m));
+    let jagged = RawJagged::new(matrix, MatrixIndexer::new(m));
     let iter = ConIterJaggedOwned::new(jagged, 0);
 
     for _ in 0..pulled_before {
