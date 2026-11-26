@@ -1,3 +1,5 @@
+use core::num::NonZeroUsize;
+
 use crate::{
     IntoConcurrentIter,
     chain::ChainUnknownLenI,
@@ -118,7 +120,7 @@ use crate::{
 ///
 /// fn parallel_reduce<T, F>(
 ///     num_threads: usize,
-///     chunk: usize,
+///     chunk: std::num::NonZeroUsize,
 ///     con_iter: impl ConcurrentIter<Item = T>,
 ///     reduce: F,
 /// ) -> Option<T>
@@ -136,7 +138,12 @@ use crate::{
 ///
 /// let n = 10_000;
 /// let data: Vec<_> = (0..n).collect();
-/// let sum = parallel_reduce(8, 64, data.con_iter().copied(), |a, b| a + b);
+/// let sum = parallel_reduce(
+///     8,
+///     std::num::NonZeroUsize::new(64).unwrap(),
+///     data.con_iter().copied(),
+///     |a, b| a + b,
+/// );
 /// assert_eq!(sum, Some(n * (n - 1) / 2));
 /// ```
 ///
@@ -191,7 +198,8 @@ use crate::{
 ///         s.spawn(|| {
 ///             // concurrently iterate over values in a `while let` loop
 ///             // while pulling (up to) 10 elements every time
-///             let mut chunk_puller = con_iter.chunk_puller(10);
+///             let mut chunk_puller =
+///                 con_iter.chunk_puller(std::num::NonZeroUsize::new(10).unwrap());
 ///             while let Some(chunk) = chunk_puller.pull() {
 ///                 // chunk is an ExactSizeIterator
 ///                 for value in chunk {
@@ -229,7 +237,10 @@ use crate::{
 ///         s.spawn(|| {
 ///             // concurrently iterate over values in a `for` loop
 ///             // while concurrently pulling (up to) 10 elements every time
-///             for value in con_iter.chunk_puller(10).flattened() {
+///             for value in con_iter
+///                 .chunk_puller(std::num::NonZeroUsize::new(10).unwrap())
+///                 .flattened()
+///             {
 ///                 process(value);
 ///             }
 ///         });
@@ -686,7 +697,8 @@ pub trait ConcurrentIter: Sync {
     ///         s.spawn(|| {
     ///             // concurrently iterate over values in a `while let` loop
     ///             // while pulling (up to) 10 elements every time
-    ///             let mut chunk_puller = con_iter.chunk_puller(10);
+    ///             let mut chunk_puller =
+    ///                 con_iter.chunk_puller(std::num::NonZeroUsize::new(10).unwrap());
     ///             while let Some(chunk) = chunk_puller.pull() {
     ///                 // chunk is an ExactSizeIterator
     ///                 for value in chunk {
@@ -724,7 +736,10 @@ pub trait ConcurrentIter: Sync {
     ///         s.spawn(|| {
     ///             // concurrently iterate over values in a `for` loop
     ///             // while concurrently pulling (up to) 10 elements every time
-    ///             for value in con_iter.chunk_puller(10).flattened() {
+    ///             for value in con_iter
+    ///                 .chunk_puller(std::num::NonZeroUsize::new(10).unwrap())
+    ///                 .flattened()
+    ///             {
     ///                 process(value);
     ///             }
     ///         });
@@ -750,7 +765,7 @@ pub trait ConcurrentIter: Sync {
     ///
     /// It is important to note that, when we say we pull 10 items, we actually only reserve these
     /// elements for the corresponding thread. We do not actually clone elements or copy memory.
-    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_>;
+    fn chunk_puller(&self, chunk_size: NonZeroUsize) -> Self::ChunkPuller<'_>;
 
     /// Behaves exactly as [`chunk_puller`] but additionally provides `thread_idx` to the iterator.
     /// This information might be useful for certain concurrent iterators, such as the
@@ -763,7 +778,11 @@ pub trait ConcurrentIter: Sync {
     /// [`chunk_puller`]: Self::chunk_puller
     #[inline(always)]
     #[allow(unused_variables)]
-    fn chunk_puller_by(&self, chunk_size: usize, thread_idx: usize) -> Self::ChunkPuller<'_> {
+    fn chunk_puller_by(
+        &self,
+        chunk_size: NonZeroUsize,
+        thread_idx: usize,
+    ) -> Self::ChunkPuller<'_> {
         self.chunk_puller(chunk_size)
     }
 

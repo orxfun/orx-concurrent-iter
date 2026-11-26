@@ -51,7 +51,7 @@ fn enumerate_chunk_puller() {
 
     let mut j = 0;
 
-    let mut puller = iter.chunk_puller(2);
+    let mut puller = iter.chunk_puller(core::num::NonZeroUsize::new(2).unwrap());
     while let Some(chunk) = puller.pull() {
         assert_eq!(chunk.len(), 2);
         for (i, x) in chunk {

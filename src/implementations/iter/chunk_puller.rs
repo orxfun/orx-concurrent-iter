@@ -1,9 +1,9 @@
 use super::con_iter::ConIterOfIter;
 use crate::pullers::ChunkPuller;
 use alloc::vec::Vec;
-use core::iter::FusedIterator;
+use core::{iter::FusedIterator, num::NonZeroUsize};
 
-pub(super) const MAX_CHUNK_SIZE: usize = 1 << 10;
+pub(super) const MAX_CHUNK_SIZE: NonZeroUsize = NonZeroUsize::new(1 << 10).unwrap();
 
 pub struct ChunkPullerOfIter<'i, I>
 where
@@ -20,16 +20,18 @@ where
     I: Iterator,
     I::Item: Send,
 {
-    pub(super) fn new(con_iter: &'i ConIterOfIter<I>, chunk_size: usize) -> Self {
+    pub(super) fn new(con_iter: &'i ConIterOfIter<I>, chunk_size: NonZeroUsize) -> Self {
         let chunk_size = chunk_size.min(MAX_CHUNK_SIZE);
-        let mut buffer = Vec::with_capacity(chunk_size);
-        for _ in 0..chunk_size {
+
+        let pos_chunk_size: usize = chunk_size.into();
+        let mut buffer = Vec::with_capacity(pos_chunk_size);
+        for _ in 0..pos_chunk_size {
             buffer.push(None);
         }
         Self {
             con_iter,
             buffer,
-            chunk_size,
+            chunk_size: pos_chunk_size,
         }
     }
 }

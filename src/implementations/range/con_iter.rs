@@ -2,6 +2,7 @@ use super::chunk_puller::ChunkPullerRange;
 use crate::{concurrent_iter::ConcurrentIter, exact_size_concurrent_iter::ExactSizeConcurrentIter};
 use core::{
     marker::PhantomData,
+    num::NonZeroUsize,
     ops::Range,
     sync::atomic::{AtomicUsize, Ordering},
 };
@@ -142,8 +143,9 @@ where
         true
     }
 
-    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
-        let chunk_size = chunk_size.min(self.len);
+    fn chunk_puller(&self, chunk_size: NonZeroUsize) -> Self::ChunkPuller<'_> {
+        let range_len_or_one = NonZeroUsize::new(self.len).unwrap_or(NonZeroUsize::MIN);
+        let chunk_size = chunk_size.min(range_len_or_one);
         (self, chunk_size).into()
     }
 }

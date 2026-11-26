@@ -244,8 +244,7 @@ where
                     unsafe { s.drop_in_place(p) };
                 }
 
-                for f in (begin.f + 1)..self.arrays.len() {
-                    let s = &self.arrays[f];
+                for s in self.arrays.iter().take(self.arrays.len()).skip(begin.f + 1) {
                     for p in 0..s.length() {
                         unsafe { s.drop_in_place(p) };
                     }

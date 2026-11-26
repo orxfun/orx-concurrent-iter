@@ -34,7 +34,10 @@ use core::iter::Enumerate;
 /// std::thread::scope(|s| {
 ///     for _ in 0..num_threads {
 ///         s.spawn(|| {
-///             for (idx, value) in con_iter.chunk_puller(8).flattened_with_idx() {
+///             for (idx, value) in con_iter
+///                 .chunk_puller(std::num::NonZeroUsize::new(8).unwrap())
+///                 .flattened_with_idx()
+///             {
 ///                 assert_eq!(value, &idx.to_string());
 ///             }
 ///         });

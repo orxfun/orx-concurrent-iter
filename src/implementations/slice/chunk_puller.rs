@@ -1,3 +1,5 @@
+use core::num::NonZeroUsize;
+
 use super::con_iter::ConIterSlice;
 use crate::pullers::ChunkPuller;
 
@@ -7,10 +9,10 @@ pub struct ChunkPullerSlice<'i, 'a, T> {
 }
 
 impl<'i, 'a, T> ChunkPullerSlice<'i, 'a, T> {
-    pub(super) fn new(con_iter: &'i ConIterSlice<'a, T>, chunk_size: usize) -> Self {
+    pub(super) fn new(con_iter: &'i ConIterSlice<'a, T>, chunk_size: NonZeroUsize) -> Self {
         Self {
             con_iter,
-            chunk_size,
+            chunk_size: chunk_size.into(),
         }
     }
 }

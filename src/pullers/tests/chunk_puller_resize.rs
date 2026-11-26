@@ -3,17 +3,22 @@ use crate::concurrent_iter::ConcurrentIter;
 use crate::into_concurrent_iter::IntoConcurrentIter;
 use crate::iter_into_concurrent_iter::IterIntoConcurrentIter;
 use crate::pullers::ChunkPuller;
+use core::num::NonZeroUsize;
 use std::collections::VecDeque;
 
 // ============================================================================
 // Vec Tests
 // ============================================================================
 
+fn pos(x: usize) -> NonZeroUsize {
+    NonZeroUsize::new(x).unwrap()
+}
+
 #[test]
 fn chunk_puller_resize_vec_larger() {
     let data = vec![1, 2, 3, 4, 5, 6, 7, 8];
     let con_iter = data.con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(2);
+    let mut chunk_puller = con_iter.chunk_puller(pos(2));
 
     // First pull with size 2
     let chunk1 = chunk_puller.pull().expect("valid");
@@ -32,7 +37,7 @@ fn chunk_puller_resize_vec_larger() {
 fn chunk_puller_resize_vec_smaller() {
     let data = vec![1, 2, 3, 4, 5, 6, 7, 8];
     let con_iter = data.con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(4);
+    let mut chunk_puller = con_iter.chunk_puller(pos(4));
 
     // First pull with size 4
     let chunk1 = chunk_puller.pull().expect("valid");
@@ -51,7 +56,7 @@ fn chunk_puller_resize_vec_smaller() {
 fn chunk_puller_resize_vec_multiple_times() {
     let data: Vec<i32> = (0..20).collect();
     let con_iter = data.con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(3);
+    let mut chunk_puller = con_iter.chunk_puller(pos(3));
 
     // Pull with size 3
     let chunk1 = chunk_puller.pull().expect("valid");
@@ -77,7 +82,7 @@ fn chunk_puller_resize_vec_multiple_times() {
 fn chunk_puller_resize_vec_to_size_one() {
     let data = vec![10, 20, 30, 40];
     let con_iter = data.con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(2);
+    let mut chunk_puller = con_iter.chunk_puller(pos(2));
 
     let _ = chunk_puller.pull().expect("valid"); // size 2
     chunk_puller.resize_for_chunk_size(1);
@@ -90,7 +95,7 @@ fn chunk_puller_resize_vec_to_size_one() {
 fn chunk_puller_resize_vec_larger_than_remaining() {
     let data = vec![1, 2, 3, 4, 5];
     let con_iter = data.con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(2);
+    let mut chunk_puller = con_iter.chunk_puller(pos(2));
 
     // Pull 2 items (3 remain)
     let _ = chunk_puller.pull().expect("valid");
@@ -113,7 +118,7 @@ fn chunk_puller_resize_slice_larger() {
     let data_inner = vec![1, 2, 3, 4, 5, 6, 7, 8];
     let data = data_inner.clone();
     let con_iter = data.con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(2);
+    let mut chunk_puller = con_iter.chunk_puller(pos(2));
 
     let _ = chunk_puller.pull().expect("valid"); // size 2
     chunk_puller.resize_for_chunk_size(4);
@@ -126,7 +131,7 @@ fn chunk_puller_resize_slice_larger() {
 fn chunk_puller_resize_slice_smaller() {
     let data = vec![1, 2, 3, 4, 5, 6, 7, 8];
     let con_iter = data.con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(4);
+    let mut chunk_puller = con_iter.chunk_puller(pos(4));
 
     let _ = chunk_puller.pull().expect("valid"); // size 4
     chunk_puller.resize_for_chunk_size(2);
@@ -139,7 +144,7 @@ fn chunk_puller_resize_slice_smaller() {
 fn chunk_puller_resize_slice_multiple() {
     let data: Vec<i32> = (0..16).collect();
     let con_iter = data.con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(3);
+    let mut chunk_puller = con_iter.chunk_puller(pos(3));
 
     let _ = chunk_puller.pull().expect("valid");
     chunk_puller.resize_for_chunk_size(5);
@@ -159,7 +164,7 @@ fn chunk_puller_resize_slice_mut_larger() {
     {
         let slice_mut: &mut [i32] = &mut data;
         let con_iter = slice_mut.into_con_iter();
-        let mut chunk_puller = con_iter.chunk_puller(2);
+        let mut chunk_puller = con_iter.chunk_puller(pos(2));
 
         let _ = chunk_puller.pull().expect("valid"); // size 2
         chunk_puller.resize_for_chunk_size(3);
@@ -175,7 +180,7 @@ fn chunk_puller_resize_slice_mut_smaller() {
     {
         let slice_mut: &mut [i32] = &mut data;
         let con_iter = slice_mut.into_con_iter();
-        let mut chunk_puller = con_iter.chunk_puller(4);
+        let mut chunk_puller = con_iter.chunk_puller(pos(4));
 
         let _ = chunk_puller.pull().expect("valid"); // size 4
         chunk_puller.resize_for_chunk_size(1);
@@ -196,7 +201,7 @@ fn chunk_puller_resize_vec_deque_larger() {
         deque.push_back(i);
     }
     let con_iter = deque.con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(2);
+    let mut chunk_puller = con_iter.chunk_puller(pos(2));
 
     chunk_puller.pull().expect("valid"); // size 2
     chunk_puller.resize_for_chunk_size(4);
@@ -212,7 +217,7 @@ fn chunk_puller_resize_vec_deque_smaller() {
         deque.push_back(i);
     }
     let con_iter = deque.con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(4);
+    let mut chunk_puller = con_iter.chunk_puller(pos(4));
 
     chunk_puller.pull().expect("valid"); // size 4
     chunk_puller.resize_for_chunk_size(2);
@@ -229,7 +234,7 @@ fn chunk_puller_resize_vec_deque_smaller() {
 fn chunk_puller_resize_with_idx_vec_larger() {
     let data = vec![1, 2, 3, 4, 5, 6, 7, 8];
     let con_iter = data.con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(2);
+    let mut chunk_puller = con_iter.chunk_puller(pos(2));
 
     let (idx1, chunk1) = chunk_puller.pull_with_idx().expect("valid");
     assert_eq!(idx1, 0);
@@ -246,7 +251,7 @@ fn chunk_puller_resize_with_idx_vec_larger() {
 fn chunk_puller_resize_with_idx_vec_smaller() {
     let data = vec![1, 2, 3, 4, 5, 6, 7, 8];
     let con_iter = data.con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(4);
+    let mut chunk_puller = con_iter.chunk_puller(pos(4));
 
     let (idx1, chunk1) = chunk_puller.pull_with_idx().expect("valid");
     assert_eq!(idx1, 0);
@@ -263,7 +268,7 @@ fn chunk_puller_resize_with_idx_vec_smaller() {
 fn chunk_puller_resize_with_idx_multiple() {
     let data: Vec<i32> = (0..12).collect();
     let con_iter = data.con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(2);
+    let mut chunk_puller = con_iter.chunk_puller(pos(2));
 
     // First chunk: indices 0-1
     let (idx1, chunk1) = chunk_puller.pull_with_idx().expect("valid");
@@ -291,7 +296,7 @@ fn chunk_puller_resize_with_idx_multiple() {
 fn chunk_puller_resize_to_zero_then_pull() {
     let data = vec![1, 2, 3, 4, 5];
     let con_iter = data.con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(2);
+    let mut chunk_puller = con_iter.chunk_puller(pos(2));
 
     let _ = chunk_puller.pull().expect("valid");
 
@@ -316,7 +321,7 @@ fn chunk_puller_resize_to_zero_then_pull() {
 fn chunk_puller_resize_maintains_chunk_size() {
     let data = vec![1, 2, 3, 4, 5, 6, 7, 8];
     let con_iter = data.con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(2);
+    let mut chunk_puller = con_iter.chunk_puller(pos(2));
 
     assert_eq!(chunk_puller.chunk_size(), 2);
 
@@ -331,7 +336,7 @@ fn chunk_puller_resize_maintains_chunk_size() {
 fn chunk_puller_resize_very_large_size() {
     let data: Vec<i32> = (0..100).collect();
     let con_iter = data.con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(10);
+    let mut chunk_puller = con_iter.chunk_puller(pos(10));
 
     let _ = chunk_puller.pull().expect("valid");
     chunk_puller.resize_for_chunk_size(1000); // Much larger than remaining
@@ -344,7 +349,7 @@ fn chunk_puller_resize_very_large_size() {
 fn chunk_puller_resize_small_dataset() {
     let data = vec![1, 2, 3];
     let con_iter = data.con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(5);
+    let mut chunk_puller = con_iter.chunk_puller(pos(5));
 
     // First pull with size 5 but only 3 items available
     let chunk1 = chunk_puller.pull().expect("valid");
@@ -362,7 +367,7 @@ fn chunk_puller_resize_small_dataset() {
 fn chunk_puller_resize_alternating_larger_and_smaller() {
     let data: Vec<i32> = (0..24).collect();
     let con_iter = data.con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(2);
+    let mut chunk_puller = con_iter.chunk_puller(pos(2));
 
     // 2, 4, 2, 4, 2, 4
     let _ = chunk_puller.pull().expect("valid"); // 2 items (0-1)
@@ -401,7 +406,7 @@ fn chunk_puller_of_iter_resize_larger_with_strings() {
     let data: Vec<String> = (0..8).map(|i| format!("item_{}", i)).collect();
     let iter = data.into_iter();
     let con_iter = iter.iter_into_con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(2);
+    let mut chunk_puller = con_iter.chunk_puller(pos(2));
 
     assert_eq!(chunk_puller.chunk_size(), 2);
 
@@ -429,7 +434,7 @@ fn chunk_puller_of_iter_resize_smaller_with_strings() {
     let data: Vec<String> = (0..8).map(|i| format!("item_{}", i)).collect();
     let iter = data.into_iter();
     let con_iter = iter.iter_into_con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(4);
+    let mut chunk_puller = con_iter.chunk_puller(pos(4));
 
     assert_eq!(chunk_puller.chunk_size(), 4);
 
@@ -455,7 +460,7 @@ fn chunk_puller_of_iter_resize_multiple_times_with_strings() {
     let data: Vec<String> = (0..20).map(|i| format!("item_{}", i)).collect();
     let iter = data.into_iter();
     let con_iter = iter.iter_into_con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(3);
+    let mut chunk_puller = con_iter.chunk_puller(pos(3));
 
     // Pull with size 3
     let chunk1: Vec<_> = chunk_puller.pull().expect("valid").collect();
@@ -490,7 +495,7 @@ fn chunk_puller_of_iter_resize_maintains_chunk_size_with_strings() {
     let data: Vec<String> = (0..8).map(|i| format!("item_{}", i)).collect();
     let iter = data.into_iter();
     let con_iter = iter.iter_into_con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(2);
+    let mut chunk_puller = con_iter.chunk_puller(pos(2));
 
     assert_eq!(chunk_puller.chunk_size(), 2);
 
@@ -506,7 +511,7 @@ fn chunk_puller_of_iter_with_idx_larger_with_strings() {
     let data: Vec<String> = (0..8).map(|i| format!("item_{}", i)).collect();
     let iter = data.into_iter();
     let con_iter = iter.iter_into_con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(2);
+    let mut chunk_puller = con_iter.chunk_puller(pos(2));
 
     let (idx1, chunk1) = chunk_puller.pull_with_idx().expect("valid");
     assert_eq!(idx1, 0);
@@ -530,7 +535,7 @@ fn chunk_puller_of_iter_with_idx_smaller_with_strings() {
     let data: Vec<String> = (0..8).map(|i| format!("item_{}", i)).collect();
     let iter = data.into_iter();
     let con_iter = iter.iter_into_con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(4);
+    let mut chunk_puller = con_iter.chunk_puller(pos(4));
 
     let (idx1, chunk1) = chunk_puller.pull_with_idx().expect("valid");
     assert_eq!(idx1, 0);
@@ -553,7 +558,7 @@ fn chunk_puller_of_iter_with_idx_multiple_with_strings() {
     let data: Vec<String> = (0..12).map(|i| format!("item_{}", i)).collect();
     let iter = data.into_iter();
     let con_iter = iter.iter_into_con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(2);
+    let mut chunk_puller = con_iter.chunk_puller(pos(2));
 
     // First chunk: indices 0-1
     let (idx1, chunk1) = chunk_puller.pull_with_idx().expect("valid");
@@ -586,7 +591,7 @@ fn chunk_puller_of_iter_pull_to_completion_with_strings() {
     let data: Vec<String> = (0..5).map(|i| format!("item_{}", i)).collect();
     let iter = data.into_iter();
     let con_iter = iter.iter_into_con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(2);
+    let mut chunk_puller = con_iter.chunk_puller(pos(2));
 
     let chunk1: Vec<_> = chunk_puller.pull().expect("valid").collect();
     assert_eq!(chunk1.len(), 2);
@@ -607,7 +612,7 @@ fn chunk_puller_of_iter_empty_iterator_with_strings() {
     let data: Vec<String> = vec![];
     let iter = data.into_iter();
     let con_iter = iter.iter_into_con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(2);
+    let mut chunk_puller = con_iter.chunk_puller(pos(2));
 
     assert!(chunk_puller.pull().is_none());
 
@@ -621,7 +626,7 @@ fn chunk_puller_of_iter_alternating_resize_with_strings() {
     let data: Vec<String> = (0..24).map(|i| format!("item_{}", i)).collect();
     let iter = data.into_iter();
     let con_iter = iter.iter_into_con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(2);
+    let mut chunk_puller = con_iter.chunk_puller(pos(2));
 
     // 2, 4, 2, 4, 2, 4 pattern
     let chunk1: Vec<_> = chunk_puller.pull().expect("valid").collect();
@@ -666,7 +671,7 @@ fn chunk_puller_of_iter_resize_chunk_and_leave_unconsumed() {
     let data: Vec<String> = (0..24).map(|i| format!("item_{}", i)).collect();
     let iter = data.into_iter();
     let con_iter = iter.iter_into_con_iter();
-    let mut chunk_puller = con_iter.chunk_puller(3);
+    let mut chunk_puller = con_iter.chunk_puller(pos(3));
 
     // pull but do not consume the chunk
     let _chunk = chunk_puller.pull();

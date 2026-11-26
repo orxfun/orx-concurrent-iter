@@ -1,3 +1,5 @@
+use core::num::NonZeroUsize;
+
 use crate::{ChunkPuller, ConcurrentIter, chain::chunk::ChunkOfEither};
 
 pub struct ChainedChunkPullerKnownLenI<'i, I, J>
@@ -16,7 +18,7 @@ where
     I: ConcurrentIter,
     J: ConcurrentIter<Item = I::Item>,
 {
-    pub(super) fn new(i: &'i I, j: &'i J, chunk_size: usize, len_i: usize) -> Self {
+    pub(super) fn new(i: &'i I, j: &'i J, chunk_size: NonZeroUsize, len_i: usize) -> Self {
         let p = i.chunk_puller(chunk_size);
         let q = j.chunk_puller(chunk_size);
         Self {

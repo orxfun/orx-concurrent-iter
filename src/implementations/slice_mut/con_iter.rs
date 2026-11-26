@@ -5,6 +5,7 @@ use crate::{
 use core::{
     iter::Skip,
     marker::PhantomData,
+    num::NonZeroUsize,
     sync::atomic::{AtomicUsize, Ordering},
 };
 
@@ -149,8 +150,9 @@ where
         true
     }
 
-    fn chunk_puller(&self, chunk_size: usize) -> Self::ChunkPuller<'_> {
-        let chunk_size = chunk_size.min(self.slice_len);
+    fn chunk_puller(&self, chunk_size: NonZeroUsize) -> Self::ChunkPuller<'_> {
+        let slice_len_or_one = NonZeroUsize::new(self.slice_len).unwrap_or(NonZeroUsize::MIN);
+        let chunk_size = chunk_size.min(slice_len_or_one);
         Self::ChunkPuller::new(self, chunk_size)
     }
 }

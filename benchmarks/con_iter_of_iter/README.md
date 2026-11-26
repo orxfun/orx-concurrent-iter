@@ -8,10 +8,10 @@ A benchmark suite designed to evaluate and optimize the performance of `ConIterO
 - `seq`: Sequential baseline (`Iterator::map / filter / reduce`).
 - `rayon`: Rayon's `par_bridge` baseline.
 - `con-iter-single`: `ConIterOfIter::next()` (pull 1 element per lock acquisition).
-- `con-iter-c16`: `ConIterOfIter::chunk_puller(16)` (pull 16 elements per lock acquisition).
-- `con-iter-c64`: `ConIterOfIter::chunk_puller(64)` (pull 64 elements per lock acquisition).
-- `con-iter-c256`: `ConIterOfIter::chunk_puller(256)` (pull 256 elements per lock acquisition).
-- `con-iter-c1024`: `ConIterOfIter::chunk_puller(1024)` (pull 1024 elements per lock acquisition).
+- `con-iter-c16`: `ConIterOfIter::chunk_puller(NonZeroUsize::new(16).unwrap())` (pull 16 elements per lock acquisition).
+- `con-iter-c64`: `ConIterOfIter::chunk_puller(NonZeroUsize::new(64).unwrap())` (pull 64 elements per lock acquisition).
+- `con-iter-c256`: `ConIterOfIter::chunk_puller(NonZeroUsize::new(256).unwrap())` (pull 256 elements per lock acquisition).
+- `con-iter-c1024`: `ConIterOfIter::chunk_puller(NonZeroUsize::new(1024).unwrap())` (pull 1024 elements per lock acquisition).
 
 ### 2. Input Characteristics (`InputVariant`)
 - **Size (`n`)**: Sequence length (e.g. `16_384`, `65_536`, `262_144`, `1_048_576`).

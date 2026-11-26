@@ -29,7 +29,7 @@ use super::ChunkPuller;
 ///
 /// fn parallel_reduce<T, F>(
 ///     num_threads: usize,
-///     chunk: usize,
+///     chunk: std::num::NonZeroUsize,
 ///     con_iter: impl ConcurrentIter<Item = T>,
 ///     reduce: F,
 /// ) -> Option<T>
@@ -45,12 +45,22 @@ use super::ChunkPuller;
 ///     })
 /// }
 ///
-/// let sum = parallel_reduce(8, 64, (0..0).into_con_iter(), |a, b| a + b);
+/// let sum = parallel_reduce(
+///     8,
+///     std::num::NonZeroUsize::new(64).unwrap(),
+///     (0..0).into_con_iter(),
+///     |a, b| a + b,
+/// );
 /// assert_eq!(sum, None);
 ///
 /// let n = 10_000;
 /// let data: Vec<_> = (0..n).collect();
-/// let sum = parallel_reduce(8, 64, data.con_iter().copied(), |a, b| a + b);
+/// let sum = parallel_reduce(
+///     8,
+///     std::num::NonZeroUsize::new(64).unwrap(),
+///     data.con_iter().copied(),
+///     |a, b| a + b,
+/// );
 /// assert_eq!(sum, Some(n * (n - 1) / 2));
 /// ```
 ///

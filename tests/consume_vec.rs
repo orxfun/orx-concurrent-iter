@@ -1,5 +1,10 @@
+use core::num::NonZeroUsize;
 use orx_concurrent_iter::*;
 use test_case::test_matrix;
+
+fn pos(x: usize) -> NonZeroUsize {
+    NonZeroUsize::new(x).unwrap()
+}
 
 const NUM_RERUNS: usize = 1;
 
@@ -29,7 +34,7 @@ fn concurrent_iter_stack(num_threads: usize, batch: usize, vec: Vec<i64>, consum
                             }
                         }
                         _ => {
-                            let mut puller = iter.chunk_puller(batch);
+                            let mut puller = iter.chunk_puller(pos(batch));
                             while let Some(chunk) = puller.pull() {
                                 for value in chunk {
                                     sum += value;
@@ -48,7 +53,7 @@ fn concurrent_iter_stack(num_threads: usize, batch: usize, vec: Vec<i64>, consum
                         }
                         _ => {
                             let until = vec_len.saturating_sub(batch);
-                            let mut puller = iter.chunk_puller(batch);
+                            let mut puller = iter.chunk_puller(pos(batch));
                             while iter.try_get_len().expect("exists") < until {
                                 if let Some(chunk) = puller.pull() {
                                     for value in chunk {
@@ -108,7 +113,7 @@ fn concurrent_iter_heap(
                             }
                         }
                         _ => {
-                            let mut puller = iter.chunk_puller(batch);
+                            let mut puller = iter.chunk_puller(pos(batch));
                             while let Some(chunk) = puller.pull() {
                                 for value in chunk {
                                     str = value;
@@ -127,7 +132,7 @@ fn concurrent_iter_heap(
                         }
                         _ => {
                             let until = vec_len.saturating_sub(batch);
-                            let mut puller = iter.chunk_puller(batch);
+                            let mut puller = iter.chunk_puller(pos(batch));
                             while iter.try_get_len().expect("exists") < until {
                                 if let Some(chunk) = puller.pull() {
                                     for value in chunk {

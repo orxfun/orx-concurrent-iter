@@ -1,4 +1,9 @@
+use core::num::NonZeroUsize;
 use orx_concurrent_iter::*;
+
+fn pos(x: usize) -> NonZeroUsize {
+    NonZeroUsize::new(x).unwrap()
+}
 
 #[cfg(not(miri))]
 const NUM_THREADS_AND_BATCH: [(usize, usize); 6] =
@@ -93,7 +98,7 @@ fn early_exit_slice() {
                             }
                         }
                     } else {
-                        let mut puller = iter.chunk_puller(batch);
+                        let mut puller = iter.chunk_puller(pos(batch));
                         while let Some((begin_idx, chunk)) = puller.pull_with_idx() {
                             for (i, x) in chunk.enumerate() {
                                 if predicate(x) {
@@ -141,7 +146,7 @@ where
                     _ = iter.next();
                     _ = iter.next_with_idx();
                 } else {
-                    let mut puller = iter.chunk_puller(batch);
+                    let mut puller = iter.chunk_puller(pos(batch));
                     while let Some((begin_idx, chunk)) = puller.pull_with_idx() {
                         for (i, x) in chunk.enumerate() {
                             if predicate(&x) {
